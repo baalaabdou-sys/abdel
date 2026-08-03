@@ -1,9 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import { Product } from "@/data/menu";
+import { useProductModal } from "./ProductModalContext";
 
 export default function ProductCard({ product }: { product: Product }) {
+  const { openProduct } = useProductModal();
+
   return (
-    <div className="group overflow-hidden rounded-xl2 border border-border bg-surface shadow-card transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-soft">
+    <button
+      type="button"
+      onClick={() => openProduct(product)}
+      className="group overflow-hidden rounded-xl2 border border-border bg-surface text-left shadow-card transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+    >
       <div className="relative h-40 w-full overflow-hidden bg-[#F3ECDF] sm:h-44">
         <Image
           src={product.image}
@@ -20,6 +29,6 @@ export default function ProductCard({ product }: { product: Product }) {
         </h3>
         <p className="text-sm font-medium text-gold-dark">{product.price} DHS</p>
       </div>
-    </div>
+    </button>
   );
 }

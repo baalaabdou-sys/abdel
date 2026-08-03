@@ -86,15 +86,3 @@ export const products: Product[] = [
   { id: "milkshake-fraise", name: "Milkshake Fraise", price: 22, image: "/menu/milkshake-fraise.jpg", categoryId: "milkshakes" },
   { id: "milkshake-chocolat", name: "Milkshake Chocolat", price: 22, image: "/menu/milkshake-chocolat.jpg", categoryId: "milkshakes" },
 ];
-
-export interface Supplement {
-  id: string;
-  name: string;
-  price: number;
-}
-
-export const supplements: Supplement[] = [
-  { id: "miel", name: "Miel", price: 2 },
-  { id: "eau", name: "Eau", price: 5 },
-  { id: "sirop", name: "Sirop", price: 3 },
-];
