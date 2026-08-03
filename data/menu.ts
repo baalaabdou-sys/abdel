@@ -20,10 +20,9 @@ export const categories: Category[] = [
   { id: "choco-milk", name: "Choco Milk", icon: "GlassWater", order: 4 },
   { id: "ice", name: "Ice", icon: "Snowflake", order: 5 },
   { id: "essfrapa", name: "Essfrapa", icon: "IceCreamCone", order: 6 },
-  { id: "frozen", name: "Frozen", icon: "IceCream2", order: 7 },
-  { id: "limonades", name: "Limonades", icon: "Citrus", order: 8 },
-  { id: "thes-glaces", name: "Thés glacés", icon: "Leaf", order: 9 },
-  { id: "milkshakes", name: "Milkshakes", icon: "Milkshake", order: 10 },
+  { id: "limonades", name: "Limonades", icon: "Citrus", order: 7 },
+  { id: "thes-glaces", name: "Thés glacés", icon: "Leaf", order: 8 },
+  { id: "milkshakes", name: "Milkshakes", icon: "Milkshake", order: 9 },
 ];
 
 export const products: Product[] = [
@@ -63,12 +62,6 @@ export const products: Product[] = [
   // Essfrapa
   { id: "essfrapa-chocolat", name: "Essfrapa Chocolat", price: 25, image: "/menu/essfrapa-chocolat.jpg", categoryId: "essfrapa" },
   { id: "essfrapa-caramel", name: "Essfrapa Caramel", price: 25, image: "/menu/essfrapa-caramel.jpg", categoryId: "essfrapa" },
-
-  // Frozen
-  { id: "tropical-frozen", name: "Tropical Frozen", price: 23, image: "/menu/tropical-frozen.jpg", categoryId: "frozen" },
-  { id: "fruit-passion-frozen", name: "Fruit Passion Frozen", price: 23, image: "/menu/fruit-passion-frozen.jpg", categoryId: "frozen" },
-  { id: "fruit-peche", name: "Fruit Pêche", price: 23, image: "/menu/fruit-peche.jpg", categoryId: "frozen" },
-  { id: "fruit-mangue", name: "Fruit Mangue", price: 23, image: "/menu/fruit-mangue.jpg", categoryId: "frozen" },
 
   // Limonades
   { id: "strawberry-lemonade", name: "Strawberry Lemonade", price: 25, image: "/menu/strawberry-lemonade.jpg", categoryId: "limonades" },
