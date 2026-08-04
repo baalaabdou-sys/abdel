@@ -1,30 +1,6 @@
-import {
-  Coffee,
-  Milk,
-  CupSoda,
-  Snowflake,
-  IceCreamCone,
-  IceCream2,
-  Citrus,
-  Leaf,
-  GlassWater,
-  LucideIcon,
-} from "lucide-react";
 import { Category, Product } from "@/data/menu";
 import ProductCard from "./ProductCard";
-
-const iconMap: Record<string, LucideIcon> = {
-  Coffee,
-  Milk,
-  CupSoda,
-  Snowflake,
-  IceCreamCone,
-  IceCream2,
-  Citrus,
-  Leaf,
-  GlassWater,
-  Milkshake: GlassWater,
-};
+import CategoryIcon from "./CategoryIcon";
 
 export default function MenuSection({
   category,
@@ -35,8 +11,6 @@ export default function MenuSection({
   products: Product[];
   alternate: boolean;
 }) {
-  const Icon = iconMap[category.icon] ?? Coffee;
-
   return (
     <section
       id={category.id}
@@ -45,7 +19,7 @@ export default function MenuSection({
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mb-6 flex items-center gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gold/10 text-gold-dark">
-            <Icon className="h-5 w-5" strokeWidth={1.8} />
+            <CategoryIcon categoryId={category.id} className="h-5 w-5" />
           </span>
           <h2 className="font-display text-2xl font-bold text-espresso sm:text-3xl">
             {category.name}

@@ -1,32 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Coffee,
-  Milk,
-  CupSoda,
-  Snowflake,
-  IceCreamCone,
-  IceCream2,
-  Citrus,
-  Leaf,
-  GlassWater,
-  LucideIcon,
-} from "lucide-react";
 import { categories } from "@/data/menu";
-
-const iconMap: Record<string, LucideIcon> = {
-  Coffee,
-  Milk,
-  CupSoda,
-  Snowflake,
-  IceCreamCone,
-  IceCream2,
-  Citrus,
-  Leaf,
-  GlassWater,
-  Milkshake: GlassWater,
-};
+import CategoryIcon from "./CategoryIcon";
 
 export default function CategoryNav() {
   const [active, setActive] = useState(categories[0].id);
@@ -58,7 +34,6 @@ export default function CategoryNav() {
         className="no-scrollbar mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3 sm:px-6"
       >
         {categories.map((category) => {
-          const Icon = iconMap[category.icon] ?? Coffee;
           const isActive = active === category.id;
           return (
             <a
@@ -70,7 +45,7 @@ export default function CategoryNav() {
                   : "border-border bg-surface text-coffee hover:border-gold/50"
               }`}
             >
-              <Icon className="h-4 w-4" strokeWidth={1.8} />
+              <CategoryIcon categoryId={category.id} className="h-4 w-4" />
               {category.name}
             </a>
           );
