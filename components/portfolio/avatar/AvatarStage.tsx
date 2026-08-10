@@ -127,7 +127,7 @@ export default function AvatarStage() {
         // the avatar renders far larger than the space reserved for it and
         // visibly overlaps/misaligns with the content around it.
         const vw = window.innerWidth;
-        const sizeScale = vw < 480 ? 0.5 : vw < 768 ? 0.62 : vw < 1024 ? 0.82 : 1;
+        const sizeScale = vw < 480 ? 0.82 : vw < 768 ? 0.9 : vw < 1024 ? 0.95 : 1;
         x.set(rect.left + rect.width / 2);
         y.set(rect.top + rect.height / 2);
         w.set(config.size * sizeScale);
