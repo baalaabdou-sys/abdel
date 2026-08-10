@@ -35,6 +35,7 @@ export default function AvatarStage() {
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const keyRafRef = useRef<number>();
+  const activeAnchorIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     return actionEmitter.on((evt) => {
@@ -46,13 +47,22 @@ export default function AvatarStage() {
 
   useEffect(() => {
     let raf: number;
+    // How much closer a different anchor must be, in px, before we switch
+    // to it. Without this, two anchors that are nearly tied in distance
+    // (common on short mobile viewports, or mid-scroll on any device) cause
+    // the "closest" pick to flip every frame, snapping the character's
+    // target position back and forth — this margin adds hysteresis so it
+    // only switches on a real, decisive change.
+    const SWITCH_MARGIN = 80;
+
     const tick = () => {
       const vh = window.innerHeight;
+      let bestId: string | null = null;
       let bestEl: HTMLElement | null = null;
       let bestConfig: { basePose: ClipKey; size: number; flip?: boolean } | null = null;
       let bestDist = Infinity;
 
-      anchors.forEach((entry) => {
+      anchors.forEach((entry, id) => {
         const rect = entry.el.getBoundingClientRect();
         if (rect.bottom < 0 || rect.top > vh) return;
         const center = rect.top + rect.height / 2;
@@ -61,20 +71,47 @@ export default function AvatarStage() {
           bestDist = dist;
           bestEl = entry.el;
           bestConfig = entry.config;
+          bestId = id;
         }
       });
 
-      if (bestEl && bestConfig) {
-        const rect = (bestEl as HTMLElement).getBoundingClientRect();
-        const config = bestConfig as { basePose: ClipKey; size: number; flip?: boolean };
+      let chosenId: string | null = bestId;
+      let chosenEl: HTMLElement | null = bestEl;
+      let chosenConfig: { basePose: ClipKey; size: number; flip?: boolean } | null = bestConfig;
+      let chosenDist: number = bestDist;
+
+      const currentId = activeAnchorIdRef.current;
+      if (currentId && currentId !== bestId) {
+        const current = anchors.get(currentId);
+        if (current) {
+          const rect = current.el.getBoundingClientRect();
+          if (rect.bottom >= 0 && rect.top <= vh) {
+            const center = rect.top + rect.height / 2;
+            const curDist = Math.abs(center - vh / 2);
+            if (curDist <= bestDist + SWITCH_MARGIN) {
+              chosenId = currentId;
+              chosenEl = current.el;
+              chosenConfig = current.config;
+              chosenDist = curDist;
+            }
+          }
+        }
+      }
+      void chosenDist;
+
+      if (chosenEl && chosenConfig) {
+        activeAnchorIdRef.current = chosenId;
+        const rect = (chosenEl as HTMLElement).getBoundingClientRect();
+        const config = chosenConfig as { basePose: ClipKey; size: number; flip?: boolean };
         x.set(rect.left + rect.width / 2);
         y.set(rect.top + rect.height / 2);
         w.set(config.size);
         if (basePoseRef.current !== config.basePose) setBasePose(config.basePose);
         if (baseFlipRef.current !== Boolean(config.flip)) setBaseFlip(Boolean(config.flip));
         if (!visibleRef.current) setVisible(true);
-      } else if (visibleRef.current) {
-        setVisible(false);
+      } else {
+        activeAnchorIdRef.current = null;
+        if (visibleRef.current) setVisible(false);
       }
 
       raf = requestAnimationFrame(tick);
@@ -88,16 +125,35 @@ export default function AvatarStage() {
 
   useEffect(() => {
     if (lightweight) return;
+    const cleanups: (() => void)[] = [];
+
     clipKeys.forEach((key) => {
       const el = videoRefs.current[key];
       if (!el) return;
-      if (key === activeClip) {
-        el.currentTime = 0;
-        el.play().catch(() => {});
-      } else {
+      if (key !== activeClip) {
         el.pause();
+        return;
+      }
+
+      el.currentTime = 0;
+      const start = () => el.play().catch(() => {});
+
+      // Starting playback before enough of the clip is buffered causes
+      // stalls that read as jittery/back-and-forth motion, especially on
+      // mobile networks — wait for canplaythrough when it isn't ready yet.
+      if (el.readyState >= 3) {
+        start();
+      } else {
+        el.addEventListener("canplaythrough", start, { once: true });
+        const fallback = setTimeout(start, 1200);
+        cleanups.push(() => {
+          el.removeEventListener("canplaythrough", start);
+          clearTimeout(fallback);
+        });
       }
     });
+
+    return () => cleanups.forEach((fn) => fn());
   }, [activeClip, lightweight]);
 
   // Live chroma-key compositing: the source clips are shot on solid green,
