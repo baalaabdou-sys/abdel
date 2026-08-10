@@ -16,6 +16,7 @@ import {
 } from "@/lib/qr";
 import { useAvatarContext } from "../../avatar/AvatarContext";
 import MagneticButton from "../../MagneticButton";
+import CustomQrPitch from "./CustomQrPitch";
 
 type Stage = "purpose" | "customize" | "building" | "ready";
 
@@ -183,6 +184,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
   );
 
   return (
+    <div>
     <div className="grid items-start gap-10 lg:grid-cols-[1.05fr_0.95fr]">
       {/* ── left: flow ─────────────────────────────── */}
       <div className="min-h-[300px]">
@@ -544,6 +546,11 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
           )}
         </AnimatePresence>
       </div>
+    </div>
+
+    {/* Once they have a working code in hand, show what fully custom work
+        looks like — the generator proves the tech, this proves the craft. */}
+    {stage === "ready" && <CustomQrPitch />}
     </div>
   );
 }
