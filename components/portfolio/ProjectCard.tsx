@@ -4,7 +4,15 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import type { Project } from "@/data/projects";
 
-export default function ProjectCard({ project, index }: { project: Project; index: number }) {
+export default function ProjectCard({
+  project,
+  index,
+  onHover,
+}: {
+  project: Project;
+  index: number;
+  onHover?: (hovering: boolean) => void;
+}) {
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -50,14 +58,22 @@ export default function ProjectCard({ project, index }: { project: Project; inde
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
+      onMouseEnter={() => onHover?.(true)}
+      onMouseLeave={() => onHover?.(false)}
     >
       {project.href ? (
         project.internal ? (
-          <Link href={project.href} className={wrapperClass}>
+          <Link href={project.href} className={wrapperClass} data-cursor-hover>
             {content}
           </Link>
         ) : (
-          <a href={project.href} target="_blank" rel="noreferrer" className={wrapperClass}>
+          <a
+            href={project.href}
+            target="_blank"
+            rel="noreferrer"
+            className={wrapperClass}
+            data-cursor-hover
+          >
             {content}
           </a>
         )

@@ -1,21 +1,43 @@
+"use client";
+
+import { useState } from "react";
+import Avatar from "./avatar/Avatar";
+import type { Pose } from "./avatar/poses";
+import MagneticButton from "./MagneticButton";
+
 export default function Contact() {
+  const [celebrating, setCelebrating] = useState(false);
+  const pose: Pose = celebrating ? "celebrating" : "waving";
+
+  const handleClick = () => {
+    setCelebrating(true);
+    setTimeout(() => setCelebrating(false), 2200);
+  };
+
   return (
-    <section id="contact" className="bg-ink px-6 py-28">
-      <div className="mx-auto max-w-3xl text-center">
-        <p className="text-sm font-medium tracking-wide text-accent">Contact</p>
-        <h2 className="mt-3 font-display text-4xl text-paper sm:text-5xl">
-          Have a project in mind?
-        </h2>
-        <p className="mt-4 text-haze">
-          Whether it's a website, an internal tool, or something that needs
-          an app and a backend working together — I'd like to hear about it.
-        </p>
-        <a
-          href="mailto:baalaabdou@gmail.com"
-          className="mt-8 inline-flex rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition hover:bg-accent-soft"
-        >
-          baalaabdou@gmail.com
-        </a>
+    <section id="contact" className="relative overflow-hidden bg-ink px-6 py-28">
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="flex justify-center lg:order-2">
+          <Avatar pose={pose} size="lg" />
+        </div>
+
+        <div className="text-center lg:order-1 lg:text-left">
+          <p className="text-sm font-medium tracking-wide text-accent">Contact</p>
+          <h2 className="mt-3 font-display text-4xl text-paper sm:text-5xl">
+            Let's build something.
+          </h2>
+          <p className="mt-4 text-haze">
+            Whether it's a website, an internal tool, or something that needs
+            an app and a backend working together — I'd like to hear about it.
+          </p>
+          <MagneticButton
+            href="mailto:baalaabdou@gmail.com"
+            onClick={handleClick}
+            className="mt-8 inline-flex rounded-full bg-accent px-8 py-3.5 text-sm font-semibold text-ink transition hover:bg-accent-soft"
+          >
+            baalaabdou@gmail.com
+          </MagneticButton>
+        </div>
       </div>
     </section>
   );
