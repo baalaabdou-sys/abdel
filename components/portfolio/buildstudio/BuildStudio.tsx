@@ -7,8 +7,9 @@ import { useAvatarAnchor, useAvatarContext } from "../avatar/AvatarContext";
 import MagneticButton from "../MagneticButton";
 import WebsiteMockup from "./WebsiteMockup";
 import AppMockup from "./AppMockup";
+import QrStudio from "./qr/QrStudio";
 
-type Stage = "kind" | "category" | "building" | "reveal";
+type Stage = "kind" | "category" | "building" | "reveal" | "qr";
 
 const BUILD_MS = 2600;
 const HOLD_MS = 6500;
@@ -41,6 +42,7 @@ export default function BuildStudio() {
         if (entries.some((e) => e.isIntersecting)) {
           warmClip("build_website");
           warmClip("build_app");
+          warmClip("build_qr");
           io.disconnect();
         }
       },
@@ -54,7 +56,9 @@ export default function BuildStudio() {
 
   const pickKind = (k: BuildKind) => {
     setKind(k);
-    setStage("category");
+    // QR runs its own multi-step studio (purpose → customise → build → real,
+    // scannable output) rather than the prebuilt category → mockup path.
+    setStage(k === "qr" ? "qr" : "category");
   };
 
   const pickCategory = (categorySlug: string) => {
@@ -98,6 +102,15 @@ export default function BuildStudio() {
           </p>
         </div>
 
+        {stage === "qr" ? (
+          <div className="relative">
+            <div
+              ref={anchorRef}
+              className="pointer-events-none absolute -top-6 right-0 h-40 w-32 sm:h-52 sm:w-40"
+            />
+            <QrStudio onRestart={reset} />
+          </div>
+        ) : (
         <div className="grid items-center gap-10 lg:grid-cols-[0.85fr_1.15fr]">
           {/* ── choice panel ───────────────────────────── */}
           <div className="min-h-[280px]">
@@ -107,7 +120,7 @@ export default function BuildStudio() {
                   <p className="mb-4 text-xs font-medium uppercase tracking-wider text-haze">
                     Step 1 — pick a type
                   </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {KINDS.map((k) => (
                       <button
                         key={k.kind}
@@ -127,7 +140,7 @@ export default function BuildStudio() {
                 </motion.div>
               )}
 
-              {stage === "category" && kind && (
+              {stage === "category" && kind && kind !== "qr" && (
                 <motion.div key="category" {...fade}>
                   <div className="mb-4 flex items-center gap-3">
                     <p className="text-xs font-medium uppercase tracking-wider text-haze">
@@ -238,6 +251,7 @@ export default function BuildStudio() {
             </AnimatePresence>
           </div>
         </div>
+        )}
       </div>
     </section>
   );

@@ -1,6 +1,6 @@
 import type { ClipKey } from "@/components/portfolio/avatar/clips";
 
-export type BuildKind = "website" | "app";
+export type BuildKind = "website" | "app" | "qr";
 
 export type BuildCategory = {
   slug: string;
@@ -21,9 +21,15 @@ export const KINDS: { kind: BuildKind; label: string; hint: string; clip: ClipKe
     hint: "Something people open every day",
     clip: "build_app",
   },
+  {
+    kind: "qr",
+    label: "A Custom QR Code",
+    hint: "Branded, scannable — and built for real, right here",
+    clip: "build_qr",
+  },
 ];
 
-export const CATEGORIES: Record<BuildKind, BuildCategory[]> = {
+export const CATEGORIES: Record<Exclude<BuildKind, "qr">, BuildCategory[]> = {
   website: [
     { slug: "portfolio", label: "Portfolio", blurb: "Your work, presented like it matters." },
     { slug: "business", label: "Business Website", blurb: "Clear, credible, built to convert." },
@@ -39,5 +45,6 @@ export const CATEGORIES: Record<BuildKind, BuildCategory[]> = {
 };
 
 export function getCategory(kind: BuildKind, slug: string) {
+  if (kind === "qr") return undefined;
   return CATEGORIES[kind].find((c) => c.slug === slug);
 }

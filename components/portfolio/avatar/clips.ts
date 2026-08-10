@@ -6,7 +6,8 @@ export type ClipKey =
   | "sit_lean"
   | "celebrate"
   | "build_website"
-  | "build_app";
+  | "build_app"
+  | "build_qr";
 
 /**
  * `eager` clips preload fully on page load. The rest only fetch metadata
@@ -46,6 +47,10 @@ export const clips: Record<ClipKey, { url: string; loop: boolean; eager?: boolea
   },
   build_app: {
     url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260810_164327_02646b94-4594-487c-94c3-942d3770a8b0.mp4",
+    loop: false,
+  },
+  build_qr: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260810_171523_76f02afc-e4a8-411d-a09b-69a08747f8c0.mp4",
     loop: false,
   },
 };
