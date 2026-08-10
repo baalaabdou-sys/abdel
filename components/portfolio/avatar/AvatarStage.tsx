@@ -10,9 +10,19 @@ const clipKeys = Object.keys(clips) as ClipKey[];
 export default function AvatarStage() {
   const { anchors, actionEmitter } = useAvatarContext();
   const prefersReducedMotion = useReducedMotion();
+  const [isTouch, setIsTouch] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    setIsTouch(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsTouch(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
 
   // Only an explicit OS-level reduced-motion preference gets the static
-  // fallback — phones get the full video + chroma-key experience too.
+  // fallback — phones get the full video + chroma-key experience too, just
+  // throttled (see below) since they have far less CPU headroom than desktop.
   const lightweight = prefersReducedMotion;
 
   const x = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
@@ -46,7 +56,6 @@ export default function AvatarStage() {
   }, [actionEmitter]);
 
   useEffect(() => {
-    let raf: number;
     // How much closer a different anchor must be, in px, before we switch
     // to it. Without this, two anchors that are nearly tied in distance
     // (common on short mobile viewports, or mid-scroll on any device) cause
@@ -54,8 +63,17 @@ export default function AvatarStage() {
     // target position back and forth — this margin adds hysteresis so it
     // only switches on a real, decisive change.
     const SWITCH_MARGIN = 80;
+    // getBoundingClientRect forces layout; on touch devices we poll it far
+    // less often (desktop: every frame, phones: ~20fps) since the character
+    // only needs to catch up with scroll, not track it at 60fps.
+    const MIN_INTERVAL_MS = isTouch ? 50 : 0;
+    let lastTick = 0;
 
-    const tick = () => {
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (now - lastTick < MIN_INTERVAL_MS) return;
+      lastTick = now;
+
       const vh = window.innerHeight;
       let bestId: string | null = null;
       let bestEl: HTMLElement | null = null;
@@ -103,9 +121,16 @@ export default function AvatarStage() {
         activeAnchorIdRef.current = chosenId;
         const rect = (chosenEl as HTMLElement).getBoundingClientRect();
         const config = chosenConfig as { basePose: ClipKey; size: number; flip?: boolean };
+        // The pixel sizes in each section's anchor config are tuned for
+        // desktop-width anchor boxes. On a phone the anchor box itself is
+        // much smaller (responsive Tailwind classes), so without scaling,
+        // the avatar renders far larger than the space reserved for it and
+        // visibly overlaps/misaligns with the content around it.
+        const vw = window.innerWidth;
+        const sizeScale = vw < 480 ? 0.5 : vw < 768 ? 0.62 : vw < 1024 ? 0.82 : 1;
         x.set(rect.left + rect.width / 2);
         y.set(rect.top + rect.height / 2);
-        w.set(config.size);
+        w.set(config.size * sizeScale);
         if (basePoseRef.current !== config.basePose) setBasePose(config.basePose);
         if (baseFlipRef.current !== Boolean(config.flip)) setBaseFlip(Boolean(config.flip));
         if (!visibleRef.current) setVisible(true);
@@ -113,12 +138,10 @@ export default function AvatarStage() {
         activeAnchorIdRef.current = null;
         if (visibleRef.current) setVisible(false);
       }
-
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    let raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [anchors, x, y, w]);
+  }, [anchors, x, y, w, isTouch]);
 
   const activeClip = action?.clip ?? basePose;
   const activeFlip = action ? Boolean(action.flip) : baseFlip;
@@ -172,13 +195,24 @@ export default function AvatarStage() {
     const TOLERANCE = 70;
     const SOFT = 45;
     const SPILL = 18;
+    // Reading/writing every pixel of every frame is the single heaviest
+    // thing this component does. Phones get a smaller working resolution
+    // and a capped processing rate so it doesn't compete with everything
+    // else on a weaker CPU.
+    const TARGET_W = isTouch ? 240 : 480;
+    const MIN_FRAME_MS = isTouch ? 66 : 0; // ~15fps on touch, uncapped on desktop
+    let lastDraw = 0;
 
-    const draw = () => {
+    const draw = (now: number) => {
+      keyRafRef.current = requestAnimationFrame(draw);
+      if (now - lastDraw < MIN_FRAME_MS) return;
+      lastDraw = now;
+
       if (video.readyState >= 2 && !video.paused && !video.ended) {
         const vw = video.videoWidth || 480;
         const vh = video.videoHeight || 640;
-        const outW = 480;
-        const outH = Math.round((outW * vh) / vw) || 640;
+        const outW = TARGET_W;
+        const outH = Math.round((outW * vh) / vw) || Math.round(outW * 1.33);
         if (canvas.width !== outW || canvas.height !== outH) {
           canvas.width = outW;
           canvas.height = outH;
@@ -229,14 +263,13 @@ export default function AvatarStage() {
           }
         }
       }
-      keyRafRef.current = requestAnimationFrame(draw);
     };
 
     keyRafRef.current = requestAnimationFrame(draw);
     return () => {
       if (keyRafRef.current) cancelAnimationFrame(keyRafRef.current);
     };
-  }, [activeClip, lightweight]);
+  }, [activeClip, lightweight, isTouch]);
 
   if (lightweight) {
     return (
