@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { projects } from "@/data/projects";
 import ProjectCard from "./ProjectCard";
-import Avatar from "./avatar/Avatar";
+import { useAvatarAnchor } from "./avatar/AvatarContext";
 
 export default function Projects() {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const flip = hoverIndex !== null && hoverIndex % 3 === 2;
+  const anchorRef = useAvatarAnchor("work", { basePose: "idle_loop", size: 220 });
 
   return (
     <section id="work" className="bg-ink px-6 py-28">
@@ -23,23 +21,12 @@ export default function Projects() {
               built end to end, from data model to interface. Hover a card.
             </p>
           </div>
-          <Avatar
-            pose={hoverIndex !== null ? "pointing" : "idle"}
-            flip={flip}
-            size="sm"
-            glow={false}
-            className="hidden shrink-0 sm:block"
-          />
+          <div ref={anchorRef} className="hidden h-40 w-32 shrink-0 sm:block" />
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project, index) => (
-            <ProjectCard
-              key={project.slug}
-              project={project}
-              index={index}
-              onHover={(hovering) => setHoverIndex(hovering ? index : null)}
-            />
+            <ProjectCard key={project.slug} project={project} index={index} />
           ))}
         </div>
       </div>

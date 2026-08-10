@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import Avatar from "./avatar/Avatar";
-import type { Pose } from "./avatar/poses";
+import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 
 const skills = [
   { label: "React", desc: "Component-driven interfaces", angle: 0 },
@@ -20,7 +19,13 @@ const RADIUS = 190;
 export default function Skills() {
   const prefersReducedMotion = useReducedMotion();
   const [active, setActive] = useState<(typeof skills)[number] | null>(null);
-  const pose: Pose = active ? "pointing" : "idle";
+  const { requestAction } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("skills", { basePose: "idle_loop", size: 220 });
+
+  const handleActivate = (s: (typeof skills)[number] | null) => {
+    setActive(s);
+    if (s) requestAction("skills_tap", { flip: s.angle > 180, holdMs: 1800 });
+  };
 
   return (
     <section id="skills" className="relative border-t border-ink-line bg-ink px-6 py-28">
@@ -34,7 +39,7 @@ export default function Skills() {
         </div>
 
         <div className="relative mx-auto flex h-[420px] max-w-xl items-center justify-center sm:h-[480px]">
-          <Avatar pose={pose} size="md" glow={active !== null} flip={active ? active.angle > 180 : false} />
+          <div ref={anchorRef} className="h-40 w-32" />
 
           {skills.map((s) => {
             const rad = (s.angle * Math.PI) / 180;
@@ -47,10 +52,10 @@ export default function Skills() {
                 key={s.label}
                 type="button"
                 data-cursor-hover
-                onMouseEnter={() => setActive(s)}
-                onMouseLeave={() => setActive(null)}
-                onFocus={() => setActive(s)}
-                onBlur={() => setActive(null)}
+                onMouseEnter={() => handleActivate(s)}
+                onMouseLeave={() => handleActivate(null)}
+                onFocus={() => handleActivate(s)}
+                onBlur={() => handleActivate(null)}
                 className={`absolute flex h-16 w-16 items-center justify-center rounded-2xl border text-[11px] font-semibold transition-colors sm:h-20 sm:w-20 sm:text-xs ${
                   isActive
                     ? "border-accent bg-accent text-ink"

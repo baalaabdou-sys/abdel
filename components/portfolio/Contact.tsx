@@ -1,24 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import Avatar from "./avatar/Avatar";
-import type { Pose } from "./avatar/poses";
+import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import MagneticButton from "./MagneticButton";
 
 export default function Contact() {
-  const [celebrating, setCelebrating] = useState(false);
-  const pose: Pose = celebrating ? "celebrating" : "waving";
+  const { requestAction } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("contact", { basePose: "idle_loop", size: 280 });
 
   const handleClick = () => {
-    setCelebrating(true);
-    setTimeout(() => setCelebrating(false), 2200);
+    requestAction("celebrate", { holdMs: 3400 });
   };
 
   return (
     <section id="contact" className="relative overflow-hidden bg-ink px-6 py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="flex justify-center lg:order-2">
-          <Avatar pose={pose} size="lg" />
+          <div ref={anchorRef} className="h-72 w-56" />
         </div>
 
         <div className="text-center lg:order-1 lg:text-left">

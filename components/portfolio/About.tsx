@@ -1,6 +1,6 @@
 "use client";
 
-import Avatar from "./avatar/Avatar";
+import { useAvatarAnchor } from "./avatar/AvatarContext";
 
 const pillars = [
   { label: "Coding", detail: "Clean, typed, maintainable" },
@@ -10,14 +10,15 @@ const pillars = [
 ];
 
 export default function About() {
+  const anchorRef = useAvatarAnchor("about", { basePose: "sit_lean", size: 200 });
+
   return (
     <section id="about" className="relative overflow-hidden border-t border-ink-line bg-ink-soft px-6 py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[0.8fr_1.2fr]">
         <div className="relative flex justify-center">
           <div className="relative w-full max-w-sm rounded-3xl border border-ink-line bg-ink/70 p-6 pt-16 shadow-soft">
-            <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-              <Avatar pose="sitting" size="md" glow={false} />
-            </div>
+            <div ref={anchorRef} className="absolute -top-16 left-1/2 h-40 w-32 -translate-x-1/2" />
+
             <div className="grid grid-cols-2 gap-3 pt-4">
               {pillars.map((p) => (
                 <div

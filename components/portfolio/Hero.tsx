@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import Avatar from "./avatar/Avatar";
+import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import MagneticButton from "./MagneticButton";
-import type { Pose } from "./avatar/poses";
 
 const floaters = [
   { label: "</>", top: "14%", left: "6%", delay: 0 },
@@ -13,43 +12,16 @@ const floaters = [
   { label: "npm", top: "78%", left: "80%", delay: 0.9 },
 ];
 
-const IDLE_TIMEOUT = 14000;
-
 export default function Hero() {
   const prefersReducedMotion = useReducedMotion();
-  const [pose, setPose] = useState<Pose>("waving");
-  const idleTimer = useRef<ReturnType<typeof setTimeout>>();
+  const { requestAction } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("hero", { basePose: "idle_loop", size: 420 });
 
   useEffect(() => {
-    const t = setTimeout(() => setPose("idle"), 1600);
+    const t = setTimeout(() => requestAction("hero_entrance", { holdMs: 4200 }), 300);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    const scheduleIdle = () => {
-      clearTimeout(idleTimer.current);
-      idleTimer.current = setTimeout(() => {
-        const eggs: Pose[] = ["thinking", "typing"];
-        const egg = eggs[Math.floor(Math.random() * eggs.length)];
-        setPose(egg);
-        setTimeout(() => setPose("idle"), 2800);
-      }, IDLE_TIMEOUT);
-    };
-
-    scheduleIdle();
-    const reset = () => scheduleIdle();
-    window.addEventListener("pointermove", reset);
-    window.addEventListener("scroll", reset);
-    window.addEventListener("keydown", reset);
-    return () => {
-      clearTimeout(idleTimer.current);
-      window.removeEventListener("pointermove", reset);
-      window.removeEventListener("scroll", reset);
-      window.removeEventListener("keydown", reset);
-    };
-  }, [prefersReducedMotion]);
 
   return (
     <section
@@ -124,7 +96,7 @@ export default function Hero() {
               </motion.div>
             ))}
 
-          <Avatar pose={pose} size="xl" trackCursor className="relative" />
+          <div ref={anchorRef} className="h-[26rem] w-[22rem] sm:h-[30rem] sm:w-[26rem]" />
         </div>
       </div>
 

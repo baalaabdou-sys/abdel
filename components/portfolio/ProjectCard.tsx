@@ -3,16 +3,11 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import type { Project } from "@/data/projects";
+import { useAvatarContext } from "./avatar/AvatarContext";
 
-export default function ProjectCard({
-  project,
-  index,
-  onHover,
-}: {
-  project: Project;
-  index: number;
-  onHover?: (hovering: boolean) => void;
-}) {
+export default function ProjectCard({ project, index }: { project: Project; index: number }) {
+  const { requestAction } = useAvatarContext();
+  const flip = index % 3 === 2;
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -58,8 +53,7 @@ export default function ProjectCard({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
-      onMouseEnter={() => onHover?.(true)}
-      onMouseLeave={() => onHover?.(false)}
+      onMouseEnter={() => requestAction("point_action", { flip, holdMs: 3000 })}
     >
       {project.href ? (
         project.internal ? (
