@@ -1,34 +1,19 @@
-import Header from "@/components/Header";
-import Hero from "@/components/Hero";
-import CategoryNav from "@/components/CategoryNav";
-import MenuSection from "@/components/MenuSection";
-import Footer from "@/components/Footer";
-import ProductModalProvider from "@/components/ProductModalContext";
-import { categories, products } from "@/data/menu";
+import Nav from "@/components/portfolio/Nav";
+import Hero from "@/components/portfolio/Hero";
+import Projects from "@/components/portfolio/Projects";
+import About from "@/components/portfolio/About";
+import Contact from "@/components/portfolio/Contact";
+import Footer from "@/components/portfolio/Footer";
 
 export default function Home() {
-  const sortedCategories = [...categories].sort((a, b) => a.order - b.order);
-
   return (
-    <ProductModalProvider>
-      <main>
-        <Header />
-        <Hero />
-        <CategoryNav />
-
-        <div id="menu">
-          {sortedCategories.map((category, index) => (
-            <MenuSection
-              key={category.id}
-              category={category}
-              products={products.filter((p) => p.categoryId === category.id)}
-              alternate={index % 2 === 1}
-            />
-          ))}
-        </div>
-
-        <Footer />
-      </main>
-    </ProductModalProvider>
+    <main className="bg-ink">
+      <Nav />
+      <Hero />
+      <Projects />
+      <About />
+      <Contact />
+      <Footer />
+    </main>
   );
 }

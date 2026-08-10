@@ -16,6 +16,14 @@ const config: Config = {
         "gold-dark": "#A97418",
         muted: "#81766D",
         border: "#E8DDD0",
+
+        ink: "#0B0E1A",
+        "ink-soft": "#12172B",
+        "ink-line": "#232a45",
+        paper: "#F5F6FA",
+        haze: "#9AA3C7",
+        accent: "#8B7CFF",
+        "accent-soft": "#5EE6D0",
       },
       fontFamily: {
         display: ["var(--font-display)", "serif"],

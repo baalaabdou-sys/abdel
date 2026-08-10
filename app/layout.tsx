@@ -14,8 +14,9 @@ const body = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "الفاضلي — Menu Digital",
-  description: "Découvrez la carte des boissons du café الفاضلي. Menu digital, sur place uniquement.",
+  title: "Abderrahmane Baalla — Full-Stack & Software Developer",
+  description:
+    "Portfolio of Abderrahmane Baalla: web apps, backends, and mobile tools — digital menus, AI photo pipelines, attendance systems, and business software.",
 };
 
 export default function RootLayout({
@@ -24,10 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${display.variable} ${body.variable}`}>
-      <body className="bg-background text-espresso font-body antialiased">
-        {children}
-      </body>
+    <html lang="en" className={`${display.variable} ${body.variable}`}>
+      <body className="bg-ink font-body antialiased">{children}</body>
     </html>
   );
 }
