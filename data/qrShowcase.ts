@@ -18,28 +18,36 @@ export type QrShowcaseItem = {
 
 export const QR_SHOWCASE: QrShowcaseItem[] = [
   {
-    slug: "cafe-menu-poster",
-    title: "Café Menu Poster",
+    slug: "aurelia-coffee-house",
+    title: "Aurelia Coffee House",
     category: "Hospitality",
     description:
-      "A table-top poster where the code sits inside the café's own branding — logo, typography and palette carried through, so it reads as part of the venue rather than a sticker slapped on the table.",
-    image: null,
+      "A warm, hand-illustrated menu code for a coffee house — coffee-bean linework and the shop's own monogram carried straight through into the code itself.",
+    image: "/qr-showcase/aurelia-coffee-house.jpg",
   },
   {
-    slug: "restaurant-menu",
-    title: "Restaurant QR Menu",
+    slug: "miel-crumb-bakery",
+    title: "Miel & Crumb Bakery",
     category: "Hospitality",
     description:
-      "Menu access designed into the table setting: a framed code with illustrated detailing, matched to the restaurant's identity and printed at a size that scans comfortably from a seated position.",
-    image: null,
+      "A bakery menu poster built around wheat sprigs, a honey dipper and the shop's badge — the code sits inside the illustration instead of next to it.",
+    image: "/qr-showcase/miel-crumb-bakery.jpg",
   },
   {
-    slug: "wifi-card",
-    title: "Wi-Fi Guest Card",
+    slug: "maison-olive",
+    title: "Maison Olive",
     category: "Hospitality",
     description:
-      "A small branded card guests actually keep on the table. Network name and code laid out with the venue's type and colours, no password typing required.",
-    image: null,
+      "An editorial restaurant menu card in olive and gold, with the venue's monogram set into the centre of the code and its identity carried through every border detail.",
+    image: "/qr-showcase/maison-olive.jpg",
+  },
+  {
+    slug: "luna-harbor-hotel",
+    title: "Luna Harbor Hotel",
+    category: "Hospitality",
+    description:
+      "A guest-services and Wi-Fi card for a five-star hotel — deep navy and gold, art-deco detailing, designed to sit on a nightstand and feel like part of the room.",
+    image: "/qr-showcase/luna-harbor-hotel.jpg",
   },
   {
     slug: "instagram-standee",
@@ -50,27 +58,59 @@ export const QR_SHOWCASE: QrShowcaseItem[] = [
     image: null,
   },
   {
+    slug: "noir-atelier",
+    title: "Noir Atelier",
+    category: "Retail",
+    description:
+      "A fashion boutique's shop-the-collection code, styled in black and gold art-deco linework to match the label's own packaging and in-store signage.",
+    image: "/qr-showcase/noir-atelier.jpg",
+  },
+  {
+    slug: "voyage-expo",
+    title: "Voyage Expo 2027",
+    category: "Events",
+    description:
+      "An event pass poster themed entirely around travel — vintage stamps, a compass rose worked into the code's centre, and a skyline running along the base.",
+    image: "/qr-showcase/voyage-expo.jpg",
+  },
+  {
+    slug: "veloura-beauty-lounge",
+    title: "Veloura Beauty Lounge",
+    category: "Business",
+    description:
+      "A booking code for a beauty lounge, dressed in blush and gold with the brand's emblem set at the centre — designed to book an appointment, not just scan.",
+    image: "/qr-showcase/veloura-beauty-lounge.jpg",
+  },
+  {
+    slug: "serenite-spa",
+    title: "Sérénité Spa",
+    category: "Business",
+    description:
+      "A treatment-booking code in soft sage and gold, framed by botanical linework so it reads as part of the spa's own calm, editorial identity.",
+    image: "/qr-showcase/serenite-spa.jpg",
+  },
+  {
+    slug: "northline-hub",
+    title: "Northline Hub",
+    category: "Business",
+    description:
+      "A membership sign-up code for a co-working space — architectural line art, a copper accent, and the code framed like a keycard rather than a sticker.",
+    image: "/qr-showcase/northline-hub.jpg",
+  },
+  {
+    slug: "pixel-forge-studio",
+    title: "Pixel Forge Studio",
+    category: "Business",
+    description:
+      "A portfolio code for a digital studio, built entirely in their own neon HUD visual language — proof the same technique scales from soft and organic to sharp and technical.",
+    image: "/qr-showcase/pixel-forge-studio.jpg",
+  },
+  {
     slug: "business-card",
     title: "Business Card with QR",
     category: "Identity",
     description:
       "Contact card where the code is integrated into the card's composition rather than dropped into a corner — saving the full contact record in one scan.",
-    image: null,
-  },
-  {
-    slug: "event-poster",
-    title: "Event QR Poster",
-    category: "Events",
-    description:
-      "Event artwork with the code worked into the illustration and themed to the occasion, sending scanners straight to tickets or the calendar entry.",
-    image: null,
-  },
-  {
-    slug: "booking-layout",
-    title: "Branded Booking / Payment QR",
-    category: "Business",
-    description:
-      "Signage for bookings or payment, composed for its real placement — counter, window or wall — with the contrast and sizing tuned for the distance it gets scanned from.",
     image: null,
   },
 ];
