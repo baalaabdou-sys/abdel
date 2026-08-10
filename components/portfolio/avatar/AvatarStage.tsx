@@ -29,6 +29,8 @@ export default function AvatarStage() {
 
   const actionTimer = useRef<ReturnType<typeof setTimeout>>();
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const keyRafRef = useRef<number>();
 
   useEffect(() => {
     return actionEmitter.on((evt) => {
@@ -94,6 +96,88 @@ export default function AvatarStage() {
     });
   }, [activeClip, prefersReducedMotion]);
 
+  // Live chroma-key compositing: the source clips are shot on solid green,
+  // and here we punch that out per-frame onto a canvas so the character
+  // sits directly on the page background instead of a colored box.
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const canvas = canvasRef.current;
+    const video = videoRefs.current[activeClip];
+    if (!canvas || !video) return;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    let keyColor: [number, number, number] | null = null;
+    let keyingBroken = false;
+    const TOLERANCE = 70;
+    const SOFT = 45;
+    const SPILL = 18;
+
+    const draw = () => {
+      if (video.readyState >= 2 && !video.paused && !video.ended) {
+        const vw = video.videoWidth || 480;
+        const vh = video.videoHeight || 640;
+        const outW = 480;
+        const outH = Math.round((outW * vh) / vw) || 640;
+        if (canvas.width !== outW || canvas.height !== outH) {
+          canvas.width = outW;
+          canvas.height = outH;
+          keyColor = null;
+        }
+
+        ctx.drawImage(video, 0, 0, outW, outH);
+
+        if (!keyingBroken) {
+          try {
+            const frame = ctx.getImageData(0, 0, outW, outH);
+            const data = frame.data;
+
+            if (!keyColor) {
+              const idx = (2 * outW + 2) * 4;
+              keyColor = [data[idx], data[idx + 1], data[idx + 2]];
+            }
+
+            const [kr, kg, kb] = keyColor;
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              const dr = r - kr;
+              const dg = g - kg;
+              const db = b - kb;
+              const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+
+              if (dist < TOLERANCE) {
+                data[i + 3] = 0;
+              } else if (dist < TOLERANCE + SOFT) {
+                data[i + 3] = Math.round((255 * (dist - TOLERANCE)) / SOFT);
+                if (g > r + SPILL && g > b + SPILL) {
+                  data[i + 1] = Math.round((r + b) / 2);
+                }
+              } else if (g > r + SPILL && g > b + SPILL) {
+                data[i + 1] = Math.round((r + b) / 2);
+              }
+            }
+
+            ctx.putImageData(frame, 0, 0);
+          } catch (err) {
+            // Cross-origin frame without permissive CORS headers taints the
+            // canvas — fall back to showing the raw (un-keyed) frame instead
+            // of crashing the animation loop.
+            keyingBroken = true;
+            console.warn("Avatar chroma-key disabled (canvas read blocked):", err);
+          }
+        }
+      }
+      keyRafRef.current = requestAnimationFrame(draw);
+    };
+
+    keyRafRef.current = requestAnimationFrame(draw);
+    return () => {
+      if (keyRafRef.current) cancelAnimationFrame(keyRafRef.current);
+    };
+  }, [activeClip, prefersReducedMotion]);
+
   if (prefersReducedMotion) {
     return (
       <div className="pointer-events-none fixed left-1/2 top-24 z-30 w-40 -translate-x-1/2 opacity-90">
@@ -118,19 +202,23 @@ export default function AvatarStage() {
               videoRefs.current[key] = el;
             }}
             src={clips[key].url}
+            crossOrigin="anonymous"
             muted
             playsInline
             preload="auto"
             loop={clips[key].loop}
-            poster={posterFallback}
             onEnded={() => {
               if (key === activeClip && !clips[key].loop && action) setAction(null);
             }}
-            className={`absolute inset-0 h-full w-full object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.45)] transition-opacity duration-300 ${
-              key === activeClip ? "opacity-100" : "pointer-events-none opacity-0"
-            } ${activeFlip ? "-scale-x-100" : ""}`}
+            className="pointer-events-none absolute h-px w-px opacity-0"
           />
         ))}
+        <canvas
+          ref={canvasRef}
+          className={`absolute inset-0 h-full w-full object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.45)] ${
+            activeFlip ? "-scale-x-100" : ""
+          }`}
+        />
       </div>
     </motion.div>
   );
