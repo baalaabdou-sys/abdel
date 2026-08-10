@@ -31,8 +31,11 @@ class Emitter<T> {
 type AvatarContextValue = {
   anchors: Map<string, AnchorEntry>;
   actionEmitter: Emitter<ActionEvent>;
+  warmEmitter: Emitter<ClipKey>;
   registerAnchor: (id: string, el: HTMLElement | null, config: AnchorConfig) => void;
   requestAction: (clip: ClipKey, opts?: { flip?: boolean; holdMs?: number }) => void;
+  /** Ask AvatarStage to start fully buffering a lazily-loaded clip. */
+  warmClip: (clip: ClipKey) => void;
 };
 
 const AvatarContext = createContext<AvatarContextValue | null>(null);
@@ -40,15 +43,18 @@ const AvatarContext = createContext<AvatarContextValue | null>(null);
 export function AvatarProvider({ children }: { children: React.ReactNode }) {
   const anchors = useRef(new Map<string, AnchorEntry>()).current;
   const actionEmitter = useRef(new Emitter<ActionEvent>()).current;
+  const warmEmitter = useRef(new Emitter<ClipKey>()).current;
 
   const value = useRef<AvatarContextValue>({
     anchors,
     actionEmitter,
+    warmEmitter,
     registerAnchor: (id, el, config) => {
       if (el) anchors.set(id, { el, config });
       else anchors.delete(id);
     },
     requestAction: (clip, opts) => actionEmitter.emit({ clip, ...opts }),
+    warmClip: (clip) => warmEmitter.emit(clip),
   }).current;
 
   return <AvatarContext.Provider value={value}>{children}</AvatarContext.Provider>;

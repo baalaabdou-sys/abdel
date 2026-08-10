@@ -8,9 +8,10 @@ import { clips, posterFallback, type ClipKey } from "./clips";
 const clipKeys = Object.keys(clips) as ClipKey[];
 
 export default function AvatarStage() {
-  const { anchors, actionEmitter } = useAvatarContext();
+  const { anchors, actionEmitter, warmEmitter } = useAvatarContext();
   const prefersReducedMotion = useReducedMotion();
   const [isTouch, setIsTouch] = useState(false);
+  const [warmed, setWarmed] = useState<ClipKey[]>([]);
 
   useEffect(() => {
     const mq = window.matchMedia("(pointer: coarse)");
@@ -54,6 +55,13 @@ export default function AvatarStage() {
       actionTimer.current = setTimeout(() => setAction(null), evt.holdMs ?? 2400);
     });
   }, [actionEmitter]);
+
+  useEffect(() => {
+    return warmEmitter.on((clip) => {
+      setWarmed((prev) => (prev.includes(clip) ? prev : [...prev, clip]));
+      videoRefs.current[clip]?.load();
+    });
+  }, [warmEmitter]);
 
   useEffect(() => {
     // How much closer a different anchor must be, in px, before we switch
@@ -302,7 +310,7 @@ export default function AvatarStage() {
             crossOrigin="anonymous"
             muted
             playsInline
-            preload="auto"
+            preload={clips[key].eager || warmed.includes(key) ? "auto" : "metadata"}
             loop={clips[key].loop}
             onEnded={() => {
               if (key === activeClip && !clips[key].loop && action) setAction(null);
