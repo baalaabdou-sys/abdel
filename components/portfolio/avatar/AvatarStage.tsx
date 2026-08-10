@@ -10,19 +10,10 @@ const clipKeys = Object.keys(clips) as ClipKey[];
 export default function AvatarStage() {
   const { anchors, actionEmitter } = useAvatarContext();
   const prefersReducedMotion = useReducedMotion();
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    setIsSmallScreen(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsSmallScreen(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  // Phones skip video decode + per-frame canvas chroma-keying (battery/CPU
-  // heavy) and fall back to a single static image that still tracks scroll.
-  const lightweight = prefersReducedMotion || isSmallScreen;
+  // Only an explicit OS-level reduced-motion preference gets the static
+  // fallback — phones get the full video + chroma-key experience too.
+  const lightweight = prefersReducedMotion;
 
   const x = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
   const y = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
@@ -76,10 +67,9 @@ export default function AvatarStage() {
       if (bestEl && bestConfig) {
         const rect = (bestEl as HTMLElement).getBoundingClientRect();
         const config = bestConfig as { basePose: ClipKey; size: number; flip?: boolean };
-        const scale = window.innerWidth < 640 ? 0.55 : window.innerWidth < 1024 ? 0.8 : 1;
         x.set(rect.left + rect.width / 2);
         y.set(rect.top + rect.height / 2);
-        w.set(config.size * scale);
+        w.set(config.size);
         if (basePoseRef.current !== config.basePose) setBasePose(config.basePose);
         if (baseFlipRef.current !== Boolean(config.flip)) setBaseFlip(Boolean(config.flip));
         if (!visibleRef.current) setVisible(true);
