@@ -8,7 +8,7 @@ export type ClipKey =
 
 export const clips: Record<ClipKey, { url: string; loop: boolean }> = {
   hero_entrance: {
-    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260810_111723_b3857ed8-580d-49d8-a63a-dca67ae3f263.mp4",
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260810_123014_b6585b29-10dd-42fe-8640-0453510534e2.mp4",
     loop: false,
   },
   idle_loop: {

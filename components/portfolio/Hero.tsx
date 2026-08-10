@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import MagneticButton from "./MagneticButton";
+import TechThrowFX from "./TechThrowFX";
+
+const ENTRANCE_HOLD_MS = 6800;
 
 const floaters = [
   { label: "</>", top: "14%", left: "6%", delay: 0 },
@@ -16,12 +19,21 @@ export default function Hero() {
   const prefersReducedMotion = useReducedMotion();
   const { requestAction } = useAvatarContext();
   const anchorRef = useAvatarAnchor("hero", { basePose: "idle_loop", size: 420 });
+  const [entranceActive, setEntranceActive] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => requestAction("hero_entrance", { holdMs: 4200 }), 300);
-    return () => clearTimeout(t);
+    if (prefersReducedMotion) return;
+    const start = setTimeout(() => {
+      requestAction("hero_entrance", { holdMs: ENTRANCE_HOLD_MS });
+      setEntranceActive(true);
+    }, 300);
+    const stop = setTimeout(() => setEntranceActive(false), 300 + ENTRANCE_HOLD_MS);
+    return () => {
+      clearTimeout(start);
+      clearTimeout(stop);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [prefersReducedMotion]);
 
   return (
     <section
@@ -29,6 +41,7 @@ export default function Hero() {
       className="relative flex min-h-screen items-center overflow-hidden bg-ink pt-24"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_35%,rgba(139,124,255,0.16),transparent_55%)]" />
+      <TechThrowFX active={entranceActive} />
 
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-6 lg:grid-cols-[1.05fr_0.95fr]">
         <div className="relative z-10">
