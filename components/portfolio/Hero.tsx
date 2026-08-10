@@ -1,20 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 const HERO_IMAGE =
   "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260810_092809_890a4dde-893b-44af-bd6f-45fccee044fd.png";
 
 export default function Hero() {
+  const [imageOk, setImageOk] = useState(true);
+
   return (
     <section id="top" className="relative flex min-h-screen items-center overflow-hidden bg-ink">
-      <div className="absolute inset-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={HERO_IMAGE}
-          alt=""
-          className="h-full w-full object-cover opacity-70"
-        />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1440] via-ink to-ink">
+        {imageOk && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={HERO_IMAGE}
+            alt=""
+            onError={() => setImageOk(false)}
+            className="h-full w-full object-cover opacity-70"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-ink/40 via-ink/70 to-ink" />
       </div>
 
