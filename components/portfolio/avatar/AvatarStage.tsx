@@ -199,8 +199,8 @@ export default function AvatarStage() {
     // thing this component does. Phones get a smaller working resolution
     // and a capped processing rate so it doesn't compete with everything
     // else on a weaker CPU.
-    const TARGET_W = isTouch ? 240 : 480;
-    const MIN_FRAME_MS = isTouch ? 66 : 0; // ~15fps on touch, uncapped on desktop
+    const TARGET_W = isTouch ? 420 : 480;
+    const MIN_FRAME_MS = isTouch ? 42 : 0; // ~24fps on touch, uncapped on desktop
     let lastDraw = 0;
 
     const draw = (now: number) => {
