@@ -62,6 +62,15 @@ export const projects: Project[] = [
     category: "Web",
   },
   {
+    slug: "custom-qr-codes",
+    title: "Custom Branded QR Codes",
+    tagline: "Designed QR codes that still scan perfectly",
+    description:
+      "On-brand QR codes designed around a business's colors, logo, and shapes — not the default black-and-white grid — while keeping error-correction and contrast tuned so they scan reliably every time.",
+    stack: ["Design", "Branding"],
+    category: "Design",
+  },
+  {
     slug: "erp",
     title: "Internal ERP System",
     tagline: "Operations management for day-to-day business workflows",
