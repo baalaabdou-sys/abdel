@@ -44,23 +44,12 @@ export const projects: Project[] = [
     category: "Full-stack",
   },
   {
-    slug: "photo-organizer",
-    title: "Product Photo Organizer",
-    tagline: "AI-sorted product photography, straight to Drive",
-    description:
-      "An Android app that lets a team pick photos from the gallery, classifies each one by category and brand with an AI vision model, and uploads them straight into matching nested folders in a shared Google Drive.",
-    stack: ["React Native", "Expo", "Gemini API", "Google Drive API"],
-    href: "https://github.com/baalaabdou-sys/Product-photo-organizer-",
-    hrefLabel: "View source",
-    category: "Mobile",
-  },
-  {
     slug: "whatsapp-sales-tracker",
     title: "WhatsApp Sales Tracker",
-    tagline: "Turning WhatsApp orders into structured sales data",
+    tagline: "Turning raw seller chats into a same-day sales report",
     description:
-      "A lightweight tracking tool that captures orders coming in through WhatsApp and organizes them into a running log — giving a small business owner real visibility into sales without changing how customers actually order.",
-    stack: ["Automation", "Sales Ops"],
+      "A store runs sales through multiple WhatsApp seller groups, where each seller just types a product and a price in whatever currency they're used to — dh, dollars, euros. This tool reads every message, uses Gemini to pull the seller name and identify the exact product with 100% accuracy, and converts the price to dirhams at the live exchange rate at the moment of the sale. At the end of the day, it compiles everything into a report and sends it straight to the boss's WhatsApp automatically — no manual bookkeeping.",
+    stack: ["Gemini API", "WhatsApp API", "Automation", "Live FX Rates"],
     category: "Business Tools",
   },
   {
