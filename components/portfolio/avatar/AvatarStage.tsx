@@ -10,6 +10,19 @@ const clipKeys = Object.keys(clips) as ClipKey[];
 export default function AvatarStage() {
   const { anchors, actionEmitter } = useAvatarContext();
   const prefersReducedMotion = useReducedMotion();
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    setIsSmallScreen(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsSmallScreen(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  // Phones skip video decode + per-frame canvas chroma-keying (battery/CPU
+  // heavy) and fall back to a single static image that still tracks scroll.
+  const lightweight = prefersReducedMotion || isSmallScreen;
 
   const x = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
   const y = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
@@ -63,9 +76,10 @@ export default function AvatarStage() {
       if (bestEl && bestConfig) {
         const rect = (bestEl as HTMLElement).getBoundingClientRect();
         const config = bestConfig as { basePose: ClipKey; size: number; flip?: boolean };
+        const scale = window.innerWidth < 640 ? 0.55 : window.innerWidth < 1024 ? 0.8 : 1;
         x.set(rect.left + rect.width / 2);
         y.set(rect.top + rect.height / 2);
-        w.set(config.size);
+        w.set(config.size * scale);
         if (basePoseRef.current !== config.basePose) setBasePose(config.basePose);
         if (baseFlipRef.current !== Boolean(config.flip)) setBaseFlip(Boolean(config.flip));
         if (!visibleRef.current) setVisible(true);
@@ -83,7 +97,7 @@ export default function AvatarStage() {
   const activeFlip = action ? Boolean(action.flip) : baseFlip;
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (lightweight) return;
     clipKeys.forEach((key) => {
       const el = videoRefs.current[key];
       if (!el) return;
@@ -94,13 +108,13 @@ export default function AvatarStage() {
         el.pause();
       }
     });
-  }, [activeClip, prefersReducedMotion]);
+  }, [activeClip, lightweight]);
 
   // Live chroma-key compositing: the source clips are shot on solid green,
   // and here we punch that out per-frame onto a canvas so the character
   // sits directly on the page background instead of a colored box.
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (lightweight) return;
     const canvas = canvasRef.current;
     const video = videoRefs.current[activeClip];
     if (!canvas || !video) return;
@@ -176,14 +190,18 @@ export default function AvatarStage() {
     return () => {
       if (keyRafRef.current) cancelAnimationFrame(keyRafRef.current);
     };
-  }, [activeClip, prefersReducedMotion]);
+  }, [activeClip, lightweight]);
 
-  if (prefersReducedMotion) {
+  if (lightweight) {
     return (
-      <div className="pointer-events-none fixed left-1/2 top-24 z-30 w-40 -translate-x-1/2 opacity-90">
+      <motion.div
+        className="pointer-events-none fixed left-0 top-0 z-30"
+        style={{ x, y, width: w, translateX: "-50%", translateY: "-50%", opacity: visible ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={posterFallback} alt="Abderrahmane's avatar" className="w-full" />
-      </div>
+      </motion.div>
     );
   }
 
