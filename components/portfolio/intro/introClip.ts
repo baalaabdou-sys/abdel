@@ -38,6 +38,10 @@ export type IntroClip = {
  * sound-blocked path never fires for this asset, though it stays in place for
  * a future one that has audio.
  *
+ * This is the same take Act 2 opens on, and deliberately one file rather than
+ * two copies: whoever watches both sees the entrance again as the film starts,
+ * which reads as a callback rather than a repeat.
+ *
  * `portalStartFromEnd` is the one number that could not be read here: this
  * environment has no H.264 decoder, so the frame where the tear begins to
  * bloom could not be observed. 1.3s is taken from the shot's own structure —
@@ -49,7 +53,7 @@ export type IntroClip = {
  */
 export const INTRO: IntroClip = {
   mode: "scene",
-  src: "/clips/intro-arrow-portal.mp4",
+  src: "/clips/a2_cursor_pull.mp4",
   portalStartFromEnd: 1.3,
   portalStartAt: null,
   focal: { x: 0.68, y: 0.5 },
