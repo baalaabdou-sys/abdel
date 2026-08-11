@@ -25,10 +25,13 @@ import LiveScene from "./LiveScene";
  *
  * The player never shows one shot at a time. Three layers are live at once —
  * the shot leaving through the lens, the shot holding the frame, and the next
- * shot already mounted and running underneath (PREROLL ms early). A cut is
- * therefore never a start: by the time a shot is revealed it has been in
- * motion for most of a second, which is what removes the seam between two
- * separately generated pieces of footage.
+ * shot mounted and buffering underneath (PREROLL ms early) so it can start on
+ * the frame it is asked to without stalling.
+ *
+ * It buffers early but does not *play* early. It used to, so that a shot was
+ * already in motion when revealed — which meant every take was revealed 0.7s
+ * into itself and its opening 0.7s was never seen by anyone. A shot playing
+ * from its first frame matters more than a shot being mid-motion at the cut.
  *
  * The score is scheduled on the audio context from the same beat grid, with
  * each transition's sound placed *ahead* of its picture (a J-cut) and a tail
@@ -87,7 +90,13 @@ export default function Act2Player({
       setShot((prev) => {
         if (prev !== idx) {
           const nv = videos.current[idx];
-          if (nv && nv.paused) void nv.play().catch(() => {});
+          if (nv) {
+            // From the first frame, every time.
+            nv.currentTime = 0;
+            void nv.play().catch(() => {});
+          }
+          // The outgoing shot keeps playing while it travels past the lens,
+          // so its final frames are seen rather than cut off at the beat.
         }
         return idx;
       });
@@ -97,6 +106,13 @@ export default function Act2Player({
         onEnded();
       }
     };
+    // The opening shot is never "changed to", so it is started explicitly.
+    const first = videos.current[0];
+    if (first) {
+      first.currentTime = 0;
+      void first.play().catch(() => {});
+    }
+
     raf.current = requestAnimationFrame(tick);
 
     return () => {
@@ -124,7 +140,13 @@ export default function Act2Player({
   );
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-black" data-act2-shot={shot}>
+    <div
+      className="absolute inset-0 overflow-hidden bg-black"
+      data-act2-shot={shot}
+      // How far into the current take we are, so "is it playing from the
+      // start" is checkable on hardware that can actually decode it.
+      data-act2-clip-t={videos.current[shot]?.currentTime.toFixed(2) ?? "-"}
+    >
       {/* The glass scene pushes the frame open to the full screen, because
           what he is knocking on is meant to be the screen you are holding. */}
       <StageBackdrop active={portrait} getVideo={() => videos.current[shot]} />
@@ -146,7 +168,6 @@ export default function Act2Player({
                 muted
                 playsInline
                 preload="auto"
-                autoPlay
                 className="h-full w-full object-cover"
               />
             ) : (
