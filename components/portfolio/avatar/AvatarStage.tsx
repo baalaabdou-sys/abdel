@@ -19,7 +19,11 @@ export default function AvatarStage() {
   const { anchors, actionEmitter, warmEmitter, pointer, play } = useAvatarContext();
   const cap = useCapability();
 
-  const x = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
+  // Horizontal is deliberately much lazier than vertical. Section anchors sit
+  // on alternating sides of the layout, so a responsive x-spring made him
+  // zigzag across the viewport as you scrolled. Vertical still tracks scroll
+  // closely; lateral moves are a slow glide.
+  const x = useSpring(useMotionValue(0), { stiffness: 26, damping: 26 });
   const y = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
   const w = useSpring(useMotionValue(320), { stiffness: 90, damping: 22 });
   const rotX = useSpring(useMotionValue(0), { stiffness: 120, damping: 16 });
@@ -42,6 +46,7 @@ export default function AvatarStage() {
   const lastNotice = useRef(0);
   const lastCatch = useRef(0);
   const warpRef = useRef(false);
+  const scrollingUntil = useRef(0);
   const lastWarp = useRef(0);
   const pendingAnchor = useRef<{
     id: string | null;
@@ -75,6 +80,17 @@ export default function AvatarStage() {
       setWarmed((p) => (p.includes(clip) ? p : [...p, clip]));
     });
   }, [warmEmitter]);
+
+  /* Warping mid-scroll relocates him while the visitor is still moving,
+     which reads as the character jumping around. Only travel once the page
+     has actually settled. */
+  useEffect(() => {
+    const onScroll = () => {
+      scrollingUntil.current = Date.now() + 260;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   /* ── the journey: portal out here, portal in there ────────────── */
   useEffect(() => {
@@ -177,6 +193,7 @@ export default function AvatarStage() {
           far &&
           !warpRef.current &&
           !cap.reducedMotion &&
+          Date.now() > scrollingUntil.current &&
           Date.now() - lastWarp.current > 2600
         ) {
           warpRef.current = true;
@@ -210,7 +227,7 @@ export default function AvatarStage() {
   useEffect(() => {
     if (cap.reducedMotion) return;
 
-    const handle = (px: number, py: number, isTouch: boolean) => {
+    const handle = (px: number, py: number, isTouch: boolean, tilt: boolean) => {
       pointer.x = px;
       pointer.y = py;
       pointer.active = true;
@@ -221,13 +238,21 @@ export default function AvatarStage() {
       const dy = py - cy;
       const dist = Math.hypot(dx, dy);
 
-      // Head/body tilt toward them.
-      rotY.set(Math.max(-10, Math.min(10, (dx / (window.innerWidth / 2)) * 10)));
-      rotX.set(Math.max(-7, Math.min(7, (-dy / (window.innerHeight / 2)) * 7)));
+      // Lean toward them — mouse only. A finger's position changes constantly
+      // while scrolling, and tilting a character this large off every one of
+      // those events made him visibly rock left and right down the page.
+      if (tilt) {
+        rotY.set(Math.max(-6, Math.min(6, (dx / (window.innerWidth / 2)) * 6)));
+        rotX.set(Math.max(-4, Math.min(4, (-dy / (window.innerHeight / 2)) * 4)));
+      }
 
       const now = Date.now();
-      // Rare: he actually reaches out and grabs the cursor.
-      if (dist < Math.min(CATCH_RADIUS, cw * 0.35) && now - lastCatch.current > 11000) {
+      // He reaches out and grabs the cursor.
+      if (
+        !isTouch &&
+        dist < Math.min(CATCH_RADIUS, cw * 0.35) &&
+        now - lastCatch.current > 11000
+      ) {
         lastCatch.current = now;
         lastNotice.current = now;
         setCaughtCursor(true);
@@ -235,17 +260,22 @@ export default function AvatarStage() {
         setTimeout(() => setCaughtCursor(false), 2600);
         return;
       }
-      // Common: he glances over when you come close.
-      if (dist < NOTICE_RADIUS && now - lastNotice.current > 4000) {
+      // He glances over when they come close.
+      if (dist < NOTICE_RADIUS && now - lastNotice.current > 8000) {
         lastNotice.current = now;
         play("noticing", { flip: dx < 0 });
       }
     };
 
-    const onMove = (e: PointerEvent) => handle(e.clientX, e.clientY, e.pointerType !== "mouse");
+    const onMove = (e: PointerEvent) => {
+      // Ignore synthetic pointermove from touch scrolling.
+      if (e.pointerType !== "mouse") return;
+      handle(e.clientX, e.clientY, false, true);
+    };
+    // On touch, only a deliberate tap counts — never a scroll gesture.
     const onTouch = (e: TouchEvent) => {
       const t = e.touches[0] ?? e.changedTouches[0];
-      if (t) handle(t.clientX, t.clientY, true);
+      if (t) handle(t.clientX, t.clientY, true, false);
     };
     const onLeave = () => {
       pointer.active = false;
@@ -255,12 +285,10 @@ export default function AvatarStage() {
 
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("touchstart", onTouch, { passive: true });
-    window.addEventListener("touchmove", onTouch, { passive: true });
     window.addEventListener("pointerleave", onLeave);
     return () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("touchstart", onTouch);
-      window.removeEventListener("touchmove", onTouch);
       window.removeEventListener("pointerleave", onLeave);
     };
   }, [cap.reducedMotion, play, pointer, rotX, rotY]);
