@@ -5,7 +5,7 @@ import ProjectCard from "./ProjectCard";
 import { useAvatarAnchor } from "./avatar/AvatarContext";
 
 export default function Projects() {
-  const anchorRef = useAvatarAnchor("work", { basePose: "idle_loop", size: 220 });
+  const anchorRef = useAvatarAnchor("work", { basePose: "idle", size: 220 });
 
   return (
     <section id="work" className="bg-ink px-6 py-28">

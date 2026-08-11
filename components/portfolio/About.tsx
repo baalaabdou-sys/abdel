@@ -10,7 +10,7 @@ const pillars = [
 ];
 
 export default function About() {
-  const anchorRef = useAvatarAnchor("about", { basePose: "sit_lean", size: 200 });
+  const anchorRef = useAvatarAnchor("about", { basePose: "sitting", size: 200 });
 
   return (
     <section id="about" className="relative overflow-hidden border-t border-ink-line bg-ink-soft px-6 py-28">

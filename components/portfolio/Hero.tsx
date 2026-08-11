@@ -5,6 +5,10 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import MagneticButton from "./MagneticButton";
 import TechThrowFX from "./TechThrowFX";
+import ChromaClip from "./avatar/ChromaClip";
+import { useCapability } from "./avatar/useCapability";
+import { useMalfunction } from "./avatar/useMalfunction";
+import { useSafeReducedMotion } from "./avatar/useSafeReducedMotion";
 
 const ENTRANCE_HOLD_MS = 6800;
 
@@ -17,20 +21,30 @@ const floaters = [
 
 export default function Hero() {
   const prefersReducedMotion = useReducedMotion();
-  const { requestAction } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("hero", { basePose: "idle_loop", size: 420 });
+  // Structural conditionals below must use the hydration-safe variant.
+  const safeReduced = useSafeReducedMotion();
+  const { play } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("hero", { basePose: "idle", size: 420 });
   const [entranceActive, setEntranceActive] = useState(false);
+  const [miniWalk, setMiniWalk] = useState(false);
+  const cap = useCapability();
+  useMalfunction(!prefersReducedMotion);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
     const start = setTimeout(() => {
-      requestAction("hero_entrance", { holdMs: ENTRANCE_HOLD_MS });
+      play("arriving", { holdMs: ENTRANCE_HOLD_MS });
       setEntranceActive(true);
     }, 300);
     const stop = setTimeout(() => setEntranceActive(false), 300 + ENTRANCE_HOLD_MS);
+    // A beat after he settles, a tiny version of him strolls across the name.
+    const mini = setTimeout(() => setMiniWalk(true), 300 + ENTRANCE_HOLD_MS + 2200);
+    const miniOff = setTimeout(() => setMiniWalk(false), 300 + ENTRANCE_HOLD_MS + 12000);
     return () => {
       clearTimeout(start);
       clearTimeout(stop);
+      clearTimeout(mini);
+      clearTimeout(miniOff);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefersReducedMotion]);
@@ -55,12 +69,30 @@ export default function Hero() {
           </motion.p>
 
           <motion.h1
+            data-glitchable
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="max-w-xl font-display text-5xl font-semibold leading-[1.05] text-paper sm:text-6xl"
+            className="relative max-w-xl font-display text-5xl font-semibold leading-[1.05] text-paper sm:text-6xl"
           >
             Abderrahmane Baalla
+            {/* Mini mode: he shrinks and walks the length of the name, then
+                hops off. No explanation, no label — just there if you look. */}
+            {miniWalk && !safeReduced && (
+              <motion.span
+                aria-hidden
+                className="pointer-events-none absolute -top-11 left-0 block w-14"
+                initial={{ x: "-10%", opacity: 0 }}
+                animate={{ x: ["-10%", "560%", "560%"], opacity: [0, 1, 1] }}
+                transition={{ duration: 9, times: [0, 0.85, 1], ease: "linear" }}
+              >
+                <span className="relative block w-full" style={{ paddingTop: "133%" }}>
+                  <span className="absolute inset-0 block">
+                    <ChromaClip clip="idle_loop" cap={cap} />
+                  </span>
+                </span>
+              </motion.span>
+            )}
           </motion.h1>
 
           <motion.p
@@ -96,7 +128,7 @@ export default function Hero() {
         </div>
 
         <div className="relative z-0 flex justify-center lg:justify-end">
-          {!prefersReducedMotion &&
+          {!safeReduced &&
             floaters.map((f) => (
               <motion.div
                 key={f.label}

@@ -1,163 +1,208 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useAvatarContext } from "./AvatarContext";
 import { clips, posterFallback, type ClipKey } from "./clips";
+import { clipFor, STATES, type CharacterState } from "./states";
+import { useCapability } from "./useCapability";
 
 const clipKeys = Object.keys(clips) as ClipKey[];
 
+/** How close the pointer must get before he notices it (px). */
+const NOTICE_RADIUS = 220;
+/** How close before the rare catch can fire (px). */
+const CATCH_RADIUS = 90;
+
 export default function AvatarStage() {
-  const { anchors, actionEmitter, warmEmitter } = useAvatarContext();
-  const prefersReducedMotion = useReducedMotion();
-  const [isTouch, setIsTouch] = useState(false);
-  const [warmed, setWarmed] = useState<ClipKey[]>([]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(pointer: coarse)");
-    setIsTouch(mq.matches);
-    const onChange = (e: MediaQueryListEvent) => setIsTouch(e.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  // Only an explicit OS-level reduced-motion preference gets the static
-  // fallback — phones get the full video + chroma-key experience too, just
-  // throttled (see below) since they have far less CPU headroom than desktop.
-  const lightweight = prefersReducedMotion;
+  const { anchors, actionEmitter, warmEmitter, pointer, play } = useAvatarContext();
+  const cap = useCapability();
 
   const x = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
   const y = useSpring(useMotionValue(0), { stiffness: 90, damping: 20 });
   const w = useSpring(useMotionValue(320), { stiffness: 90, damping: 22 });
+  const rotX = useSpring(useMotionValue(0), { stiffness: 120, damping: 16 });
+  const rotY = useSpring(useMotionValue(0), { stiffness: 120, damping: 16 });
 
-  const [basePose, setBasePose] = useState<ClipKey>("idle_loop");
+  const [ambient, setAmbient] = useState<CharacterState>("idle");
   const [baseFlip, setBaseFlip] = useState(false);
   const [visible, setVisible] = useState(false);
-  const [action, setAction] = useState<{ clip: ClipKey; flip?: boolean } | null>(null);
+  const [action, setAction] = useState<{ state: CharacterState; flip?: boolean } | null>(null);
+  const [warmed, setWarmed] = useState<ClipKey[]>([]);
+  const [caughtCursor, setCaughtCursor] = useState(false);
 
-  const basePoseRef = useRef(basePose);
-  const baseFlipRef = useRef(baseFlip);
+  const ambientRef = useRef(ambient);
+  const flipRef = useRef(baseFlip);
   const visibleRef = useRef(visible);
-  basePoseRef.current = basePose;
-  baseFlipRef.current = baseFlip;
+  const actionTimer = useRef<ReturnType<typeof setTimeout>>();
+  const activeAnchorId = useRef<string | null>(null);
+  const centre = useRef({ x: 0, y: 0, w: 320 });
+  const lastNotice = useRef(0);
+  const lastCatch = useRef(0);
+  ambientRef.current = ambient;
+  flipRef.current = baseFlip;
   visibleRef.current = visible;
 
-  const actionTimer = useRef<ReturnType<typeof setTimeout>>();
-  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const keyRafRef = useRef<number>();
-  const activeAnchorIdRef = useRef<string | null>(null);
+  const activeState: CharacterState = action?.state ?? ambient;
+  const activeClip = clipFor(activeState);
+  const activeFlip = action ? Boolean(action.flip) : baseFlip;
 
+  /* ── engine: actions override ambient, then fall back ─────────── */
   useEffect(() => {
     return actionEmitter.on((evt) => {
-      setAction({ clip: evt.clip, flip: evt.flip });
+      setAction({ state: evt.state, flip: evt.flip });
       clearTimeout(actionTimer.current);
-      actionTimer.current = setTimeout(() => setAction(null), evt.holdMs ?? 2400);
+      actionTimer.current = setTimeout(() => {
+        if (evt.then) play(evt.then);
+        else setAction(null);
+      }, evt.holdMs ?? STATES[evt.state].hold);
     });
-  }, [actionEmitter]);
+  }, [actionEmitter, play]);
 
   useEffect(() => {
     return warmEmitter.on((clip) => {
-      setWarmed((prev) => (prev.includes(clip) ? prev : [...prev, clip]));
-      videoRefs.current[clip]?.load();
+      setWarmed((p) => (p.includes(clip) ? p : [...p, clip]));
     });
   }, [warmEmitter]);
 
+  /* ── anchor tracking ──────────────────────────────────────────── */
   useEffect(() => {
-    // How much closer a different anchor must be, in px, before we switch
-    // to it. Without this, two anchors that are nearly tied in distance
-    // (common on short mobile viewports, or mid-scroll on any device) cause
-    // the "closest" pick to flip every frame, snapping the character's
-    // target position back and forth — this margin adds hysteresis so it
-    // only switches on a real, decisive change.
     const SWITCH_MARGIN = 80;
-    // getBoundingClientRect forces layout; on touch devices we poll it far
-    // less often (desktop: every frame, phones: ~20fps) since the character
-    // only needs to catch up with scroll, not track it at 60fps.
-    const MIN_INTERVAL_MS = isTouch ? 50 : 0;
-    let lastTick = 0;
+    const interval = cap.isTouch ? 50 : 0;
+    let last = 0;
 
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
-      if (now - lastTick < MIN_INTERVAL_MS) return;
-      lastTick = now;
+      if (now - last < interval) return;
+      last = now;
 
       const vh = window.innerHeight;
       let bestId: string | null = null;
       let bestEl: HTMLElement | null = null;
-      let bestConfig: { basePose: ClipKey; size: number; flip?: boolean } | null = null;
+      let bestCfg: { basePose: CharacterState; size: number; flip?: boolean } | null = null;
       let bestDist = Infinity;
 
       anchors.forEach((entry, id) => {
-        const rect = entry.el.getBoundingClientRect();
-        if (rect.bottom < 0 || rect.top > vh) return;
-        const center = rect.top + rect.height / 2;
-        const dist = Math.abs(center - vh / 2);
+        const r = entry.el.getBoundingClientRect();
+        if (r.bottom < 0 || r.top > vh) return;
+        const dist = Math.abs(r.top + r.height / 2 - vh / 2);
         if (dist < bestDist) {
           bestDist = dist;
           bestEl = entry.el;
-          bestConfig = entry.config;
+          bestCfg = entry.config;
           bestId = id;
         }
       });
 
-      let chosenId: string | null = bestId;
-      let chosenEl: HTMLElement | null = bestEl;
-      let chosenConfig: { basePose: ClipKey; size: number; flip?: boolean } | null = bestConfig;
-      let chosenDist: number = bestDist;
-
-      const currentId = activeAnchorIdRef.current;
-      if (currentId && currentId !== bestId) {
-        const current = anchors.get(currentId);
-        if (current) {
-          const rect = current.el.getBoundingClientRect();
-          if (rect.bottom >= 0 && rect.top <= vh) {
-            const center = rect.top + rect.height / 2;
-            const curDist = Math.abs(center - vh / 2);
-            if (curDist <= bestDist + SWITCH_MARGIN) {
-              chosenId = currentId;
-              chosenEl = current.el;
-              chosenConfig = current.config;
-              chosenDist = curDist;
+      // Hysteresis so two near-equidistant anchors can't ping-pong.
+      const curId = activeAnchorId.current;
+      if (curId && curId !== bestId) {
+        const cur = anchors.get(curId);
+        if (cur) {
+          const r = cur.el.getBoundingClientRect();
+          if (r.bottom >= 0 && r.top <= vh) {
+            const d = Math.abs(r.top + r.height / 2 - vh / 2);
+            if (d <= bestDist + SWITCH_MARGIN) {
+              bestId = curId;
+              bestEl = cur.el;
+              bestCfg = cur.config;
             }
           }
         }
       }
-      void chosenDist;
 
-      if (chosenEl && chosenConfig) {
-        activeAnchorIdRef.current = chosenId;
-        const rect = (chosenEl as HTMLElement).getBoundingClientRect();
-        const config = chosenConfig as { basePose: ClipKey; size: number; flip?: boolean };
-        // The pixel sizes in each section's anchor config are tuned for
-        // desktop-width anchor boxes. On a phone the anchor box itself is
-        // much smaller (responsive Tailwind classes), so without scaling,
-        // the avatar renders far larger than the space reserved for it and
-        // visibly overlaps/misaligns with the content around it.
+      if (bestEl && bestCfg) {
+        activeAnchorId.current = bestId;
+        const r = (bestEl as HTMLElement).getBoundingClientRect();
+        const cfg = bestCfg as { basePose: CharacterState; size: number; flip?: boolean };
         const vw = window.innerWidth;
-        const sizeScale = vw < 480 ? 0.82 : vw < 768 ? 0.9 : vw < 1024 ? 0.95 : 1;
-        x.set(rect.left + rect.width / 2);
-        y.set(rect.top + rect.height / 2);
-        w.set(config.size * sizeScale);
-        if (basePoseRef.current !== config.basePose) setBasePose(config.basePose);
-        if (baseFlipRef.current !== Boolean(config.flip)) setBaseFlip(Boolean(config.flip));
+        const scale = vw < 480 ? 0.82 : vw < 768 ? 0.9 : vw < 1024 ? 0.95 : 1;
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const size = cfg.size * scale;
+        centre.current = { x: cx, y: cy, w: size };
+        x.set(cx);
+        y.set(cy);
+        w.set(size);
+        if (ambientRef.current !== cfg.basePose) setAmbient(cfg.basePose);
+        if (flipRef.current !== Boolean(cfg.flip)) setBaseFlip(Boolean(cfg.flip));
         if (!visibleRef.current) setVisible(true);
       } else {
-        activeAnchorIdRef.current = null;
+        activeAnchorId.current = null;
         if (visibleRef.current) setVisible(false);
       }
     };
     let raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [anchors, x, y, w, isTouch]);
+  }, [anchors, x, y, w, cap.isTouch]);
 
-  const activeClip = action?.clip ?? basePose;
-  const activeFlip = action ? Boolean(action.flip) : baseFlip;
+  /* ── fourth wall: he watches the pointer / the last touch ─────── */
+  useEffect(() => {
+    if (cap.reducedMotion) return;
+
+    const handle = (px: number, py: number, isTouch: boolean) => {
+      pointer.x = px;
+      pointer.y = py;
+      pointer.active = true;
+      pointer.isTouch = isTouch;
+
+      const { x: cx, y: cy, w: cw } = centre.current;
+      const dx = px - cx;
+      const dy = py - cy;
+      const dist = Math.hypot(dx, dy);
+
+      // Head/body tilt toward them.
+      rotY.set(Math.max(-10, Math.min(10, (dx / (window.innerWidth / 2)) * 10)));
+      rotX.set(Math.max(-7, Math.min(7, (-dy / (window.innerHeight / 2)) * 7)));
+
+      const now = Date.now();
+      // Rare: he actually reaches out and grabs the cursor.
+      if (dist < Math.min(CATCH_RADIUS, cw * 0.35) && now - lastCatch.current > 45000) {
+        lastCatch.current = now;
+        lastNotice.current = now;
+        setCaughtCursor(true);
+        play("grabbing", { flip: dx < 0 });
+        setTimeout(() => setCaughtCursor(false), 2600);
+        return;
+      }
+      // Common: he glances over when you come close.
+      if (dist < NOTICE_RADIUS && now - lastNotice.current > 9000) {
+        lastNotice.current = now;
+        play("noticing", { flip: dx < 0 });
+      }
+    };
+
+    const onMove = (e: PointerEvent) => handle(e.clientX, e.clientY, e.pointerType !== "mouse");
+    const onTouch = (e: TouchEvent) => {
+      const t = e.touches[0] ?? e.changedTouches[0];
+      if (t) handle(t.clientX, t.clientY, true);
+    };
+    const onLeave = () => {
+      pointer.active = false;
+      rotX.set(0);
+      rotY.set(0);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("touchstart", onTouch, { passive: true });
+    window.addEventListener("touchmove", onTouch, { passive: true });
+    window.addEventListener("pointerleave", onLeave);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("touchstart", onTouch);
+      window.removeEventListener("touchmove", onTouch);
+      window.removeEventListener("pointerleave", onLeave);
+    };
+  }, [cap.reducedMotion, play, pointer, rotX, rotY]);
+
+  /* ── playback: only the active clip runs ──────────────────────── */
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const keyRaf = useRef<number>();
 
   useEffect(() => {
-    if (lightweight) return;
+    if (cap.reducedMotion) return;
     const cleanups: (() => void)[] = [];
-
     clipKeys.forEach((key) => {
       const el = videoRefs.current[key];
       if (!el) return;
@@ -165,33 +210,23 @@ export default function AvatarStage() {
         el.pause();
         return;
       }
-
       el.currentTime = 0;
       const start = () => el.play().catch(() => {});
-
-      // Starting playback before enough of the clip is buffered causes
-      // stalls that read as jittery/back-and-forth motion, especially on
-      // mobile networks — wait for canplaythrough when it isn't ready yet.
-      if (el.readyState >= 3) {
-        start();
-      } else {
+      if (el.readyState >= 3) start();
+      else {
         el.addEventListener("canplaythrough", start, { once: true });
-        const fallback = setTimeout(start, 1200);
+        const t = setTimeout(start, 1200);
         cleanups.push(() => {
           el.removeEventListener("canplaythrough", start);
-          clearTimeout(fallback);
+          clearTimeout(t);
         });
       }
     });
+    return () => cleanups.forEach((f) => f());
+  }, [activeClip, cap.reducedMotion]);
 
-    return () => cleanups.forEach((fn) => fn());
-  }, [activeClip, lightweight]);
-
-  // Live chroma-key compositing: the source clips are shot on solid green,
-  // and here we punch that out per-frame onto a canvas so the character
-  // sits directly on the page background instead of a colored box.
   useEffect(() => {
-    if (lightweight) return;
+    if (cap.reducedMotion) return;
     const canvas = canvasRef.current;
     const video = videoRefs.current[activeClip];
     if (!canvas || !video) return;
@@ -199,92 +234,67 @@ export default function AvatarStage() {
     if (!ctx) return;
 
     let keyColor: [number, number, number] | null = null;
-    let keyingBroken = false;
-    const TOLERANCE = 70;
+    let broken = false;
+    let last = 0;
+    const TOL = 70;
     const SOFT = 45;
     const SPILL = 18;
-    // Reading/writing every pixel of every frame is the single heaviest
-    // thing this component does. Phones get a smaller working resolution
-    // and a capped processing rate so it doesn't compete with everything
-    // else on a weaker CPU.
-    const TARGET_W = isTouch ? 420 : 480;
-    const MIN_FRAME_MS = isTouch ? 42 : 0; // ~24fps on touch, uncapped on desktop
-    let lastDraw = 0;
 
     const draw = (now: number) => {
-      keyRafRef.current = requestAnimationFrame(draw);
-      if (now - lastDraw < MIN_FRAME_MS) return;
-      lastDraw = now;
+      keyRaf.current = requestAnimationFrame(draw);
+      if (now - last < cap.keyInterval) return;
+      last = now;
+      if (video.readyState < 2 || video.paused || video.ended) return;
 
-      if (video.readyState >= 2 && !video.paused && !video.ended) {
-        const vw = video.videoWidth || 480;
-        const vh = video.videoHeight || 640;
-        const outW = TARGET_W;
-        const outH = Math.round((outW * vh) / vw) || Math.round(outW * 1.33);
-        if (canvas.width !== outW || canvas.height !== outH) {
-          canvas.width = outW;
-          canvas.height = outH;
-          keyColor = null;
+      const vw = video.videoWidth || 480;
+      const vh = video.videoHeight || 640;
+      const outW = cap.keyWidth;
+      const outH = Math.round((outW * vh) / vw) || Math.round(outW * 1.33);
+      if (canvas.width !== outW || canvas.height !== outH) {
+        canvas.width = outW;
+        canvas.height = outH;
+        keyColor = null;
+      }
+      ctx.drawImage(video, 0, 0, outW, outH);
+      if (broken) return;
+
+      try {
+        const frame = ctx.getImageData(0, 0, outW, outH);
+        const d = frame.data;
+        if (!keyColor) {
+          const i = (2 * outW + 2) * 4;
+          keyColor = [d[i], d[i + 1], d[i + 2]];
         }
-
-        ctx.drawImage(video, 0, 0, outW, outH);
-
-        if (!keyingBroken) {
-          try {
-            const frame = ctx.getImageData(0, 0, outW, outH);
-            const data = frame.data;
-
-            if (!keyColor) {
-              const idx = (2 * outW + 2) * 4;
-              keyColor = [data[idx], data[idx + 1], data[idx + 2]];
-            }
-
-            const [kr, kg, kb] = keyColor;
-            for (let i = 0; i < data.length; i += 4) {
-              const r = data[i];
-              const g = data[i + 1];
-              const b = data[i + 2];
-              const dr = r - kr;
-              const dg = g - kg;
-              const db = b - kb;
-              const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-
-              if (dist < TOLERANCE) {
-                data[i + 3] = 0;
-              } else if (dist < TOLERANCE + SOFT) {
-                data[i + 3] = Math.round((255 * (dist - TOLERANCE)) / SOFT);
-                if (g > r + SPILL && g > b + SPILL) {
-                  data[i + 1] = Math.round((r + b) / 2);
-                }
-              } else if (g > r + SPILL && g > b + SPILL) {
-                data[i + 1] = Math.round((r + b) / 2);
-              }
-            }
-
-            ctx.putImageData(frame, 0, 0);
-          } catch (err) {
-            // Cross-origin frame without permissive CORS headers taints the
-            // canvas — fall back to showing the raw (un-keyed) frame instead
-            // of crashing the animation loop.
-            keyingBroken = true;
-            console.warn("Avatar chroma-key disabled (canvas read blocked):", err);
+        const [kr, kg, kb] = keyColor;
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+          const dist = Math.sqrt((r - kr) ** 2 + (g - kg) ** 2 + (b - kb) ** 2);
+          if (dist < TOL) d[i + 3] = 0;
+          else if (dist < TOL + SOFT) {
+            d[i + 3] = Math.round((255 * (dist - TOL)) / SOFT);
+            if (g > r + SPILL && g > b + SPILL) d[i + 1] = Math.round((r + b) / 2);
+          } else if (g > r + SPILL && g > b + SPILL) {
+            d[i + 1] = Math.round((r + b) / 2);
           }
         }
+        ctx.putImageData(frame, 0, 0);
+      } catch {
+        broken = true;
       }
     };
-
-    keyRafRef.current = requestAnimationFrame(draw);
+    keyRaf.current = requestAnimationFrame(draw);
     return () => {
-      if (keyRafRef.current) cancelAnimationFrame(keyRafRef.current);
+      if (keyRaf.current) cancelAnimationFrame(keyRaf.current);
     };
-  }, [activeClip, lightweight, isTouch]);
+  }, [activeClip, cap.reducedMotion, cap.keyWidth, cap.keyInterval]);
 
-  if (lightweight) {
+  if (cap.reducedMotion) {
     return (
       <motion.div
         className="pointer-events-none fixed left-0 top-0 z-30"
         style={{ x, y, width: w, translateX: "-50%", translateY: "-50%", opacity: visible ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={posterFallback} alt="Abderrahmane's avatar" className="w-full" />
@@ -293,38 +303,67 @@ export default function AvatarStage() {
   }
 
   return (
-    <motion.div
-      className="pointer-events-none fixed left-0 top-0 z-30"
-      style={{ x, y, width: w, translateX: "-50%", translateY: "-50%", opacity: visible ? 1 : 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="absolute inset-0 -z-10 scale-90 rounded-full bg-accent/20 blur-[60px]" />
-      <div className="relative w-full" style={{ paddingTop: "133%" }}>
-        {clipKeys.map((key) => (
-          <video
-            key={key}
-            ref={(el) => {
-              videoRefs.current[key] = el;
-            }}
-            src={clips[key].url}
-            crossOrigin="anonymous"
-            muted
-            playsInline
-            preload={clips[key].eager || warmed.includes(key) ? "auto" : "metadata"}
-            loop={clips[key].loop}
-            onEnded={() => {
-              if (key === activeClip && !clips[key].loop && action) setAction(null);
-            }}
-            className="pointer-events-none absolute h-px w-px opacity-0"
+    <>
+      <motion.div
+        className="pointer-events-none fixed left-0 top-0 z-30"
+        style={{
+          x,
+          y,
+          width: w,
+          translateX: "-50%",
+          translateY: "-50%",
+          opacity: visible ? 1 : 0,
+          perspective: 900,
+        }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="absolute inset-0 -z-10 scale-90 rounded-full bg-accent/20 blur-[60px]" />
+        <motion.div
+          className="relative w-full"
+          style={{ paddingTop: "133%", rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d" }}
+        >
+          {clipKeys.map((key) => (
+            <video
+              key={key}
+              ref={(el) => {
+                videoRefs.current[key] = el;
+              }}
+              src={clips[key].url || undefined}
+              crossOrigin="anonymous"
+              muted
+              playsInline
+              preload={clips[key].eager || warmed.includes(key) ? "auto" : "metadata"}
+              loop={clips[key].loop}
+              onEnded={() => {
+                if (key === activeClip && !clips[key].loop && action) setAction(null);
+              }}
+              className="pointer-events-none absolute h-px w-px opacity-0"
+            />
+          ))}
+          <canvas
+            ref={canvasRef}
+            className={`absolute inset-0 h-full w-full object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.45)] ${
+              activeFlip ? "-scale-x-100" : ""
+            }`}
           />
-        ))}
-        <canvas
-          ref={canvasRef}
-          className={`absolute inset-0 h-full w-full object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.45)] ${
-            activeFlip ? "-scale-x-100" : ""
-          }`}
-        />
-      </div>
-    </motion.div>
+        </motion.div>
+      </motion.div>
+
+      {/* The illusion of him holding the pointer. The real cursor is never
+          captured — this just rides along beside it for a couple of seconds. */}
+      {caughtCursor && !cap.isTouch && (
+        <motion.div
+          className="pointer-events-none fixed z-[60]"
+          initial={{ opacity: 0, scale: 0.4 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          style={{ left: centre.current.x, top: centre.current.y - centre.current.w * 0.15 }}
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6 -translate-x-1/2 -translate-y-1/2 drop-shadow-lg">
+            <path d="M4 2l7 18 2.5-7.5L21 10z" fill="#5EE6D0" stroke="#0B0E1A" strokeWidth="1.5" />
+          </svg>
+        </motion.div>
+      )}
+    </>
   );
 }

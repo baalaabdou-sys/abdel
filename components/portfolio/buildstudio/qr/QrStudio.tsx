@@ -36,7 +36,7 @@ const fade = {
 
 export default function QrStudio({ onRestart }: { onRestart: () => void }) {
   const prefersReducedMotion = useReducedMotion();
-  const { requestAction } = useAvatarContext();
+  const { play } = useAvatarContext();
 
   const [stage, setStage] = useState<Stage>("purpose");
   const [purpose, setPurpose] = useState<QrPurpose | null>(null);
@@ -55,12 +55,12 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
   useEffect(() => () => clearTimeout(timer.current), []);
 
   /** Small, rate-limited character reactions while customising. */
-  const react = (clip: "skills_tap" | "point_action") => {
+  const react = (state: "tapping" | "pointing") => {
     if (prefersReducedMotion) return;
     const now = Date.now();
     if (now - reactLock.current < 2500) return;
     reactLock.current = now;
-    requestAction(clip, { holdMs: 1600 });
+    play(state);
   };
 
   const def = purpose ? getPurposeDef(purpose) : null;
@@ -110,7 +110,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
     const reader = new FileReader();
     reader.onload = () => {
       setLogo(String(reader.result));
-      react("skills_tap");
+      react("tapping");
     };
     reader.readAsDataURL(file);
   };
@@ -118,7 +118,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
   const create = () => {
     if (!canCreate) return;
     setStage("building");
-    if (!prefersReducedMotion) requestAction("build_qr", { holdMs: 7200 });
+    if (!prefersReducedMotion) play("building_qr");
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setStage("ready"), BUILD_MS);
   };
@@ -264,7 +264,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
                       value={fg}
                       onChange={(e) => {
                         setFg(e.target.value);
-                        react("point_action");
+                        react("pointing");
                       }}
                       className="h-10 w-12 cursor-pointer rounded-lg border border-ink-line bg-ink/70"
                     />
@@ -285,7 +285,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
                       value={bg}
                       onChange={(e) => {
                         setBg(e.target.value);
-                        react("point_action");
+                        react("pointing");
                       }}
                       className="h-10 w-12 cursor-pointer rounded-lg border border-ink-line bg-ink/70"
                     />
@@ -332,7 +332,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
                         data-cursor-hover
                         onClick={() => {
                           setRounded(o.v);
-                          react("skills_tap");
+                          react("tapping");
                         }}
                         className={`flex-1 rounded-lg border px-3 py-2 text-sm transition ${
                           rounded === o.v
@@ -353,7 +353,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
                         key={s.value}
                         type="button"
                         data-cursor-hover
-                        onMouseEnter={() => react("point_action")}
+                        onMouseEnter={() => react("pointing")}
                         onClick={() => setStyle(s.value)}
                         className={`flex-1 rounded-lg border px-2 py-2 text-xs transition ${
                           style === s.value

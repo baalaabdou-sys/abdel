@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
+import AvatarClones from "./avatar/AvatarClones";
 
 const skills = [
   { label: "React", desc: "Component-driven interfaces", angle: 0 },
@@ -19,16 +20,47 @@ const RADIUS = 190;
 export default function Skills() {
   const prefersReducedMotion = useReducedMotion();
   const [active, setActive] = useState<(typeof skills)[number] | null>(null);
-  const { requestAction } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("skills", { basePose: "idle_loop", size: 220 });
+  const { play } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("skills", { basePose: "idle", size: 220 });
+  const sectionRef = useRef<HTMLElement>(null);
+  const [cloned, setCloned] = useState(false);
+  const clonedOnce = useRef(false);
 
   const handleActivate = (s: (typeof skills)[number] | null) => {
     setActive(s);
-    if (s) requestAction("skills_tap", { flip: s.angle > 180, holdMs: 1800 });
+    if (s) play("tapping", { flip: s.angle > 180 });
   };
 
+  /**
+   * The clone beat. Fires once, a beat after the section settles in view, so
+   * it lands as a surprise mid-scroll rather than as a section intro.
+   */
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || prefersReducedMotion) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting) || clonedOnce.current) return;
+        clonedOnce.current = true;
+        const inTimer = setTimeout(() => setCloned(true), 1400);
+        const outTimer = setTimeout(() => setCloned(false), 7200);
+        return () => {
+          clearTimeout(inTimer);
+          clearTimeout(outTimer);
+        };
+      },
+      { threshold: 0.55 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [prefersReducedMotion]);
+
   return (
-    <section id="skills" className="relative border-t border-ink-line bg-ink px-6 py-28">
+    <section
+      ref={sectionRef}
+      id="skills"
+      className="relative border-t border-ink-line bg-ink px-6 py-28"
+    >
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 max-w-2xl">
           <p className="text-sm font-medium tracking-wide text-accent">Toolbox</p>
@@ -40,10 +72,13 @@ export default function Skills() {
 
         <div className="relative mx-auto flex h-[420px] max-w-xl items-center justify-center sm:h-[480px]">
           <div ref={anchorRef} className="h-40 w-32" />
+          <AvatarClones active={cloned} />
 
           {skills.map((s) => {
             const rad = (s.angle * Math.PI) / 180;
-            const x = Math.cos(rad) * RADIUS;
+            // Percentage-based so the orbit always fits its container — a
+            // fixed pixel radius pushed the icons off the side of a phone.
+            const x = Math.cos(rad) * 50;
             const y = Math.sin(rad) * RADIUS;
             const isActive = active?.label === s.label;
 
@@ -61,7 +96,13 @@ export default function Skills() {
                     ? "border-accent bg-accent text-ink"
                     : "border-ink-line bg-ink-soft text-paper hover:border-accent/60"
                 }`}
-                style={{ left: `calc(50% + ${x}px)`, top: `calc(50% + ${y}px)`, translate: "-50% -50%" }}
+                style={{
+                  // Horizontal position tracks the container width so the
+                  // orbit can never push past the edge of a narrow screen.
+                  left: `calc(50% + ${x}% - ${x * 0.5}px)`,
+                  top: `calc(50% + ${y}px)`,
+                  translate: "-50% -50%",
+                }}
                 animate={prefersReducedMotion ? {} : { y: [0, -6, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: s.angle / 100 }}
               >

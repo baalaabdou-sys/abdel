@@ -22,3 +22,15 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Rare "the site broke" easter egg — the character notices and fixes it. */
+.is-glitching {
+  animation: page-shudder 220ms steps(2) 3;
+}
+@keyframes page-shudder {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(1.5px, -1px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-glitching { animation: none; }
+}

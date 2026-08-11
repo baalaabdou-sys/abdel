@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
 
 /**
  * One piece of a mockup flying into place. Pieces animate in sequence so the
@@ -17,7 +18,8 @@ export default function Part({
   className?: string;
   from?: "up" | "down" | "left" | "right" | "front";
 }) {
-  const prefersReducedMotion = useReducedMotion();
+  // Structural swap (div vs motion.div) must be hydration-safe.
+  const prefersReducedMotion = useSafeReducedMotion();
 
   const offsets: Record<string, { x?: number; y?: number; scale?: number }> = {
     up: { y: 34 },

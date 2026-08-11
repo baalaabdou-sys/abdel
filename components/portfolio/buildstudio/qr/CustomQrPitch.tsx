@@ -63,7 +63,7 @@ function PlaceholderTile() {
 
 export default function CustomQrPitch() {
   const prefersReducedMotion = useReducedMotion();
-  const { requestAction } = useAvatarContext();
+  const { play } = useAvatarContext();
   const [active, setActive] = useState<QrShowcaseItem | null>(null);
 
   // Close on Escape and lock background scroll while the lightbox is open.
@@ -83,7 +83,7 @@ export default function CustomQrPitch() {
 
   const open = (item: QrShowcaseItem) => {
     setActive(item);
-    if (!prefersReducedMotion) requestAction("point_action", { holdMs: 1800 });
+    if (!prefersReducedMotion) play("pointing");
   };
 
   return (

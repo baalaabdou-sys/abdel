@@ -1,13 +1,43 @@
 "use client";
 
-import { motion } from "framer-motion";
-import Link from "next/link";
+import { useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import type { Project } from "@/data/projects";
 import { useAvatarContext } from "./avatar/AvatarContext";
+import Portal from "./avatar/Portal";
+
+/** How long the portal sequence runs before the project actually opens. */
+const PORTAL_MS = 1250;
 
 export default function ProjectCard({ project, index }: { project: Project; index: number }) {
-  const { requestAction } = useAvatarContext();
+  const { play } = useAvatarContext();
+  const router = useRouter();
+  const prefersReducedMotion = useReducedMotion();
+  const [opening, setOpening] = useState(false);
+  const navTimer = useRef<ReturnType<typeof setTimeout>>();
   const flip = index % 3 === 2;
+
+  const navigate = () => {
+    if (!project.href) return;
+    if (project.internal) router.push(project.href);
+    else window.open(project.href, "_blank", "noopener,noreferrer");
+  };
+
+  /**
+   * Opening a project isn't a page swap — he walks up, opens a portal in the
+   * card and steps through it, and the navigation happens under the cover of
+   * that. Reduced-motion and keyboard users go straight there instead.
+   */
+  const handleOpen = (e: React.MouseEvent) => {
+    if (!project.href || prefersReducedMotion || opening) return;
+    e.preventDefault();
+    setOpening(true);
+    play("portal_enter", { flip });
+    clearTimeout(navTimer.current);
+    navTimer.current = setTimeout(navigate, PORTAL_MS);
+  };
+
   const content = (
     <>
       <div className="flex items-start justify-between gap-4">
@@ -27,10 +57,7 @@ export default function ProjectCard({ project, index }: { project: Project; inde
 
       <div className="mt-6 flex flex-wrap gap-2">
         {project.stack.map((s) => (
-          <span
-            key={s}
-            className="rounded-md bg-ink px-2.5 py-1 text-[11px] text-haze"
-          >
+          <span key={s} className="rounded-md bg-ink px-2.5 py-1 text-[11px] text-haze">
             {s}
           </span>
         ))}
@@ -45,34 +72,48 @@ export default function ProjectCard({ project, index }: { project: Project; inde
   );
 
   const wrapperClass =
-    "group flex h-full flex-col rounded-2xl border border-ink-line bg-ink-soft/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-accent/50 hover:shadow-[0_20px_60px_-25px_rgba(139,124,255,0.5)]";
+    "group relative flex h-full flex-col rounded-2xl border border-ink-line bg-ink-soft/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-accent/50 hover:shadow-[0_20px_60px_-25px_rgba(139,124,255,0.5)]";
+
+  const body = (
+    <>
+      {content}
+      {/* The card itself becomes the doorway. */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 z-10">
+        <Portal open={opening} size={300} />
+      </div>
+    </>
+  );
 
   return (
     <motion.div
+      data-glitchable
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
-      onMouseEnter={() => requestAction("point_action", { flip, holdMs: 3000 })}
+      animate={
+        opening
+          ? { scale: 1.04, filter: "brightness(1.25)", transition: { duration: 0.5 } }
+          : { scale: 1, filter: "brightness(1)" }
+      }
+      onMouseEnter={() => play("pointing", { flip })}
+      // Touch equivalent of hover — he reacts to a press without stealing the tap.
+      onTouchStart={() => play("pointing", { flip })}
+      className="relative"
     >
       {project.href ? (
-        project.internal ? (
-          <Link href={project.href} className={wrapperClass} data-cursor-hover>
-            {content}
-          </Link>
-        ) : (
-          <a
-            href={project.href}
-            target="_blank"
-            rel="noreferrer"
-            className={wrapperClass}
-            data-cursor-hover
-          >
-            {content}
-          </a>
-        )
+        <a
+          href={project.href}
+          target={project.internal ? undefined : "_blank"}
+          rel={project.internal ? undefined : "noreferrer"}
+          className={wrapperClass}
+          data-cursor-hover
+          onClick={handleOpen}
+        >
+          {body}
+        </a>
       ) : (
-        <div className={wrapperClass}>{content}</div>
+        <div className={wrapperClass}>{body}</div>
       )}
     </motion.div>
   );

@@ -23,8 +23,8 @@ const fade = {
 
 export default function BuildStudio() {
   const prefersReducedMotion = useReducedMotion();
-  const { requestAction, warmClip } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("build", { basePose: "idle_loop", size: 260 });
+  const { play, warmClip } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("build", { basePose: "idle", size: 260 });
   const sectionRef = useRef<HTMLElement>(null);
 
   const [stage, setStage] = useState<Stage>("kind");
@@ -66,8 +66,9 @@ export default function BuildStudio() {
     setSlug(categorySlug);
     setStage("building");
 
-    const clip = KINDS.find((k) => k.kind === kind)?.clip;
-    if (clip && !prefersReducedMotion) requestAction(clip, { holdMs: HOLD_MS });
+    if (!prefersReducedMotion) {
+      play(kind === "app" ? "building_app" : "building_website", { holdMs: HOLD_MS });
+    }
 
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setStage("reveal"), BUILD_MS);

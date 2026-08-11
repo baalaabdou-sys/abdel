@@ -9,6 +9,7 @@ import Footer from "@/components/portfolio/Footer";
 import CustomCursor from "@/components/portfolio/CustomCursor";
 import { AvatarProvider } from "@/components/portfolio/avatar/AvatarContext";
 import AvatarStage from "@/components/portfolio/avatar/AvatarStage";
+import AvatarDirector from "@/components/portfolio/avatar/AvatarDirector";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <main className="bg-ink">
         <CustomCursor />
         <AvatarStage />
+        <AvatarDirector />
         <Nav />
         <Hero />
         <Projects />

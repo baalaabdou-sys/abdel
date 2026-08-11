@@ -4,11 +4,11 @@ import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import MagneticButton from "./MagneticButton";
 
 export default function Contact() {
-  const { requestAction } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("contact", { basePose: "idle_loop", size: 280 });
+  const { play } = useAvatarContext();
+  const anchorRef = useAvatarAnchor("contact", { basePose: "idle", size: 280 });
 
   const handleClick = () => {
-    requestAction("celebrate", { holdMs: 3400 });
+    play("celebrating");
   };
 
   return (
