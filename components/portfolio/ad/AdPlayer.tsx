@@ -13,6 +13,7 @@ import {
 } from "@/data/adCut";
 import { useCapability } from "../avatar/useCapability";
 import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
+import FilmStage, { useStagePortrait } from "./FilmStage";
 import Act2Player from "./act2/Act2Player";
 import CursorBeat from "./act2/CursorBeat";
 import Interstitial from "./act2/Interstitial";
@@ -36,7 +37,7 @@ export default function AdPlayer() {
   const { open, runId, close, replay } = useAd();
   const prefersReducedMotion = useSafeReducedMotion();
   const cap = useCapability();
-  const portrait = typeof window !== "undefined" && window.innerWidth < 768;
+  const portrait = useStagePortrait();
 
   // act1 → interstitial → the silent cursor beat → act2 → the end card.
   const [state, setState] = useState<
@@ -205,10 +206,8 @@ export default function AdPlayer() {
       )}
 
       {/* ── the picture ─────────────────────────────────── */}
-      <div
-        className="absolute inset-0 overflow-hidden"
-        style={{ visibility: state === "act2" ? "hidden" : "visible" }}
-      >
+      <div style={{ visibility: state === "act2" ? "hidden" : "visible" }}>
+      <FilmStage portrait={portrait}>
         {SCENES.map((s, i) => {
           // Only the current shot and its neighbours exist as loaded media.
           const near = Math.abs(i - scene) <= 1;
@@ -234,6 +233,7 @@ export default function AdPlayer() {
             </motion.div>
           );
         })}
+      </FilmStage>
       </div>
 
       {/* ── the cut itself: a hit of movement on every arrival ── */}

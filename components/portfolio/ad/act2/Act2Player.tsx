@@ -14,6 +14,7 @@ import {
 import { useCapability } from "../../avatar/useCapability";
 import { useSafeReducedMotion } from "../../avatar/useSafeReducedMotion";
 import { ACT2_CLIPS } from "../act2Clips";
+import FilmStage, { useStagePortrait } from "../FilmStage";
 import CutLayer, { PREROLL } from "../MatchCut";
 import { Score } from "../score";
 import LiveScene from "./LiveScene";
@@ -45,7 +46,7 @@ export default function Act2Player({
 
   const [shot, setShot] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [portrait, setPortrait] = useState(false);
+  const portrait = useStagePortrait();
 
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
   const score = useRef<Score | null>(null);
@@ -63,8 +64,6 @@ export default function Act2Player({
   }, [muted]);
 
   useEffect(() => {
-    setPortrait(window.innerWidth < 768);
-
     const s = new Score();
     score.current = s;
     void s.resume();
@@ -125,6 +124,12 @@ export default function Act2Player({
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-black" data-act2-shot={shot}>
+      {/* The glass scene pushes the frame open to the full screen, because
+          what he is knocking on is meant to be the screen you are holding. */}
+      <FilmStage
+        portrait={portrait}
+        expand={ACT2[shot].kind === "live" && ACT2[shot].scene === "glass"}
+      >
       {ACT2.map((s, i) => {
         const phase = phaseOf(i);
         if (phase === "gone") return null;
@@ -154,6 +159,7 @@ export default function Act2Player({
           </CutLayer>
         );
       })}
+      </FilmStage>
 
       {/* grade, matched to Act 1 so the two acts are one film */}
       <div className="pointer-events-none absolute inset-0 z-[70] bg-[radial-gradient(circle_at_50%_50%,transparent_45%,rgba(0,0,0,0.72)_100%)]" />
