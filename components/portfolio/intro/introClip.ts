@@ -31,22 +31,33 @@ export type IntroClip = {
 };
 
 /**
- * PLACEHOLDER — this is not the arrow-and-portal take.
+ * The entrance shot: he notices the arrow cursor, snatches it, and hauls the
+ * page open with it.
  *
- * That clip is not in the generation history, so this is wired to the closest
- * thing that exists (he draws a circle in the air and steps through it) purely
- * so the entrance runs end to end today. Swapping in the real file is this
- * object and nothing else: for a finished scene set mode "scene" and a src,
- * and set portalStartFromEnd to the moment the portal begins to bloom.
+ * Read from the file itself: 5.042s, 1280x720, H.264, no audio track — so the
+ * sound-blocked path never fires for this asset, though it stays in place for
+ * a future one that has audio.
+ *
+ * `portalStartFromEnd` is the one number that could not be read here: this
+ * environment has no H.264 decoder, so the frame where the tear begins to
+ * bloom could not be observed. 1.3s is taken from the shot's own structure —
+ * notice, snatch, haul, then the gap opening through the last stretch — and it
+ * is a single number to nudge if the hand-over feels early or late.
+ *
+ * The gap opens on the right of frame, which is why the portal is centred
+ * there rather than in the middle: the hole grows from where the tear is.
  */
 export const INTRO: IntroClip = {
-  mode: "chroma",
-  clip: "portal_enter",
-  portalStartFromEnd: 1.5,
+  mode: "scene",
+  src: "/clips/intro-arrow-portal.mp4",
+  portalStartFromEnd: 1.3,
   portalStartAt: null,
-  focal: { x: 0.5, y: 0.46 },
-  transitionMs: 1600,
+  focal: { x: 0.68, y: 0.5 },
+  transitionMs: 1500,
 };
+
+/** What the file says, so code never has to guess while it loads. */
+export const INTRO_DURATION_S = 5.042;
 
 /** Once per browsing session, not once per navigation. */
 export const SEEN_KEY = "intro-seen";

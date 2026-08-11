@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import ChromaClip from "../avatar/ChromaClip";
 import { clips } from "../avatar/clips";
 import { useCapability } from "../avatar/useCapability";
-import { INTRO, SEEN_KEY } from "./introClip";
+import { INTRO, INTRO_DURATION_S, SEEN_KEY } from "./introClip";
 
 /**
  * The way in.
@@ -52,6 +52,7 @@ export default function Intro() {
     setPhase("playing");
   }, []);
 
+
   const finish = useCallback(() => {
     sessionStorage.setItem(SEEN_KEY, "1");
     const root = document.documentElement;
@@ -90,6 +91,20 @@ export default function Intro() {
     openRaf.current = requestAnimationFrame(step);
   }, [finish]);
 
+/* ── nobody gets stuck here ────────────────────────────────
+     Held at the top level rather than inside a phase, because the phases
+     are exactly what a failure knocks off course. Whatever happens — no
+     codec, a stalled fetch, an unplayable file, a paused tab — the portal
+     opens and the site is handed over. */
+  useEffect(() => {
+    if (phase === "idle" || phase === "done") return;
+    const bail = setTimeout(
+      () => openPortal(),
+      (INTRO.portalStartAt ?? INTRO_DURATION_S) * 1000 + 3000
+    );
+    return () => clearTimeout(bail);
+  }, [phase, openPortal]);
+
   /* ── watch the clip for its own last beat ──────────────── */
   useEffect(() => {
     if (phase !== "playing") return;
@@ -114,11 +129,20 @@ export default function Intro() {
     };
     watchRaf.current = requestAnimationFrame(watch);
 
-    // Belt and braces: if the clip ends without us noticing, go anyway.
+    // Belt and braces. Any of these means the shot is over or was never
+    // going to play — an old browser without the codec, a failed fetch, a
+    // stalled decode — and none of them may leave someone on a black screen.
     v.addEventListener("ended", openPortal);
+    v.addEventListener("error", openPortal);
+    const failsafe = setTimeout(
+      openPortal,
+      (INTRO.portalStartAt ?? INTRO_DURATION_S) * 1000 + 2500
+    );
     return () => {
+      clearTimeout(failsafe);
       v.removeEventListener("loadedmetadata", arm);
       v.removeEventListener("ended", openPortal);
+      v.removeEventListener("error", openPortal);
       cancelAnimationFrame(watchRaf.current);
     };
   }, [phase, openPortal]);
@@ -131,23 +155,39 @@ export default function Intro() {
     v.muted = false;
     v.play()
       .then(() => setReady(true))
-      .catch(() => {
-        // Sound was refused. Offer the gesture rather than starting silently
-        // and pretending this is what was intended.
-        setPhase("armed");
+      .catch((err: DOMException) => {
+        if (err?.name === "NotAllowedError") {
+          // Sound was refused. Offer the gesture rather than starting silently
+          // and pretending this is what was intended.
+          setPhase("armed");
+          return;
+        }
+        // Anything else — no codec, bad fetch, a decode that will never
+        // start — means this shot is not going to play at all. Do not offer a
+        // button that cannot work: go straight through the portal.
+        openPortal();
       });
-  }, [phase]);
+  }, [phase, openPortal]);
 
   const start = () => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = false;
-    void v.play().catch(() => {
-      v.muted = true;
-      void v.play();
-    });
-    setPhase("playing");
-    setReady(true);
+    v.play()
+      .then(() => {
+        setPhase("playing");
+        setReady(true);
+      })
+      .catch(() => {
+        v.muted = true;
+        // Second refusal means it is not the sound that is the problem.
+        v.play()
+          .then(() => {
+            setPhase("playing");
+            setReady(true);
+          })
+          .catch(openPortal);
+      });
   };
 
   if (phase === "done") return null;
