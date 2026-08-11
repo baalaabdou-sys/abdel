@@ -5,7 +5,7 @@ import MagneticButton from "./MagneticButton";
 
 export default function Contact() {
   const { play } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("contact", { basePose: "idle", size: 280 });
+  const anchorRef = useAvatarAnchor("contact", { basePose: "idle", size: 440 });
 
   const handleClick = () => {
     play("celebrating");

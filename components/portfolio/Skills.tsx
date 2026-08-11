@@ -21,29 +21,27 @@ export default function Skills() {
   const prefersReducedMotion = useReducedMotion();
   const [active, setActive] = useState<(typeof skills)[number] | null>(null);
   const { play } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("skills", { basePose: "idle", size: 220 });
+  const anchorRef = useAvatarAnchor("skills", { basePose: "idle", size: 340 });
   const sectionRef = useRef<HTMLElement>(null);
   const [cloned, setCloned] = useState(false);
-  const clonedOnce = useRef(false);
-
+  
   const handleActivate = (s: (typeof skills)[number] | null) => {
     setActive(s);
     if (s) play("tapping", { flip: s.angle > 180 });
   };
 
   /**
-   * The clone beat. Fires once, a beat after the section settles in view, so
-   * it lands as a surprise mid-scroll rather than as a section intro.
+   * The clone beat. Fires every time the section comes into view — rare
+   * enough to surprise, frequent enough that visitors actually see it.
    */
   useEffect(() => {
     const el = sectionRef.current;
     if (!el || prefersReducedMotion) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (!entries.some((e) => e.isIntersecting) || clonedOnce.current) return;
-        clonedOnce.current = true;
+        if (!entries.some((e) => e.isIntersecting)) return;
         const inTimer = setTimeout(() => setCloned(true), 1400);
-        const outTimer = setTimeout(() => setCloned(false), 7200);
+        const outTimer = setTimeout(() => setCloned(false), 9000);
         return () => {
           clearTimeout(inTimer);
           clearTimeout(outTimer);

@@ -19,34 +19,34 @@ const VARIANTS: Record<Path, { keyframes: Record<string, number[]>; times: numbe
     keyframes: {
       x: [30, 10, -10],
       y: [10, -10, -30],
-      scale: [0.3, 1.5, 3.4],
+      scale: [0.25, 2.2, 7.5],
       opacity: [0, 1, 0],
       rotate: [-6, 2, 4],
-      blur: [0, 2, 16],
+      blur: [0, 3, 34],
     },
     times: [0, 0.45, 1],
     duration: 1.3,
   },
   leftSpin: {
     keyframes: {
-      x: [40, -40, -220],
+      x: [40, -30, -130],
       y: [20, -10, -60],
-      scale: [0.3, 1.1, 1.6],
+      scale: [0.25, 1.8, 3.2],
       opacity: [0, 1, 0],
       rotate: [0, 200, 380],
-      blur: [0, 1, 10],
+      blur: [0, 2, 22],
     },
     times: [0, 0.5, 1],
     duration: 1.2,
   },
   rightSpin: {
     keyframes: {
-      x: [-30, 30, 220],
+      x: [-30, 25, 125],
       y: [30, 0, -30],
-      scale: [0.3, 1.1, 1.6],
+      scale: [0.25, 1.8, 3.2],
       opacity: [0, 1, 0],
       rotate: [0, -180, -360],
-      blur: [0, 1, 10],
+      blur: [0, 2, 22],
     },
     times: [0, 0.5, 1],
     duration: 1.2,
@@ -55,10 +55,10 @@ const VARIANTS: Record<Path, { keyframes: Record<string, number[]>; times: numbe
     keyframes: {
       x: [20, 0, -10],
       y: [30, 0, -20],
-      scale: [0.3, 2.4, 4.6],
+      scale: [0.25, 3.4, 9],
       opacity: [0, 0.9, 0],
       rotate: [-4, 0, 2],
-      blur: [0, 1, 6],
+      blur: [0, 2, 20],
     },
     times: [0, 0.55, 1],
     duration: 1.4,
@@ -67,10 +67,10 @@ const VARIANTS: Record<Path, { keyframes: Record<string, number[]>; times: numbe
     keyframes: {
       x: [20, 0, -20],
       y: [10, -10, -30],
-      scale: [0.3, 1.4, 2.6],
+      scale: [0.25, 2, 5.5],
       opacity: [0, 1, 0],
       rotate: [-6, 3, 6],
-      blur: [0, 2, 12],
+      blur: [0, 3, 26],
     },
     times: [0, 0.5, 1],
     duration: 1.3,
@@ -123,7 +123,7 @@ function TechCard({ label, path, delay, active }: { label: string; path: Path; d
       }}
       transition={{ duration: v.duration, delay, times: v.times, ease: "easeOut" }}
     >
-      <div className="relative -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-accent-soft/40 bg-gradient-to-br from-accent/25 via-ink-soft/60 to-accent-soft/15 px-5 py-3 font-mono text-sm font-semibold text-paper shadow-[0_0_40px_rgba(139,124,255,0.35)] backdrop-blur-md">
+      <div className="relative -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-accent-soft/40 bg-gradient-to-br from-accent/25 via-ink-soft/60 to-accent-soft/15 px-6 py-3.5 font-mono text-base font-semibold sm:text-lg text-paper shadow-[0_0_40px_rgba(139,124,255,0.35)] backdrop-blur-md">
         <span className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-tr from-white/15 via-transparent to-transparent" />
         {label}
       </div>

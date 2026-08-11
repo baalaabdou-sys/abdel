@@ -24,7 +24,7 @@ const fade = {
 export default function BuildStudio() {
   const prefersReducedMotion = useReducedMotion();
   const { play, warmClip } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("build", { basePose: "idle", size: 260 });
+  const anchorRef = useAvatarAnchor("build", { basePose: "idle", size: 420 });
   const sectionRef = useRef<HTMLElement>(null);
 
   const [stage, setStage] = useState<Stage>("kind");

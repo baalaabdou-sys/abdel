@@ -5,16 +5,17 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { Project } from "@/data/projects";
 import { useAvatarContext } from "./avatar/AvatarContext";
-import Portal from "./avatar/Portal";
+import PortalTakeover, { type TakeoverOrigin } from "./avatar/PortalTakeover";
 
-/** How long the portal sequence runs before the project actually opens. */
-const PORTAL_MS = 1250;
+/** How long the takeover runs before the project actually opens. */
+const PORTAL_MS = 1150;
 
 export default function ProjectCard({ project, index }: { project: Project; index: number }) {
   const { play } = useAvatarContext();
   const router = useRouter();
   const prefersReducedMotion = useReducedMotion();
-  const [opening, setOpening] = useState(false);
+  const [origin, setOrigin] = useState<TakeoverOrigin | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const navTimer = useRef<ReturnType<typeof setTimeout>>();
   const flip = index % 3 === 2;
 
@@ -22,17 +23,21 @@ export default function ProjectCard({ project, index }: { project: Project; inde
     if (!project.href) return;
     if (project.internal) router.push(project.href);
     else window.open(project.href, "_blank", "noopener,noreferrer");
+    // Clear a beat later so the overlay covers the paint of the new route.
+    setTimeout(() => setOrigin(null), 600);
   };
 
   /**
-   * Opening a project isn't a page swap — he walks up, opens a portal in the
-   * card and steps through it, and the navigation happens under the cover of
-   * that. Reduced-motion and keyboard users go straight there instead.
+   * Opening a project is a full-screen event: the card grows from where it
+   * sits to fill the viewport while he walks into the portal. Reduced-motion
+   * and keyboard users navigate straight there.
    */
   const handleOpen = (e: React.MouseEvent) => {
-    if (!project.href || prefersReducedMotion || opening) return;
+    if (!project.href || prefersReducedMotion || origin) return;
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
     e.preventDefault();
-    setOpening(true);
+    setOrigin({ x: rect.left, y: rect.top, w: rect.width, h: rect.height });
     play("portal_enter", { flip });
     clearTimeout(navTimer.current);
     navTimer.current = setTimeout(navigate, PORTAL_MS);
@@ -74,47 +79,37 @@ export default function ProjectCard({ project, index }: { project: Project; inde
   const wrapperClass =
     "group relative flex h-full flex-col rounded-2xl border border-ink-line bg-ink-soft/60 p-7 transition duration-300 hover:-translate-y-1 hover:border-accent/50 hover:shadow-[0_20px_60px_-25px_rgba(139,124,255,0.5)]";
 
-  const body = (
-    <>
-      {content}
-      {/* The card itself becomes the doorway. */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 z-10">
-        <Portal open={opening} size={300} />
-      </div>
-    </>
-  );
-
   return (
-    <motion.div
-      data-glitchable
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
-      animate={
-        opening
-          ? { scale: 1.04, filter: "brightness(1.25)", transition: { duration: 0.5 } }
-          : { scale: 1, filter: "brightness(1)" }
-      }
-      onMouseEnter={() => play("pointing", { flip })}
-      // Touch equivalent of hover — he reacts to a press without stealing the tap.
-      onTouchStart={() => play("pointing", { flip })}
-      className="relative"
-    >
-      {project.href ? (
-        <a
-          href={project.href}
-          target={project.internal ? undefined : "_blank"}
-          rel={project.internal ? undefined : "noreferrer"}
-          className={wrapperClass}
-          data-cursor-hover
-          onClick={handleOpen}
-        >
-          {body}
-        </a>
-      ) : (
-        <div className={wrapperClass}>{body}</div>
-      )}
-    </motion.div>
+    <>
+      <motion.div
+        ref={cardRef}
+        data-glitchable
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.5, delay: (index % 3) * 0.08 }}
+        animate={origin ? { opacity: 0, transition: { duration: 0.25 } } : { opacity: 1 }}
+        onMouseEnter={() => play("pointing", { flip })}
+        // Touch equivalent of hover — reacts to a press without stealing the tap.
+        onTouchStart={() => play("pointing", { flip })}
+      >
+        {project.href ? (
+          <a
+            href={project.href}
+            target={project.internal ? undefined : "_blank"}
+            rel={project.internal ? undefined : "noreferrer"}
+            className={wrapperClass}
+            data-cursor-hover
+            onClick={handleOpen}
+          >
+            {content}
+          </a>
+        ) : (
+          <div className={wrapperClass}>{content}</div>
+        )}
+      </motion.div>
+
+      <PortalTakeover origin={origin} label={project.title} />
+    </>
   );
 }

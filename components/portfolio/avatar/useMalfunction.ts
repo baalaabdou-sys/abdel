@@ -17,8 +17,8 @@ export function useMalfunction(enabled: boolean) {
   useEffect(() => {
     if (!enabled || fired.current) return;
 
-    // Somewhere between 50s and 90s of being on the page.
-    const delay = 50000 + Math.random() * 40000;
+    // Somewhere between 22s and 38s of being on the page.
+    const delay = 22000 + Math.random() * 16000;
     const timer = setTimeout(() => {
       if (fired.current) return;
       fired.current = true;

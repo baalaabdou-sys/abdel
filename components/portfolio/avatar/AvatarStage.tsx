@@ -10,7 +10,7 @@ import { useCapability } from "./useCapability";
 const clipKeys = Object.keys(clips) as ClipKey[];
 
 /** How close the pointer must get before he notices it (px). */
-const NOTICE_RADIUS = 220;
+const NOTICE_RADIUS = 320;
 /** How close before the rare catch can fire (px). */
 const CATCH_RADIUS = 90;
 
@@ -157,7 +157,7 @@ export default function AvatarStage() {
 
       const now = Date.now();
       // Rare: he actually reaches out and grabs the cursor.
-      if (dist < Math.min(CATCH_RADIUS, cw * 0.35) && now - lastCatch.current > 45000) {
+      if (dist < Math.min(CATCH_RADIUS, cw * 0.35) && now - lastCatch.current > 11000) {
         lastCatch.current = now;
         lastNotice.current = now;
         setCaughtCursor(true);
@@ -166,7 +166,7 @@ export default function AvatarStage() {
         return;
       }
       // Common: he glances over when you come close.
-      if (dist < NOTICE_RADIUS && now - lastNotice.current > 9000) {
+      if (dist < NOTICE_RADIUS && now - lastNotice.current > 4000) {
         lastNotice.current = now;
         play("noticing", { flip: dx < 0 });
       }

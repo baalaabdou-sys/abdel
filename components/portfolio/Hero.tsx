@@ -24,7 +24,7 @@ export default function Hero() {
   // Structural conditionals below must use the hydration-safe variant.
   const safeReduced = useSafeReducedMotion();
   const { play } = useAvatarContext();
-  const anchorRef = useAvatarAnchor("hero", { basePose: "idle", size: 420 });
+  const anchorRef = useAvatarAnchor("hero", { basePose: "idle", size: 640 });
   const [entranceActive, setEntranceActive] = useState(false);
   const [miniWalk, setMiniWalk] = useState(false);
   const cap = useCapability();
@@ -141,7 +141,7 @@ export default function Hero() {
               </motion.div>
             ))}
 
-          <div ref={anchorRef} className="h-[26rem] w-[22rem] sm:h-[30rem] sm:w-[26rem]" />
+          <div ref={anchorRef} className="h-[30rem] w-[24rem] sm:h-[38rem] sm:w-[32rem]" />
         </div>
       </div>
 
