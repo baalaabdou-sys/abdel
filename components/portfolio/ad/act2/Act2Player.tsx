@@ -6,6 +6,8 @@ import {
   ACT2,
   ACT2_CAPTIONS,
   ACT2_END,
+  FREEZE_IN,
+  FREEZE_OUT,
   buildAct2Cues,
   ms2,
 } from "@/data/act2";
@@ -52,7 +54,9 @@ export default function Act2Player({
 
   const total = ms2(ACT2_END);
   // The one moment the film stops dead, and the only place the music does too.
-  const frozen = elapsed >= ms2(98) && elapsed < ms2(106);
+  // Taken from the same constants the score's silence is cut from, so the two
+  // cannot drift apart.
+  const frozen = elapsed >= ms2(FREEZE_IN) && elapsed < ms2(FREEZE_OUT);
 
   useEffect(() => {
     score.current?.setMuted(muted);
