@@ -145,3 +145,28 @@ body {
 .ad-open {
   overflow-x: clip;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   The entrance. The portfolio is mounted underneath the intro from
+   the first paint — the intro is a layer over a live site, never a
+   screen in front of a missing one.
+   ───────────────────────────────────────────────────────────── */
+.intro-open {
+  overflow: hidden;
+}
+
+/* While the portal opens, the site behind is flying toward the camera.
+   Both values are written from the transition's own clock. */
+.intro-arriving main {
+  transform: scale(var(--intro-scale, 1));
+  filter: blur(var(--intro-blur, 0px));
+  transform-origin: 50% 46%;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-arriving main {
+    transform: none;
+    filter: none;
+  }
+}

@@ -17,6 +17,7 @@ import { BrainProvider } from "@/components/portfolio/brain/BrainContext";
 import BrainOverlay from "@/components/portfolio/brain/BrainOverlay";
 import { AdProvider } from "@/components/portfolio/ad/AdContext";
 import AdPlayer from "@/components/portfolio/ad/AdPlayer";
+import Intro from "@/components/portfolio/intro/Intro";
 
 export default function Home() {
   return (
@@ -32,6 +33,7 @@ export default function Home() {
         <RebuildStage />
         <BrainOverlay />
         <AdPlayer />
+        <Intro />
         <Nav />
         <Hero />
         <Projects />
