@@ -1,15 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
 
 /**
  * One piece of the interface being built, thrown into place.
  *
- * These don't fade in — each part comes in from off-screen or straight past
- * the camera, oversized and motion-blurred, then overshoots and settles. The
- * assembly is the reveal, so it has to read as construction rather than a
- * transition.
+ * These don't fade in — each piece is hurled in from beyond the edge of the
+ * screen, or comes straight past the camera, then overshoots and settles. The
+ * assembly is the reveal, so it has to read as construction.
+ *
+ * Offsets are real pixels derived from the viewport: framer-motion does not
+ * parse vw/vh units for x/y, and passing them silently produces no movement
+ * at all.
  */
 export default function Part({
   i,
@@ -23,17 +27,24 @@ export default function Part({
   from?: "up" | "down" | "left" | "right" | "front";
 }) {
   const prefersReducedMotion = useSafeReducedMotion();
+  const [vp, setVp] = useState({ w: 1200, h: 800 });
 
-  const entries: Record<string, { x?: string; y?: string; scale: number; rotate: number }> = {
-    // Hurled in from beyond the edge of the screen.
-    left: { x: "-85vw", scale: 1.5, rotate: -22 },
-    right: { x: "85vw", scale: 1.5, rotate: 22 },
-    up: { y: "55vh", scale: 1.35, rotate: -8 },
-    down: { y: "-55vh", scale: 1.35, rotate: 8 },
+  useEffect(() => {
+    const read = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, []);
+
+  const entries: Record<string, { x: number; y: number; scale: number; rotate: number }> = {
+    left: { x: -vp.w * 0.75, y: 0, scale: 1.45, rotate: -20 },
+    right: { x: vp.w * 0.75, y: 0, scale: 1.45, rotate: 20 },
+    up: { x: 0, y: vp.h * 0.5, scale: 1.3, rotate: -7 },
+    down: { x: 0, y: -vp.h * 0.5, scale: 1.3, rotate: 7 },
     // Comes at you and lands — passes the camera on the way in.
-    front: { scale: 4.6, rotate: 3 },
+    front: { x: 0, y: 0, scale: 4.6, rotate: 3 },
   };
-  const from_ = entries[from];
+  const f = entries[from];
 
   if (prefersReducedMotion) {
     return <div className={className}>{children}</div>;
@@ -42,25 +53,18 @@ export default function Part({
   return (
     <motion.div
       className={className}
-      initial={{
-        opacity: 0,
-        x: from_.x ?? 0,
-        y: from_.y ?? 0,
-        scale: from_.scale,
-        rotate: from_.rotate,
-        filter: "blur(14px)",
-      }}
+      initial={{ opacity: 0, x: f.x, y: f.y, scale: f.scale, rotate: f.rotate, filter: "blur(14px)" }}
       animate={{
         opacity: 1,
         x: 0,
         y: 0,
         // Slight overshoot on the way to rest, so it lands with weight.
-        scale: [from_.scale, 1.06, 1],
-        rotate: [from_.rotate, -from_.rotate * 0.12, 0],
+        scale: [f.scale, 1.06, 1],
+        rotate: [f.rotate, -f.rotate * 0.12, 0],
         filter: ["blur(14px)", "blur(2px)", "blur(0px)"],
       }}
       transition={{
-        duration: 0.72,
+        duration: 0.78,
         delay: 0.15 + i * 0.14,
         times: [0, 0.72, 1],
         ease: [0.16, 1, 0.3, 1],
