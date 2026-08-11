@@ -167,12 +167,14 @@ export default function Act2Player({
                 ref={(el) => {
                   videos.current[i] = el;
                 }}
-                src={ACT2_CLIPS[s.clip].url}
                 muted
                 playsInline
                 preload="auto"
                 className="h-full w-full object-cover"
-              />
+              >
+                <source src={ACT2_CLIPS[s.clip].webm} type="video/webm" />
+                <source src={ACT2_CLIPS[s.clip].mp4} type="video/mp4" />
+              </video>
             ) : (
               <LiveScene
                 scene={s.scene}

@@ -18,6 +18,8 @@ export type IntroClip = {
   mode: "scene" | "chroma";
   /** Used when mode is "scene". */
   src?: string;
+  /** A smaller VP9 encoding, preferred where it is supported. */
+  srcWebm?: string;
   /** Used when mode is "chroma". */
   clip?: ClipKey;
   /** Seconds before the end at which the portal starts to open. */
@@ -42,21 +44,22 @@ export type IntroClip = {
  * two copies: whoever watches both sees the entrance again as the film starts,
  * which reads as a callback rather than a repeat.
  *
- * `portalStartFromEnd` is the one number that could not be read here: this
- * environment has no H.264 decoder, so the frame where the tear begins to
- * bloom could not be observed. 1.3s is taken from the shot's own structure —
- * notice, snatch, haul, then the gap opening through the last stretch — and it
- * is a single number to nudge if the hand-over feels early or late.
+ * Timings taken off the frames themselves: he grips the arrow at 2.6s, the
+ * tear opens at 2.85s, the city is visible through it by 3.35s, and he is
+ * pulled out of frame by 4.6s leaving the city filling the screen.
  *
- * The gap opens on the right of frame, which is why the portal is centred
- * there rather than in the middle: the hole grows from where the tear is.
+ * So the hand-over starts at 3.74s (1.3s from the end): the tear has become a
+ * place rather than an event, and our portal grows out of the city's own light
+ * instead of competing with the rip. The focal point is the city's bright
+ * core, right of centre — the hole opens where the picture is already opening.
  */
 export const INTRO: IntroClip = {
   mode: "scene",
   src: "/clips/a2_cursor_pull.mp4",
+  srcWebm: "/clips/a2_cursor_pull.webm",
   portalStartFromEnd: 1.3,
   portalStartAt: null,
-  focal: { x: 0.68, y: 0.5 },
+  focal: { x: 0.6, y: 0.5 },
   transitionMs: 1500,
 };
 

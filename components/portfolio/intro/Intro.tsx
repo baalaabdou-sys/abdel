@@ -221,12 +221,14 @@ export default function Intro() {
         {INTRO.mode === "scene" ? (
           <video
             ref={videoRef}
-            src={INTRO.src}
             playsInline
             preload="auto"
             className="h-full w-full object-cover"
             style={{ objectPosition: `${x * 100}% ${y * 100}%` }}
-          />
+          >
+            {INTRO.srcWebm && <source src={INTRO.srcWebm} type="video/webm" />}
+            <source src={INTRO.src} type="video/mp4" />
+          </video>
         ) : (
           <>
             {/* the environment the keyed character stands in */}
