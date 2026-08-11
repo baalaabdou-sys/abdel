@@ -6,6 +6,7 @@ import { useAvatarContext } from "./AvatarContext";
 import { clips, posterFallback, type ClipKey } from "./clips";
 import { clipFor, STATES, type CharacterState } from "./states";
 import { useCapability } from "./useCapability";
+import Portal from "./Portal";
 
 const clipKeys = Object.keys(clips) as ClipKey[];
 
@@ -30,6 +31,7 @@ export default function AvatarStage() {
   const [action, setAction] = useState<{ state: CharacterState; flip?: boolean } | null>(null);
   const [warmed, setWarmed] = useState<ClipKey[]>([]);
   const [caughtCursor, setCaughtCursor] = useState(false);
+  const [warp, setWarp] = useState<null | "out" | "in">(null);
 
   const ambientRef = useRef(ambient);
   const flipRef = useRef(baseFlip);
@@ -39,6 +41,15 @@ export default function AvatarStage() {
   const centre = useRef({ x: 0, y: 0, w: 320 });
   const lastNotice = useRef(0);
   const lastCatch = useRef(0);
+  const warpRef = useRef(false);
+  const lastWarp = useRef(0);
+  const pendingAnchor = useRef<{
+    id: string | null;
+    cx: number;
+    cy: number;
+    size: number;
+    cfg: { basePose: CharacterState; size: number; flip?: boolean };
+  } | null>(null);
   ambientRef.current = ambient;
   flipRef.current = baseFlip;
   visibleRef.current = visible;
@@ -64,6 +75,40 @@ export default function AvatarStage() {
       setWarmed((p) => (p.includes(clip) ? p : [...p, clip]));
     });
   }, [warmEmitter]);
+
+  /* ── the journey: portal out here, portal in there ────────────── */
+  useEffect(() => {
+    if (warp !== "out") return;
+    // Let the ring bloom and swallow him, then cut him to the next section
+    // instantly (no travel) and open a second portal there.
+    const t = setTimeout(() => {
+      const next = pendingAnchor.current;
+      if (next) {
+        activeAnchorId.current = next.id;
+        centre.current = { x: next.cx, y: next.cy, w: next.size };
+        // jump() moves the spring without animating, so he genuinely
+        // reappears rather than sliding between the two portals.
+        x.jump(next.cx);
+        y.jump(next.cy);
+        w.jump(next.size);
+        setAmbient(next.cfg.basePose);
+        setBaseFlip(Boolean(next.cfg.flip));
+      }
+      setWarp("in");
+      play("portal_exit");
+    }, 620);
+    return () => clearTimeout(t);
+  }, [warp, play, x, y, w]);
+
+  useEffect(() => {
+    if (warp !== "in") return;
+    const t = setTimeout(() => {
+      setWarp(null);
+      warpRef.current = false;
+      pendingAnchor.current = null;
+    }, 900);
+    return () => clearTimeout(t);
+  }, [warp]);
 
   /* ── anchor tracking ──────────────────────────────────────────── */
   useEffect(() => {
@@ -112,7 +157,6 @@ export default function AvatarStage() {
       }
 
       if (bestEl && bestCfg) {
-        activeAnchorId.current = bestId;
         const r = (bestEl as HTMLElement).getBoundingClientRect();
         const cfg = bestCfg as { basePose: CharacterState; size: number; flip?: boolean };
         const vw = window.innerWidth;
@@ -120,6 +164,32 @@ export default function AvatarStage() {
         const cx = r.left + r.width / 2;
         const cy = r.top + r.height / 2;
         const size = cfg.size * scale;
+
+        // Moving to a different section is a journey, not a slide: he opens a
+        // portal, steps through, and comes out of another one where he's
+        // needed next. While that plays we freeze position tracking so the
+        // spring can't drag him across the screen underneath the effect.
+        const changed = bestId !== activeAnchorId.current;
+        const far = Math.hypot(cx - centre.current.x, cy - centre.current.y) > 260;
+        if (
+          changed &&
+          activeAnchorId.current !== null &&
+          far &&
+          !warpRef.current &&
+          !cap.reducedMotion &&
+          Date.now() - lastWarp.current > 2600
+        ) {
+          warpRef.current = true;
+          lastWarp.current = Date.now();
+          pendingAnchor.current = { id: bestId, cx, cy, size, cfg };
+          setWarp("out");
+          play("portal_enter");
+          return;
+        }
+
+        if (warpRef.current) return;
+
+        activeAnchorId.current = bestId;
         centre.current = { x: cx, y: cy, w: size };
         x.set(cx);
         y.set(cy);
@@ -127,14 +197,14 @@ export default function AvatarStage() {
         if (ambientRef.current !== cfg.basePose) setAmbient(cfg.basePose);
         if (flipRef.current !== Boolean(cfg.flip)) setBaseFlip(Boolean(cfg.flip));
         if (!visibleRef.current) setVisible(true);
-      } else {
+      } else if (!warpRef.current) {
         activeAnchorId.current = null;
         if (visibleRef.current) setVisible(false);
       }
     };
     let raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [anchors, x, y, w, cap.isTouch]);
+  }, [anchors, x, y, w, cap.isTouch, cap.reducedMotion, play]);
 
   /* ── fourth wall: he watches the pointer / the last touch ─────── */
   useEffect(() => {
@@ -318,9 +388,23 @@ export default function AvatarStage() {
         transition={{ duration: 0.3 }}
       >
         <div className="absolute inset-0 -z-10 scale-90 rounded-full bg-accent/20 blur-[60px]" />
+
+        {/* His signature ring, opening at both ends of the journey. */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2">
+          <Portal open={warp !== null} size={340} />
+        </div>
+
         <motion.div
           className="relative w-full"
           style={{ paddingTop: "133%", rotateX: rotX, rotateY: rotY, transformStyle: "preserve-3d" }}
+          animate={
+            warp === "out"
+              ? { scale: 0.15, opacity: 0, filter: "blur(12px)" }
+              : warp === "in"
+                ? { scale: [0.25, 1], opacity: [0, 1], filter: ["blur(10px)", "blur(0px)"] }
+                : { scale: 1, opacity: 1, filter: "blur(0px)" }
+          }
+          transition={{ duration: warp === "out" ? 0.55 : 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           {clipKeys.map((key) => (
             <video

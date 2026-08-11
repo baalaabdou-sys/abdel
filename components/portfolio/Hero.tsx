@@ -9,8 +9,25 @@ import ChromaClip from "./avatar/ChromaClip";
 import { useCapability } from "./avatar/useCapability";
 import { useMalfunction } from "./avatar/useMalfunction";
 import { useSafeReducedMotion } from "./avatar/useSafeReducedMotion";
+import { usePhysicsBody } from "./physics/PhysicsContext";
 
 const ENTRANCE_HOLD_MS = 6800;
+
+/** A hero chip that can be knocked out of the air by a thrown technology. */
+function Floater({ label, top, left, delay }: { label: string; top: string; left: string; delay: number }) {
+  const body = usePhysicsBody();
+  return (
+    <motion.div
+      ref={body.ref as React.Ref<HTMLDivElement>}
+      className="absolute hidden select-none items-center justify-center rounded-xl border border-ink-line bg-ink-soft/70 px-3 py-2 font-mono text-xs text-accent-soft shadow-soft backdrop-blur sm:flex"
+      style={{ top, left, ...body.style }}
+      animate={{ y: [0, -14, 0] }}
+      transition={{ duration: 5, repeat: Infinity, delay, ease: "easeInOut" }}
+    >
+      {label}
+    </motion.div>
+  );
+}
 
 const floaters = [
   { label: "</>", top: "14%", left: "6%", delay: 0 },
@@ -128,18 +145,7 @@ export default function Hero() {
         </div>
 
         <div className="relative z-0 flex justify-center lg:justify-end">
-          {!safeReduced &&
-            floaters.map((f) => (
-              <motion.div
-                key={f.label}
-                className="absolute hidden select-none items-center justify-center rounded-xl border border-ink-line bg-ink-soft/70 px-3 py-2 font-mono text-xs text-accent-soft shadow-soft backdrop-blur sm:flex"
-                style={{ top: f.top, left: f.left }}
-                animate={{ y: [0, -14, 0] }}
-                transition={{ duration: 5, repeat: Infinity, delay: f.delay, ease: "easeInOut" }}
-              >
-                {f.label}
-              </motion.div>
-            ))}
+          {!safeReduced && floaters.map((f) => <Floater key={f.label} {...f} />)}
 
           <div ref={anchorRef} className="h-[30rem] w-[24rem] sm:h-[38rem] sm:w-[32rem]" />
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { usePhysics } from "./physics/PhysicsContext";
 
 type Path = "center" | "leftSpin" | "fill" | "rightSpin" | "centerMouse";
 
@@ -80,9 +81,21 @@ const VARIANTS: Record<Path, { keyframes: Record<string, number[]>; times: numbe
 function TechCard({ label, path, delay, active }: { label: string; path: Path; delay: number; active: boolean }) {
   const v = VARIANTS[path];
   const cardRef = useRef<HTMLDivElement>(null);
+  const physics = usePhysics();
   const nudgeX = useSpring(useMotionValue(0), { stiffness: 220, damping: 20 });
   const nudgeY = useSpring(useMotionValue(0), { stiffness: 220, damping: 20 });
   const mouseReactive = path === "centerMouse";
+
+  // Mid-flight, the card actually hits whatever it passes.
+  useEffect(() => {
+    if (!active || !physics) return;
+    const at = (delay + v.duration * 0.5) * 1000;
+    const t = setTimeout(() => {
+      const r = cardRef.current?.getBoundingClientRect();
+      if (r?.width) physics.impulse(r.left + r.width / 2, r.top + r.height / 2, 74);
+    }, at);
+    return () => clearTimeout(t);
+  }, [active, physics, delay, v.duration]);
 
   useEffect(() => {
     if (!active || !mouseReactive) return;

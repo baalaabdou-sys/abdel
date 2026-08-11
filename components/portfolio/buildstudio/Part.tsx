@@ -4,8 +4,12 @@ import { motion } from "framer-motion";
 import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
 
 /**
- * One piece of a mockup flying into place. Pieces animate in sequence so the
- * interface visibly assembles itself rather than just fading in as a unit.
+ * One piece of the interface being built, thrown into place.
+ *
+ * These don't fade in — each part comes in from off-screen or straight past
+ * the camera, oversized and motion-blurred, then overshoots and settles. The
+ * assembly is the reveal, so it has to read as construction rather than a
+ * transition.
  */
 export default function Part({
   i,
@@ -18,17 +22,18 @@ export default function Part({
   className?: string;
   from?: "up" | "down" | "left" | "right" | "front";
 }) {
-  // Structural swap (div vs motion.div) must be hydration-safe.
   const prefersReducedMotion = useSafeReducedMotion();
 
-  const offsets: Record<string, { x?: number; y?: number; scale?: number }> = {
-    up: { y: 34 },
-    down: { y: -34 },
-    left: { x: -46 },
-    right: { x: 46 },
-    front: { scale: 1.7 },
+  const entries: Record<string, { x?: string; y?: string; scale: number; rotate: number }> = {
+    // Hurled in from beyond the edge of the screen.
+    left: { x: "-85vw", scale: 1.5, rotate: -22 },
+    right: { x: "85vw", scale: 1.5, rotate: 22 },
+    up: { y: "55vh", scale: 1.35, rotate: -8 },
+    down: { y: "-55vh", scale: 1.35, rotate: 8 },
+    // Comes at you and lands — passes the camera on the way in.
+    front: { scale: 4.6, rotate: 3 },
   };
-  const off = offsets[from];
+  const from_ = entries[from];
 
   if (prefersReducedMotion) {
     return <div className={className}>{children}</div>;
@@ -37,12 +42,28 @@ export default function Part({
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, filter: "blur(7px)", ...off }}
-      animate={{ opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)" }}
+      initial={{
+        opacity: 0,
+        x: from_.x ?? 0,
+        y: from_.y ?? 0,
+        scale: from_.scale,
+        rotate: from_.rotate,
+        filter: "blur(14px)",
+      }}
+      animate={{
+        opacity: 1,
+        x: 0,
+        y: 0,
+        // Slight overshoot on the way to rest, so it lands with weight.
+        scale: [from_.scale, 1.06, 1],
+        rotate: [from_.rotate, -from_.rotate * 0.12, 0],
+        filter: ["blur(14px)", "blur(2px)", "blur(0px)"],
+      }}
       transition={{
-        duration: 0.5,
-        delay: 0.25 + i * 0.13,
-        ease: [0.22, 1, 0.36, 1],
+        duration: 0.72,
+        delay: 0.15 + i * 0.14,
+        times: [0, 0.72, 1],
+        ease: [0.16, 1, 0.3, 1],
       }}
     >
       {children}
