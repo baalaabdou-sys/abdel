@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import MagneticButton from "./MagneticButton";
+import WatchAdButton from "./ad/WatchAdButton";
 import TechThrowFX from "./TechThrowFX";
 import ChromaClip from "./avatar/ChromaClip";
 import { useCapability } from "./avatar/useCapability";
@@ -142,6 +143,9 @@ export default function Hero() {
               Get in touch
             </MagneticButton>
           </motion.div>
+
+          {/* The trailer. Nothing about it loads until it is asked for. */}
+          <WatchAdButton />
         </div>
 
         <div className="relative z-0 flex justify-center lg:justify-end">

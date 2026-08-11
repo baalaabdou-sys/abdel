@@ -15,6 +15,8 @@ import { RebuildProvider } from "@/components/portfolio/rebuild/RebuildContext";
 import RebuildStage from "@/components/portfolio/rebuild/RebuildStage";
 import { BrainProvider } from "@/components/portfolio/brain/BrainContext";
 import BrainOverlay from "@/components/portfolio/brain/BrainOverlay";
+import { AdProvider } from "@/components/portfolio/ad/AdContext";
+import AdPlayer from "@/components/portfolio/ad/AdPlayer";
 
 export default function Home() {
   return (
@@ -22,12 +24,14 @@ export default function Home() {
       <PhysicsProvider>
       <RebuildProvider>
       <BrainProvider>
+      <AdProvider>
       <main className="bg-ink">
         <CustomCursor />
         <AvatarStage />
         <AvatarDirector />
         <RebuildStage />
         <BrainOverlay />
+        <AdPlayer />
         <Nav />
         <Hero />
         <Projects />
@@ -37,6 +41,7 @@ export default function Home() {
         <Contact />
         <Footer />
       </main>
+      </AdProvider>
       </BrainProvider>
       </RebuildProvider>
       </PhysicsProvider>

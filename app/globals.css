@@ -141,3 +141,7 @@ body {
 .brain-open {
   overflow-x: clip;
 }
+/* "Watch ad" — fullscreen film over an untouched page. */
+.ad-open {
+  overflow-x: clip;
+}
