@@ -95,7 +95,12 @@ export default function BuildStudio() {
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_30%,rgba(94,230,208,0.08),transparent_55%)]" />
 
-      <div className="relative mx-auto max-w-6xl">
+      <div
+        className="relative mx-auto max-w-6xl"
+        data-rb-scatter
+        data-rb-tag="<BuildStudio />"
+        data-rb-order="40"
+      >
         <div className="mb-14 max-w-2xl">
           <p className="text-sm font-medium tracking-wide text-accent">Interactive</p>
           <h2 className="mt-3 font-display text-4xl text-paper sm:text-5xl">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAvatarAnchor } from "./avatar/AvatarContext";
+import BreakButton from "./rebuild/BreakButton";
 
 const pillars = [
   { label: "Coding", detail: "Clean, typed, maintainable" },
@@ -16,7 +17,12 @@ export default function About() {
     <section id="about" className="relative overflow-hidden border-t border-ink-line bg-ink-soft px-6 py-28">
       <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[0.8fr_1.2fr]">
         <div className="relative flex justify-center">
-          <div className="relative w-full max-w-sm rounded-3xl border border-ink-line bg-ink/70 p-6 pt-16 shadow-soft">
+          <div
+            className="relative w-full max-w-sm rounded-3xl border border-ink-line bg-ink/70 p-6 pt-16 shadow-soft"
+            data-rb-scatter
+            data-rb-tag="<section>"
+            data-rb-order="50"
+          >
             <div ref={anchorRef} className="absolute -top-16 left-1/2 h-40 w-32 -translate-x-1/2" />
 
             <div className="grid grid-cols-2 gap-3 pt-4">
@@ -57,6 +63,10 @@ export default function About() {
               I don't just write code — I build ideas into products.
             </p>
           </div>
+
+          {/* The hidden demonstration: he takes the page apart and puts it
+              back, but only if you ask him to. */}
+          <BreakButton />
         </div>
       </div>
     </section>

@@ -20,7 +20,11 @@ export type CharacterState =
   | "building_website"
   | "building_app"
   | "building_qr"
-  | "arriving";
+  | "arriving"
+  | "permission"
+  | "reaching"
+  | "slamming"
+  | "signing_off";
 
 type StateDef = {
   clip: ClipKey;
@@ -52,6 +56,13 @@ export const STATES: Record<CharacterState, StateDef> = {
   portal_enter: { clip: "portal_enter", priority: 90, hold: 3000 },
   portal_exit: { clip: "portal_exit", priority: 90, hold: 3000 },
   arriving: { clip: "hero_entrance", priority: 70, hold: 6800 },
+
+  // "Break the portfolio". These run above everything else: once the visitor
+  // has started the sequence, nothing ambient may cut into it.
+  permission: { clip: "permission_smirk", priority: 95, hold: 1100 },
+  reaching: { clip: "reach_pull", priority: 95, hold: 1200 },
+  slamming: { clip: "slam_down", priority: 95, hold: 1400 },
+  signing_off: { clip: "sign_off", priority: 95, hold: 2400 },
 
   // Workshop.
   building_website: { clip: "build_website", priority: 50, hold: 6500 },

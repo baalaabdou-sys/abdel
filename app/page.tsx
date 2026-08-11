@@ -11,15 +11,19 @@ import { AvatarProvider } from "@/components/portfolio/avatar/AvatarContext";
 import { PhysicsProvider } from "@/components/portfolio/physics/PhysicsContext";
 import AvatarStage from "@/components/portfolio/avatar/AvatarStage";
 import AvatarDirector from "@/components/portfolio/avatar/AvatarDirector";
+import { RebuildProvider } from "@/components/portfolio/rebuild/RebuildContext";
+import RebuildStage from "@/components/portfolio/rebuild/RebuildStage";
 
 export default function Home() {
   return (
     <AvatarProvider>
       <PhysicsProvider>
+      <RebuildProvider>
       <main className="bg-ink">
         <CustomCursor />
         <AvatarStage />
         <AvatarDirector />
+        <RebuildStage />
         <Nav />
         <Hero />
         <Projects />
@@ -29,6 +33,7 @@ export default function Home() {
         <Contact />
         <Footer />
       </main>
+      </RebuildProvider>
       </PhysicsProvider>
     </AvatarProvider>
   );

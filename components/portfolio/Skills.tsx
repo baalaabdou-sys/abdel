@@ -72,7 +72,7 @@ export default function Skills() {
       id="skills"
       className="relative border-t border-ink-line bg-ink px-6 py-28"
     >
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl" data-rb-scatter data-rb-tag="<Skills />" data-rb-order="30">
         <div className="mb-16 max-w-2xl">
           <p className="text-sm font-medium tracking-wide text-accent">Toolbox</p>
           <h2 className="mt-3 font-display text-4xl text-paper sm:text-5xl">

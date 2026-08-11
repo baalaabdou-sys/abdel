@@ -18,7 +18,12 @@ export default function Contact() {
           <div ref={anchorRef} className="h-72 w-56" />
         </div>
 
-        <div className="text-center lg:order-1 lg:text-left">
+        <div
+          className="text-center lg:order-1 lg:text-left"
+          data-rb-scatter
+          data-rb-tag="<Contact />"
+          data-rb-order="60"
+        >
           <p className="text-sm font-medium tracking-wide text-accent">Contact</p>
           <h2 className="mt-3 font-display text-4xl text-paper sm:text-5xl">
             Let's build something.

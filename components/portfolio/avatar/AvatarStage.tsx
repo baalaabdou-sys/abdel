@@ -197,7 +197,10 @@ export default function AvatarStage() {
           Date.now() > scrollingUntil.current &&
           Date.now() - lastWarp.current > 2600 &&
           // Never teleport out from under something the visitor asked for.
-          activePriority() < 90
+          activePriority() < 90 &&
+          // The rebuild set piece runs its own choreography; a portal jump
+          // in the middle of it would fight the timeline.
+          !document.documentElement.classList.contains("rb-running")
         ) {
           warpRef.current = true;
           lastWarp.current = Date.now();

@@ -34,3 +34,105 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .is-glitching { animation: none; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   "Break the portfolio" — the character tears the page down to
+   wireframes and rebuilds it.
+
+   Everything here is purely visual and lives on `html`, so the real
+   DOM is never unmounted or reordered: scroll position, form values,
+   routing and component state all survive the sequence untouched.
+   ───────────────────────────────────────────────────────────── */
+
+/* Scroll is frozen by preventing the gesture, not by repositioning the
+   body, so scrollTop stays exactly where the visitor left it. */
+.rb-running {
+  cursor: default;
+  /* Pieces fly outward while this runs; nothing should become pannable. */
+  overflow-x: clip;
+}
+
+/* Raw structure: real sections lose their skin and become boxes. */
+.rb-wire [data-rb-scatter] {
+  background-image: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
+  outline: 1px dashed rgba(139, 124, 255, 0.5);
+  outline-offset: -1px;
+  border-radius: 6px !important;
+  backdrop-filter: none !important;
+}
+
+/* Text collapses to the grey bars you draw before the copy exists. */
+.rb-wire [data-rb-scatter] :is(h1, h2, h3, h4, p, span, a, li, strong, label) {
+  color: transparent !important;
+  background-color: rgba(148, 163, 184, 0.22) !important;
+  border-radius: 3px !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Images become the placeholder rectangle with the diagonal cross. */
+.rb-wire [data-rb-scatter] :is(img, svg, video, canvas) {
+  opacity: 0.05 !important;
+}
+.rb-wire [data-rb-scatter] :is(figure, .rb-img) {
+  background-image: linear-gradient(
+      to top right,
+      transparent calc(50% - 0.5px),
+      rgba(139, 124, 255, 0.45) 50%,
+      transparent calc(50% + 0.5px)
+    ),
+    linear-gradient(
+      to bottom right,
+      transparent calc(50% - 0.5px),
+      rgba(139, 124, 255, 0.45) 50%,
+      transparent calc(50% + 0.5px)
+    ) !important;
+  outline: 1px dashed rgba(139, 124, 255, 0.45);
+}
+
+.rb-wire [data-rb-scatter] :is(button, a[class*="rounded-full"]) {
+  border-color: transparent !important;
+  outline: 1px dashed rgba(94, 230, 208, 0.6);
+  outline-offset: -1px;
+}
+
+/* The moment the CSS block lands, style sweeps back across the page. */
+.rb-restyle [data-rb-scatter] {
+  animation: rb-restyle-pop 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes rb-restyle-pop {
+  0% { filter: saturate(0) brightness(1.6); }
+  40% { filter: saturate(1.7) brightness(1.25); }
+  100% { filter: none; }
+}
+
+/* Screen-level glitch while he is pulling it apart. */
+.rb-glitch {
+  animation: rb-shudder 120ms steps(2) infinite;
+}
+@keyframes rb-shudder {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(-2px, 1px, 0); }
+  75% { transform: translate3d(2px, -1px, 0); }
+}
+
+/* Whole-interface snap when <Portfolio /> lands. */
+.rb-snap {
+  animation: rb-snap-in 520ms cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+@keyframes rb-snap-in {
+  0% { transform: scale(0.972); }
+  60% { transform: scale(1.008); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-glitch,
+  .rb-snap,
+  .rb-restyle [data-rb-scatter] {
+    animation: none !important;
+  }
+}

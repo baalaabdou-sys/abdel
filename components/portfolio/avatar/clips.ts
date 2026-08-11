@@ -13,7 +13,11 @@ export type ClipKey =
   | "portal_enter"
   | "portal_exit"
   | "confused_fix"
-  | "jump";
+  | "jump"
+  | "permission_smirk"
+  | "reach_pull"
+  | "slam_down"
+  | "sign_off";
 
 /**
  * `eager` clips preload fully on page load. The rest only fetch metadata
@@ -81,6 +85,24 @@ export const clips: Record<ClipKey, { url: string; loop: boolean; eager?: boolea
   },
   jump: {
     url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260810_214724_b68ad658-b064-45b6-9cc4-d8da03ca1ef2.mp4",
+    loop: false,
+  },
+  // "Break the portfolio" set piece. Lazy — only the visitors who press the
+  // button ever download these.
+  permission_smirk: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_105318_482f95d2-20a2-4e31-8da3-42514f4c8411.mp4",
+    loop: false,
+  },
+  reach_pull: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_105326_5aeaf2b1-13eb-49d8-bdfd-84a6be57ab1e.mp4",
+    loop: false,
+  },
+  slam_down: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_105317_aa65c37e-9d00-42e2-8707-98566c549128.mp4",
+    loop: false,
+  },
+  sign_off: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_105317_c68981ee-2a3b-4e97-b937-55571d0febb3.mp4",
     loop: false,
   },
 };

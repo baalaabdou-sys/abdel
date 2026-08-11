@@ -47,7 +47,12 @@ export default function Nav() {
         scrolled ? "bg-ink/80 backdrop-blur-lg border-b border-ink-line" : "bg-transparent"
       }`}
     >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+      <nav
+        className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5"
+        data-rb-scatter
+        data-rb-tag="<nav>"
+        data-rb-order="0"
+      >
         <a href="#top" className="font-display text-lg tracking-tight text-paper" data-cursor-hover>
           Abderrahmane<span className="text-accent">.</span>
         </a>

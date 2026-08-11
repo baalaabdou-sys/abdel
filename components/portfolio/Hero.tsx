@@ -75,7 +75,7 @@ export default function Hero() {
       <TechThrowFX active={entranceActive} />
 
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="relative z-10">
+        <div className="relative z-10" data-rb-scatter data-rb-tag="<Hero />" data-rb-order="10">
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

@@ -99,13 +99,23 @@ export default function ProjectCard({ project, index }: { project: Project; inde
             target={project.internal ? undefined : "_blank"}
             rel={project.internal ? undefined : "noreferrer"}
             className={wrapperClass}
+            data-rb-scatter
+            data-rb-tag="<ProjectCard />"
+            data-rb-order="20"
             data-cursor-hover
             onClick={handleOpen}
           >
             {content}
           </a>
         ) : (
-          <div className={wrapperClass}>{content}</div>
+          <div
+            className={wrapperClass}
+            data-rb-scatter
+            data-rb-tag="<ProjectCard />"
+            data-rb-order="20"
+          >
+            {content}
+          </div>
         )}
       </motion.div>
 
