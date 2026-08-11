@@ -66,6 +66,15 @@ export function entering(cut: Cut, dir: 1 | -1 = 1) {
         animate: { opacity: 1, clipPath: "circle(85% at 50% 45%)" },
         transition: { duration: 0.8, ease: [0.5, 0, 0.2, 1] },
       };
+    case "drop":
+      // The camera falls: the new world rushes up into frame with the same
+      // downward momentum the last shot ended on, so the eye is carried into
+      // the fall rather than dropped into an unexplained shot.
+      return {
+        initial: { y: "26%", scale: 1.18, opacity: 1, filter: "blur(7px)" },
+        animate: { y: "0%", scale: 1, opacity: 1, filter: "blur(0px)" },
+        transition: { duration: 0.55, ease: [0.2, 0.9, 0.3, 1] },
+      };
     case "pullback":
       // The frame we were just in becomes a speck inside this one.
       return {
@@ -112,6 +121,12 @@ export function leaving(cut: Cut, dir: 1 | -1 = 1) {
       return {
         animate: { scale: 1.6, opacity: 0, filter: "blur(14px)" },
         transition: { duration: 0.35, ease: [0.8, 0, 0.4, 1] },
+      };
+    case "drop":
+      // The floor he was standing on leaves the top of frame.
+      return {
+        animate: { y: "-34%", scale: 1.1, opacity: 0, filter: "blur(10px)" },
+        transition: { duration: 0.42, ease: [0.6, 0, 0.9, 0.4] },
       };
     case "pullback":
       // Shrinks to the pixel it was always inside.

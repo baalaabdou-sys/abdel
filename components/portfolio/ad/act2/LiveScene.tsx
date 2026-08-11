@@ -414,13 +414,18 @@ function Glass({ started, portrait, cap }: P) {
       // deforms the layer on the same frame it happens.
       animate={
         push
-          ? { scale: 1.07, rotateX: -7 }
-          : { scale: 1 + knock * 0.014, rotateX: knock * -1.8 }
+          ? { scale: 1.09, rotateX: -9, rotateZ: 0 }
+          : knock === 0
+          ? { scale: 1, rotateX: 0, rotateZ: 0 }
+          : // Each contact throws the whole layer, hard and visibly: a real
+            // percussive hit rather than a 1% nudge you cannot see. The
+            // magnitude is what makes it read as instant.
+            { scale: 1.055 + knock * 0.012, rotateX: -6 - knock * 2, rotateZ: knock % 2 ? 0.7 : -0.7 }
       }
       transition={
         push
-          ? { duration: 1.3, ease: [0.16, 1, 0.3, 1] }
-          : { type: "spring", stiffness: 420, damping: 14 }
+          ? { duration: 1.1, ease: [0.16, 1, 0.3, 1] }
+          : { type: "spring", stiffness: 700, damping: 11, mass: 0.5 }
       }
       style={{ transformStyle: "preserve-3d" }}
     >
@@ -440,11 +445,22 @@ function Glass({ started, portrait, cap }: P) {
           key={i}
           className="absolute rounded-full border border-paper/60"
           style={{ left: `${portrait ? 50 : 46}%`, top: `${44 + i * 3}%` }}
-          initial={{ width: 8, height: 8, opacity: 0.9 }}
-          animate={{ width: 260, height: 260, opacity: 0, x: -130, y: -130 }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
+          initial={{ width: 10, height: 10, opacity: 1, borderWidth: 3 }}
+          animate={{ width: 620, height: 620, opacity: 0, x: -310, y: -310, borderWidth: 1 }}
+          transition={{ duration: 0.55, ease: [0.1, 0.9, 0.2, 1] }}
         />
       ))}
+
+      {/* the impact itself, on the frame */}
+      {knock > 0 && (
+        <motion.div
+          key={`flash-${knock}`}
+          className="pointer-events-none absolute inset-0 bg-paper"
+          initial={{ opacity: 0.28 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+        />
+      )}
 
       <div className="absolute bottom-[6%] left-1/2 h-[64%] -translate-x-1/2">
         <ChromaClip clip="reach_pull" cap={cap} className="h-full w-auto" />

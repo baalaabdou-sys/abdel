@@ -71,7 +71,10 @@ export type Cut =
   | "iris"
   /** The camera keeps pulling back and the previous frame becomes an object
       inside the new one. */
-  | "pullback";
+  | "pullback"
+  /** The floor goes. The world rushes up past the lens as the camera drops,
+      so a fall reads as a fall instead of an unexplained new shot. */
+  | "drop";
 
 export type Shot = {
   beat: number;
@@ -139,8 +142,8 @@ export const ACT2: Shot[] = [
   {
     kind: "clip",
     clip: "a2_error_fall",
-    beat: 35,
-    cut: "continue",
+    beat: 36,
+    cut: "drop",
     handoff: "a browser window filling frame, fracturing toward the lens",
     lead: 1,
   },
@@ -148,7 +151,7 @@ export const ACT2: Shot[] = [
   {
     kind: "clip",
     clip: "a2_chase",
-    beat: 44,
+    beat: 45,
     cut: "shatter",
     handoff: "the shockwave from the command palette, hitting the lens",
     lead: 1.5,
@@ -158,7 +161,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "crack",
-    beat: 53,
+    beat: 54,
     cut: "through",
     handoff: "the crack he has pulled open, edges filling frame",
     lead: 1.5,
@@ -166,7 +169,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "realities",
-    beat: 61,
+    beat: 62,
     cut: "tear",
     handoff: "both halves crushed together at the centre",
     lead: 1,
@@ -174,7 +177,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "zerog",
-    beat: 73,
+    beat: 74,
     cut: "continue",
     handoff: "a thrown phone spinning toward the lens, screen growing",
     lead: 1,
@@ -182,7 +185,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "glass",
-    beat: 83,
+    beat: 84,
     cut: "through",
     handoff: "the layer he has torn open behind the glass",
     lead: 1.5,
@@ -190,7 +193,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "clones",
-    beat: 95,
+    beat: 96,
     cut: "wipe",
     dir: -1,
     handoff: "the last clone pulled back into him, chaos at its peak",
@@ -199,7 +202,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "freeze",
-    beat: 107,
+    beat: 108,
     cut: "freeze",
     handoff: "his glasses, held up, the whole universe reflected in them",
     lead: 0,
@@ -207,7 +210,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "lens",
-    beat: 117,
+    beat: 118,
     cut: "iris",
     handoff: "the single idea he has grabbed, coming out with the camera",
     lead: 1.5,
@@ -215,7 +218,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "fold",
-    beat: 125,
+    beat: 126,
     cut: "continue",
     handoff: "a glowing cube tumbling toward the lens",
     lead: 1,
@@ -223,7 +226,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "cube",
-    beat: 135,
+    beat: 136,
     cut: "through",
     handoff: "the inside of the cube, opening out",
     lead: 1,
@@ -231,7 +234,7 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "pixel",
-    beat: 143,
+    beat: 144,
     cut: "pullback",
     handoff: "the real portfolio, him standing in it",
     lead: 1,
@@ -239,14 +242,14 @@ export const ACT2: Shot[] = [
   {
     kind: "live",
     scene: "signoff",
-    beat: 157,
+    beat: 158,
     cut: "wipe",
     handoff: "black",
     lead: 1,
   },
 ];
 
-export const ACT2_END = 171;
+export const ACT2_END = 172;
 
 export type Act2Caption = {
   beat: number;
@@ -261,22 +264,22 @@ export type Act2Caption = {
  * steps on, `git revert` under the command palette.
  */
 export const ACT2_CAPTIONS: Act2Caption[] = [
-  { beat: 31, outBeat: 33, text: "undefined", kind: "stamp" }, // in a2_code_run
-  { beat: 50, outBeat: 51.5, text: "git revert", kind: "stamp" }, // in a2_chase
-  { beat: 66, outBeat: 71, text: "IDEA → PRODUCT", kind: "wide" }, // in realities
-  { beat: 104, outBeat: 105.5, text: "…yeah.", kind: "whisper" }, // peak chaos
-  { beat: 150, outBeat: 155, text: "YOU HAVE THE IDEA.", kind: "wide" }, // in pixel
-  { beat: 159, outBeat: 164, text: "I'LL FIGURE OUT THE REST.", kind: "wide" },
-  { beat: 165, outBeat: 171, text: "ABDERRAHMANE BAALLA", kind: "name" },
-  { beat: 166, outBeat: 171, text: "LET'S BUILD SOMETHING.", kind: "cta" },
+  { beat: 33, outBeat: 35.5, text: "undefined", kind: "stamp" }, // as the floor goes
+  { beat: 51, outBeat: 52.5, text: "git revert", kind: "stamp" }, // in a2_chase
+  { beat: 67, outBeat: 72, text: "IDEA → PRODUCT", kind: "wide" }, // in realities
+  { beat: 105, outBeat: 106.5, text: "…yeah.", kind: "whisper" }, // peak chaos
+  { beat: 151, outBeat: 156, text: "YOU HAVE THE IDEA.", kind: "wide" }, // in pixel
+  { beat: 160, outBeat: 165, text: "I'LL FIGURE OUT THE REST.", kind: "wide" },
+  { beat: 166, outBeat: 172, text: "ABDERRAHMANE BAALLA", kind: "name" },
+  { beat: 167, outBeat: 172, text: "LET'S BUILD SOMETHING.", kind: "cta" },
 ];
 
 /**
  * The snap, and the silence it makes. Exported so the picture and the score
  * cannot disagree about when the universe stops.
  */
-export const FREEZE_IN = 107;
-export const FREEZE_OUT = 115;
+export const FREEZE_IN = 108;
+export const FREEZE_OUT = 116;
 
 export const ms2 = (beat: number) => Math.round(beat * BEAT);
 
@@ -307,17 +310,17 @@ export function buildAct2Cues(): [number, Hit][] {
 
   // ── the bed, in movements ───────────────────────────────
   // City: driving.
-  for (let b = 13; b < 35; b += 1) {
+  for (let b = 13; b < 36; b += 1) {
     put(b, "kick");
     put(b + 0.5, "hat");
     if (b % 2 === 0) put(b, "sub");
   }
   // The fall: everything drops away but the sub.
-  for (let b = 35; b < 44; b += 2) put(b, "sub");
+  for (let b = 36; b < 45; b += 2) put(b, "sub");
   // The chase: double time.
-  for (let b = 44; b < 53; b += 0.5) put(b, b % 1 === 0 ? "kick" : "hat");
+  for (let b = 45; b < 54; b += 0.5) put(b, b % 1 === 0 ? "kick" : "hat");
   // Reality bending: heavy and wide.
-  for (let b = 53; b < FREEZE_IN - 3; b += 1) {
+  for (let b = 54; b < FREEZE_IN - 3; b += 1) {
     put(b, "kick");
     if (b % 2 === 0) put(b, "sub");
     if (b % 4 === 0) put(b, "impact");
@@ -327,20 +330,20 @@ export function buildAct2Cues(): [number, Hit][] {
   put(FREEZE_IN - 3, "glitch");
   // FREEZE_IN → the lens cut is silence by omission. Nothing is scheduled
   // in that window on purpose; it is the only true silence in the act.
-  put(117, "portal");
+  put(118, "portal");
 
   // ── the last movement ───────────────────────────────────
-  for (let b = 125; b < 150; b += 1) {
+  for (let b = 126; b < 151; b += 1) {
     put(b, "kick");
     if (b % 2 === 0) put(b, "sub");
   }
-  put(143, "impact"); // the pull-back begins
-  put(150, "tail"); // and everything opens out
+  put(144, "impact"); // the pull-back begins
+  put(151, "tail"); // and everything opens out
 
   // ── sign-off ────────────────────────────────────────────
-  put(159, "glasses");
-  put(164, "impact");
-  put(165, "tail");
+  put(160, "glasses");
+  put(165, "impact");
+  put(166, "tail");
 
   return cues.sort((a, b) => a[0] - b[0]);
 }
@@ -359,6 +362,8 @@ function cutHit(cut: Cut): Hit {
       return "portal";
     case "pullback":
       return "sub";
+    case "drop":
+      return "impact";
     default:
       return "impact";
   }
