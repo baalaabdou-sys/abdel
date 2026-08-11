@@ -32,19 +32,19 @@ export type AdClipKey =
 
 export const SCENES: Scene[] = [
   { clip: "ad_open", beat: 0, enter: "cut" },
-  { clip: "ad_dev", beat: 9, enter: "whip", dir: -1 },
-  { clip: "ad_web", beat: 18, enter: "flash" },
-  { clip: "ad_apps", beat: 27, enter: "through" },
-  { clip: "ad_qr", beat: 36, enter: "spin" },
-  { clip: "ad_ai", beat: 45, enter: "through" },
-  { clip: "ad_montage", beat: 53, enter: "glitch" },
-  { clip: "ad_hero", beat: 59, enter: "cut" },
+  { clip: "ad_dev", beat: 10, enter: "whip", dir: -1 },
+  { clip: "ad_web", beat: 20, enter: "flash" },
+  { clip: "ad_apps", beat: 30, enter: "through" },
+  { clip: "ad_qr", beat: 40, enter: "spin" },
+  { clip: "ad_ai", beat: 50, enter: "through" },
+  { clip: "ad_montage", beat: 60, enter: "glitch" },
+  { clip: "ad_hero", beat: 70, enter: "cut" },
 ];
 
 /** Beat the film ends on. */
-export const END_BEAT = 71;
+export const END_BEAT = 80;
 /** Where the music stops dead and the hero shot breathes. */
-export const SILENCE_BEAT = 59;
+export const SILENCE_BEAT = 70;
 
 export type Caption = {
   beat: number;
@@ -54,14 +54,14 @@ export type Caption = {
 };
 
 export const CAPTIONS: Caption[] = [
-  { beat: 11, outBeat: 16.5, text: "I BUILD.", kind: "huge" },
-  { beat: 20, outBeat: 25.5, text: "WEB.", kind: "huge" },
-  { beat: 29, outBeat: 34.5, text: "APPS.", kind: "huge" },
-  { beat: 42, outBeat: 44.5, text: "✓ SCAN SUCCESSFUL", kind: "stamp" },
-  { beat: 48, outBeat: 52.5, text: "IDEAS → PRODUCTS", kind: "wide" },
-  { beat: 62, outBeat: 71, text: "ABDERRAHMANE BAALLA", kind: "name" },
-  { beat: 63, outBeat: 71, text: "FULL-STACK & SOFTWARE DEVELOPER", kind: "role" },
-  { beat: 66, outBeat: 71, text: "LET'S BUILD SOMETHING.", kind: "cta" },
+  { beat: 12, outBeat: 18, text: "I BUILD.", kind: "huge" },
+  { beat: 22, outBeat: 28, text: "WEB.", kind: "huge" },
+  { beat: 32, outBeat: 38, text: "APPS.", kind: "huge" },
+  { beat: 46, outBeat: 49, text: "✓ SCAN SUCCESSFUL", kind: "stamp" },
+  { beat: 53, outBeat: 58, text: "IDEAS → PRODUCTS", kind: "wide" },
+  { beat: 73, outBeat: 80, text: "ABDERRAHMANE BAALLA", kind: "name" },
+  { beat: 74, outBeat: 80, text: "FULL-STACK & SOFTWARE DEVELOPER", kind: "role" },
+  { beat: 76, outBeat: 80, text: "LET'S BUILD SOMETHING.", kind: "cta" },
 ];
 
 export const ms = (beat: number) => Math.round(beat * BEAT);
@@ -93,19 +93,19 @@ export function buildCues(): [number, Hit][] {
   });
 
   // ── picture events ──────────────────────────────────
-  put(11, "ui"); // I BUILD.
-  put(20, "ui"); // WEB.
-  put(29, "ui"); // APPS.
-  put(42, "ui"); // scan confirmed
-  put(48, "ui"); // IDEAS → PRODUCTS
-  put(53, "glitch"); // the montage arrives
+  put(12, "ui"); // I BUILD.
+  put(22, "ui"); // WEB.
+  put(32, "ui"); // APPS.
+  put(46, "ui"); // scan confirmed
+  put(53, "ui"); // IDEAS → PRODUCTS
+  put(60, "glitch"); // the montage arrives
   // visual percussion: the montage is cut on the half beat
-  for (let b = 53; b < 59; b += 0.5) put(b, b % 1 === 0 ? "keys" : "click");
+  for (let b = 60; b < 70; b += 0.5) put(b, b % 1 === 0 ? "keys" : "click");
 
   // ── silence, then the hero ──────────────────────────
   put(SILENCE_BEAT, "tail");
-  put(62, "glasses");
-  put(66, "impact"); // LET'S BUILD SOMETHING.
+  put(73, "glasses");
+  put(76, "impact"); // LET'S BUILD SOMETHING.
 
   return cues.sort((a, b) => a[0] - b[0]);
 }
