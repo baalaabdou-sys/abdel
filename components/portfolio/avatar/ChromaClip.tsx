@@ -15,12 +15,26 @@ export default function ChromaClip({
   flip = false,
   className = "",
   onEnded,
+  paused = false,
+  maxKeyWidth,
 }: {
   clip: ClipKey;
   cap: Capability;
   flip?: boolean;
   className?: string;
   onEnded?: () => void;
+  /**
+   * Stop keying entirely. Chroma work is the most expensive thing on the
+   * page — a full per-pixel pass per frame — so anything that is off screen,
+   * covered, or not yet on screen must not be paying for it.
+   */
+  paused?: boolean;
+  /**
+   * Ceiling for the keying resolution. Cost is quadratic in this number, so a
+   * character drawn 60px wide inside a phone-sized stage has no business
+   * being keyed at 420. Callers that render him small pass a small number.
+   */
+  maxKeyWidth?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -29,6 +43,10 @@ export default function ChromaClip({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    if (paused) {
+      video.pause();
+      return;
+    }
     video.currentTime = 0;
     const start = () => video.play().catch(() => {});
     if (video.readyState >= 3) start();
@@ -40,9 +58,10 @@ export default function ChromaClip({
         clearTimeout(t);
       };
     }
-  }, [clip]);
+  }, [clip, paused]);
 
   useEffect(() => {
+    if (paused) return;
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
@@ -64,7 +83,7 @@ export default function ChromaClip({
 
       const vw = video.videoWidth || 480;
       const vh = video.videoHeight || 640;
-      const outW = cap.keyWidth;
+      const outW = Math.min(cap.keyWidth, maxKeyWidth ?? cap.keyWidth);
       const outH = Math.round((outW * vh) / vw) || Math.round(outW * 1.33);
       if (canvas.width !== outW || canvas.height !== outH) {
         canvas.width = outW;
@@ -109,7 +128,7 @@ export default function ChromaClip({
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [clip, cap.keyWidth, cap.keyInterval]);
+  }, [clip, cap.keyWidth, cap.keyInterval, paused, maxKeyWidth]);
 
   const src = clips[clip]?.url;
   if (!src) return null;

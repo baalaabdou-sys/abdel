@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import ChromaClip from "../../avatar/ChromaClip";
+import { posterFallback } from "../../avatar/clips";
 import type { Capability } from "../../avatar/useCapability";
 import type { LiveScene as SceneKey } from "@/data/act2";
 
@@ -163,7 +164,7 @@ function BridgeFall({ started }: P) {
 }
 
 /* ══ the shockwave hits the lens and the viewport splits ══ */
-function Crack({ started, cap }: P) {
+function Crack({ started, cap, portrait }: P) {
   return (
     <div className={SPACE}>
       {/* the shockwave arriving from the last shot, still travelling */}
@@ -202,7 +203,7 @@ function Crack({ started, cap }: P) {
         transition={{ delay: 0.8, duration: 0.2 }}
       >
         <div className="h-[62%] w-auto">
-          <ChromaClip clip="reach_pull" cap={cap} className="h-full w-auto" />
+          <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="reach_pull" cap={cap} className="h-full w-auto" />
         </div>
       </motion.div>
 
@@ -276,7 +277,7 @@ function Realities({ started, portrait, cap }: P) {
 
       {/* he throws them across, then crushes the two halves together */}
       <div className="absolute bottom-[4%] left-[6%] h-[52%]">
-        <ChromaClip clip="throw" cap={cap} className="h-full w-auto" />
+        <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="throw" cap={cap} className="h-full w-auto" />
       </div>
 
       <motion.div
@@ -371,7 +372,7 @@ function ZeroG({ started, portrait, cap }: P) {
         animate={started ? { y: -90, rotate: -8 } : {}}
         transition={{ duration: 4.2, ease: [0.2, 0.8, 0.3, 1] }}
       >
-        <ChromaClip clip="jump" cap={cap} className="h-full w-auto" />
+        <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="jump" cap={cap} className="h-full w-auto" />
       </motion.div>
 
       {/* the phone he throws behind himself — the next shot rides it in */}
@@ -463,7 +464,7 @@ function Glass({ started, portrait, cap }: P) {
       )}
 
       <div className="absolute bottom-[6%] left-1/2 h-[64%] -translate-x-1/2">
-        <ChromaClip clip="reach_pull" cap={cap} className="h-full w-auto" />
+        <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="reach_pull" cap={cap} className="h-full w-auto" />
       </div>
 
       <motion.p
@@ -498,6 +499,10 @@ const CLONE_JOBS = [
 
 function Clones({ started, portrait, cap }: P) {
   const shown = portrait ? CLONE_JOBS.slice(0, 4) : CLONE_JOBS;
+  // Every live clone is a full per-pixel key every frame. Past the device's
+  // budget the rest are stills of the same character — they still step out of
+  // the glass and still get absorbed, they just stop costing anything.
+  const liveKeys = Math.max(1, cap.maxClones);
   return (
     <div className={SPACE}>
       {/* the reflective interface he walks past */}
@@ -529,7 +534,18 @@ function Clones({ started, portrait, cap }: P) {
               times: [0, 0.14, 0.68, 1],
             }}
           >
-            <ChromaClip clip={c.clip} cap={cap} className="h-full w-auto" />
+            {i < liveKeys ? (
+              <ChromaClip
+                paused={!started}
+                maxKeyWidth={portrait ? 120 : 220}
+                clip={c.clip}
+                cap={cap}
+                className="h-full w-auto"
+              />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={posterFallback} alt="" className="h-full w-auto" />
+            )}
             <p className="absolute inset-x-0 bottom-0 text-center font-mono text-[9px] text-accent-soft sm:text-[11px]">
               {c.label}
             </p>
@@ -541,7 +557,7 @@ function Clones({ started, portrait, cap }: P) {
 }
 
 /* ══ he snaps and the universe stops ═════════════════════ */
-function Freeze({ started, cap, frozen }: P) {
+function Freeze({ started, cap, frozen, portrait }: P) {
   return (
     <div className={SPACE}>
       {/* the chaos, caught mid-air */}
@@ -574,7 +590,7 @@ function Freeze({ started, cap, frozen }: P) {
 
       {/* he is the only thing still moving */}
       <div className="absolute bottom-[6%] left-1/2 h-[62%] -translate-x-1/2">
-        <ChromaClip clip="brain_arrange" cap={cap} className="h-full w-auto" />
+        <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="brain_arrange" cap={cap} className="h-full w-auto" />
       </div>
 
       <motion.p
@@ -590,7 +606,7 @@ function Freeze({ started, cap, frozen }: P) {
 }
 
 /* ══ into the lens, and out with one idea ════════════════ */
-function Lens({ started, cap }: P) {
+function Lens({ started, cap, portrait }: P) {
   return (
     <div className={SPACE}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(94,230,208,0.28),transparent_55%)]" />
@@ -614,7 +630,7 @@ function Lens({ started, cap }: P) {
         animate={started ? { x: 0, opacity: 1 } : {}}
         transition={{ delay: 1.4, duration: 0.8, ease: [0.2, 0, 0.1, 1] }}
       >
-        <ChromaClip clip="grab_catch" cap={cap} className="h-full w-auto" />
+        <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="grab_catch" cap={cap} className="h-full w-auto" />
       </motion.div>
 
       <motion.div
@@ -746,7 +762,7 @@ function Cube({ started }: P) {
 }
 
 /* ══ all of it fitted inside one pixel ═══════════════════ */
-function Pixel({ started, cap }: P) {
+function Pixel({ started, cap, portrait }: P) {
   return (
     <div className="absolute inset-0 overflow-hidden bg-ink">
       {/* The camera keeps pulling back and the film we just watched turns out
@@ -801,14 +817,14 @@ function Pixel({ started, cap }: P) {
         animate={started ? { opacity: 1 } : {}}
         transition={{ delay: 5.4, duration: 0.5 }}
       >
-        <ChromaClip clip="sign_off" cap={cap} className="h-full w-auto" />
+        <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="sign_off" cap={cap} className="h-full w-auto" />
       </motion.div>
     </div>
   );
 }
 
 /* ══ he covers the lens ══════════════════════════════════ */
-function SignOff({ started, cap }: P) {
+function SignOff({ started, cap, portrait }: P) {
   return (
     <div className="absolute inset-0 overflow-hidden bg-black">
       <motion.div
@@ -818,7 +834,7 @@ function SignOff({ started, cap }: P) {
         transition={{ delay: 3.6, duration: 2.2, ease: [0.5, 0, 0.3, 1] }}
       >
         <div className="h-[78%]">
-          <ChromaClip clip="brain_pull" cap={cap} className="h-full w-auto" />
+          <ChromaClip paused={!started} maxKeyWidth={portrait ? 190 : 340} clip="brain_pull" cap={cap} className="h-full w-auto" />
         </div>
       </motion.div>
 

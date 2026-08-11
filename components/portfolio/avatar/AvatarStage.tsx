@@ -37,6 +37,10 @@ export default function AvatarStage() {
   const [warmed, setWarmed] = useState<ClipKey[]>([]);
   const [caughtCursor, setCaughtCursor] = useState(false);
   const [warp, setWarp] = useState<null | "out" | "in">(null);
+  // While the film, the mind or the rebuild is on screen he is completely
+  // covered by it, and keying a character nobody can see is the single most
+  // expensive thing this page can do on a phone.
+  const [covered, setCovered] = useState(false);
 
   const ambientRef = useRef(ambient);
   const flipRef = useRef(baseFlip);
@@ -63,6 +67,20 @@ export default function AvatarStage() {
   const activeState: CharacterState = action?.state ?? ambient;
   const activeClip = clipFor(activeState);
   const activeFlip = action ? Boolean(action.flip) : baseFlip;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const read = () =>
+      setCovered(
+        root.classList.contains("ad-open") ||
+          root.classList.contains("brain-open") ||
+          root.classList.contains("rb-running")
+      );
+    read();
+    const mo = new MutationObserver(read);
+    mo.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => mo.disconnect();
+  }, []);
 
   /* ── engine: actions override ambient, then fall back ─────────── */
   useEffect(() => {
@@ -321,6 +339,11 @@ export default function AvatarStage() {
 
   useEffect(() => {
     if (cap.reducedMotion) return;
+    // Nothing decodes while he is behind a full-screen experience.
+    if (covered) {
+      clipKeys.forEach((key) => videoRefs.current[key]?.pause());
+      return;
+    }
     const cleanups: (() => void)[] = [];
     clipKeys.forEach((key) => {
       const el = videoRefs.current[key];
@@ -342,9 +365,12 @@ export default function AvatarStage() {
       }
     });
     return () => cleanups.forEach((f) => f());
-  }, [activeClip, cap.reducedMotion]);
+  }, [activeClip, cap.reducedMotion, covered]);
 
   useEffect(() => {
+    // Covered by a full-screen experience: no keying, no decoding.
+    if (covered) return;
+
     if (cap.reducedMotion) return;
     const canvas = canvasRef.current;
     const video = videoRefs.current[activeClip];
@@ -407,7 +433,7 @@ export default function AvatarStage() {
     return () => {
       if (keyRaf.current) cancelAnimationFrame(keyRaf.current);
     };
-  }, [activeClip, cap.reducedMotion, cap.keyWidth, cap.keyInterval]);
+  }, [activeClip, cap.reducedMotion, cap.keyWidth, cap.keyInterval, covered]);
 
   if (cap.reducedMotion) {
     return (
@@ -427,6 +453,9 @@ export default function AvatarStage() {
         // Surfaces what the engine is actually doing, so the character's
         // state is observable in devtools and assertable in tests.
         data-character-state={activeState}
+        // Observable so the expensive path can be checked on a real device,
+        // not just asserted here.
+        data-character-keying={covered ? "suspended" : "live"}
         className="pointer-events-none fixed left-0 top-0 z-[70]"
         style={{
           x,
