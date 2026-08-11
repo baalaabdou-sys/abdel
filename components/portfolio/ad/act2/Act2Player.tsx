@@ -15,6 +15,7 @@ import { useCapability } from "../../avatar/useCapability";
 import { useSafeReducedMotion } from "../../avatar/useSafeReducedMotion";
 import { ACT2_CLIPS } from "../act2Clips";
 import FilmStage, { useStagePortrait } from "../FilmStage";
+import StageBackdrop from "../StageBackdrop";
 import CutLayer, { PREROLL } from "../MatchCut";
 import { Score } from "../score";
 import LiveScene from "./LiveScene";
@@ -126,6 +127,7 @@ export default function Act2Player({
     <div className="absolute inset-0 overflow-hidden bg-black" data-act2-shot={shot}>
       {/* The glass scene pushes the frame open to the full screen, because
           what he is knocking on is meant to be the screen you are holding. */}
+      <StageBackdrop active={portrait} getVideo={() => videos.current[shot]} />
       <FilmStage
         portrait={portrait}
         expand={ACT2[shot].kind === "live" && ACT2[shot].scene === "glass"}
@@ -184,7 +186,11 @@ export default function Act2Player({
         )}
       </AnimatePresence>
 
-      <div className="pointer-events-none absolute inset-0 z-[72] flex items-center justify-center px-6">
+      <div
+        className={`pointer-events-none absolute inset-0 z-[72] flex justify-center px-6 ${
+          portrait ? "items-end pb-[20vh]" : "items-center"
+        }`}
+      >
         <AnimatePresence>
           {captions.map((c) => (
             <motion.div

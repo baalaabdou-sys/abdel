@@ -14,6 +14,7 @@ import {
 import { useCapability } from "../avatar/useCapability";
 import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
 import FilmStage, { useStagePortrait } from "./FilmStage";
+import StageBackdrop from "./StageBackdrop";
 import Act2Player from "./act2/Act2Player";
 import CursorBeat from "./act2/CursorBeat";
 import Interstitial from "./act2/Interstitial";
@@ -207,6 +208,7 @@ export default function AdPlayer() {
 
       {/* ── the picture ─────────────────────────────────── */}
       <div style={{ visibility: state === "act2" ? "hidden" : "visible" }}>
+      <StageBackdrop active={portrait} getVideo={() => videos.current[scene]} />
       <FilmStage portrait={portrait}>
         {SCENES.map((s, i) => {
           // Only the current shot and its neighbours exist as loaded media.
@@ -260,7 +262,13 @@ export default function AdPlayer() {
       />
 
       {/* ── typography ──────────────────────────────────── */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6">
+      <div
+        className={`pointer-events-none absolute inset-0 flex justify-center px-6 ${
+          // On a phone the picture only occupies a band in the middle, so the
+          // typography sits under it rather than over it.
+          portrait ? "items-end pb-[20vh]" : "items-center"
+        }`}
+      >
         <AnimatePresence>
           {caption.map((c) => (
             <motion.div
@@ -296,6 +304,19 @@ export default function AdPlayer() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Landscape already fills the screen with no crop, so the offer is
+          real rather than an apology for the letterbox. */}
+      {portrait && state === "playing" && elapsed < 6000 && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 1, 0] }}
+          transition={{ duration: 5, times: [0, 0.15, 0.8, 1] }}
+          className="pointer-events-none absolute inset-x-0 top-[16vh] text-center font-mono text-[10px] tracking-[0.3em] text-paper/50"
+        >
+          ↻ TURN YOUR PHONE FOR FULL SCREEN
+        </motion.p>
+      )}
 
       {/* ── controls ────────────────────────────────────── */}
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 sm:top-6">
