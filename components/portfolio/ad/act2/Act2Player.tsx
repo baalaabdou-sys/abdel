@@ -14,6 +14,7 @@ import {
 import { useCapability } from "../../avatar/useCapability";
 import { useSafeReducedMotion } from "../../avatar/useSafeReducedMotion";
 import { ACT2_CLIPS } from "../act2Clips";
+import FilmDebug from "../FilmDebug";
 import FilmStage, { useStagePortrait } from "../FilmStage";
 import StageBackdrop from "../StageBackdrop";
 import CutLayer, { PREROLL } from "../MatchCut";
@@ -49,6 +50,7 @@ export default function Act2Player({
   const prefersReducedMotion = useSafeReducedMotion();
 
   const [shot, setShot] = useState(0);
+  const shotStarted = useRef(0);
   const [elapsed, setElapsed] = useState(0);
   const portrait = useStagePortrait();
 
@@ -90,6 +92,7 @@ export default function Act2Player({
       setShot((prev) => {
         if (prev !== idx) {
           const nv = videos.current[idx];
+          shotStarted.current = performance.now();
           if (nv) {
             // From the first frame, every time.
             nv.currentTime = 0;
@@ -183,6 +186,13 @@ export default function Act2Player({
         );
       })}
       </FilmStage>
+
+      <FilmDebug
+        shot={shot}
+        label={ACT2[shot].kind === "clip" ? ACT2[shot].clip : ACT2[shot].scene}
+        video={videos.current[shot]}
+        windowElapsed={performance.now() - (shotStarted.current || performance.now())}
+      />
 
       {/* grade, matched to Act 1 so the two acts are one film */}
       <div className="pointer-events-none absolute inset-0 z-[70] bg-[radial-gradient(circle_at_50%_50%,transparent_45%,rgba(0,0,0,0.72)_100%)]" />

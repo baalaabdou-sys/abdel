@@ -13,6 +13,7 @@ import {
 } from "@/data/adCut";
 import { useCapability } from "../avatar/useCapability";
 import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
+import FilmDebug from "./FilmDebug";
 import FilmStage, { useStagePortrait } from "./FilmStage";
 import StageBackdrop from "./StageBackdrop";
 import Act2Player from "./act2/Act2Player";
@@ -49,6 +50,7 @@ export default function AdPlayer() {
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const [audio, setAudio] = useState<string>("none");
+  const sceneStarted = useRef(0);
   const mutedRef = useRef(false);
 
   const videos = useRef<(HTMLVideoElement | null)[]>([]);
@@ -128,6 +130,7 @@ export default function AdPlayer() {
         }
         setScene((prev) => {
           if (prev !== idx) {
+            sceneStarted.current = performance.now();
             const nv = videos.current[idx];
             if (nv) {
               nv.currentTime = 0;
@@ -237,6 +240,15 @@ export default function AdPlayer() {
         })}
       </FilmStage>
       </div>
+
+      {state !== "act2" && (
+        <FilmDebug
+          shot={scene}
+          label={SCENES[scene].clip}
+          video={videos.current[scene]}
+          windowElapsed={performance.now() - (sceneStarted.current || performance.now())}
+        />
+      )}
 
       {/* ── the cut itself: a hit of movement on every arrival ── */}
       {!prefersReducedMotion && (
