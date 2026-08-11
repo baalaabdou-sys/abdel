@@ -211,7 +211,7 @@ function Crack({ started, cap }: P) {
         className="absolute inset-y-0 left-1/2 -translate-x-1/2 bg-paper"
         initial={{ width: 0 }}
         animate={started ? { width: "108%" } : {}}
-        transition={{ delay: 1.5, duration: 1.1, ease: [0.6, 0, 0.2, 1] }}
+        transition={{ delay: 1.6, duration: 1.9, ease: [0.6, 0, 0.2, 1] }}
         style={{ filter: "blur(2px)" }}
       />
     </div>
@@ -388,12 +388,18 @@ function ZeroG({ started, portrait, cap }: P) {
 /* ══ he notices where he is ══════════════════════════════ */
 function Glass({ started, portrait, cap }: P) {
   const [knock, setKnock] = useState(0);
+  const [push, setPush] = useState(false);
   useEffect(() => {
     if (!started) return;
-    const times = [1500, 2100, 2500].map((d) =>
+    const times = [500, 1000, 1500].map((d) =>
       setTimeout(() => setKnock((k) => k + 1), d)
     );
-    return () => times.forEach(clearTimeout);
+    // The sustained shove comes straight off the third knock.
+    const shove = setTimeout(() => setPush(true), 1800);
+    return () => {
+      times.forEach(clearTimeout);
+      clearTimeout(shove);
+    };
   }, [started]);
 
   return (
@@ -401,12 +407,21 @@ function Glass({ started, portrait, cap }: P) {
       className={SPACE}
       // The whole layer flexes when he pushes on it, so it reads as the
       // visitor's own display bending rather than a video of a screen.
+      //
+      // Driven off the knock count rather than a long keyframe track: a
+      // scripted track made the glass answer more than a second after the
+      // knuckle landed, which reads as a bug, not a gag. Each knock now
+      // deforms the layer on the same frame it happens.
       animate={
-        started
-          ? { scale: [1, 1, 1.04, 1.01], rotateX: [0, 0, -4, 0] }
-          : {}
+        push
+          ? { scale: 1.07, rotateX: -7 }
+          : { scale: 1 + knock * 0.014, rotateX: knock * -1.8 }
       }
-      transition={{ duration: 6, times: [0, 0.45, 0.72, 1], ease: "easeInOut" }}
+      transition={
+        push
+          ? { duration: 1.3, ease: [0.16, 1, 0.3, 1] }
+          : { type: "spring", stiffness: 420, damping: 14 }
+      }
       style={{ transformStyle: "preserve-3d" }}
     >
       {/* the edges of the thing he is inside */}
@@ -439,7 +454,7 @@ function Glass({ started, portrait, cap }: P) {
         className="absolute inset-x-0 bottom-[4%] text-center font-mono text-[11px] tracking-[0.3em] text-paper/60"
         initial={{ opacity: 0 }}
         animate={started ? { opacity: [0, 1, 1, 0] } : {}}
-        transition={{ delay: 1.4, duration: 3, times: [0, 0.2, 0.8, 1] }}
+        transition={{ delay: 0.8, duration: 2.6, times: [0, 0.15, 0.85, 1] }}
       >
         {portrait ? "…he is behind your screen" : "…he is behind your browser"}
       </motion.p>
@@ -449,7 +464,7 @@ function Glass({ started, portrait, cap }: P) {
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper"
         initial={{ width: 0, height: 0, opacity: 0 }}
         animate={started ? { width: 2400, height: 2400, opacity: 1 } : {}}
-        transition={{ delay: 4.6, duration: 1.3, ease: [0.6, 0, 0.2, 1] }}
+        transition={{ delay: 3.3, duration: 1.7, ease: [0.6, 0, 0.2, 1] }}
       />
     </motion.div>
   );
@@ -490,9 +505,11 @@ function Clones({ started, portrait, cap }: P) {
                 : {}
             }
             transition={{
-              duration: 6,
-              delay: 0.25 + i * 0.35,
-              // Each one steps out, works, then is walked into and absorbed.
+              // Fits inside the shot: the last clone is absorbed at 5.5s of
+              // the 6s window. At the old 6s + 0.35s stagger the final two
+              // were still merging when the film cut away from them.
+              duration: 4.4,
+              delay: 0.15 + i * 0.2,
               times: [0, 0.14, 0.68, 1],
             }}
           >
@@ -722,7 +739,7 @@ function Pixel({ started, cap }: P) {
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         initial={{ scale: 260 }}
         animate={started ? { scale: 1 } : {}}
-        transition={{ duration: 5.2, ease: [0.5, 0, 0.15, 1] }}
+        transition={{ duration: 6.2, ease: [0.5, 0, 0.15, 1] }}
         style={{ width: "100%", height: "100%" }}
       >
         <div className="relative h-full w-full bg-ink p-6">
@@ -766,7 +783,7 @@ function Pixel({ started, cap }: P) {
         className="absolute bottom-[4%] right-[8%] h-[46%]"
         initial={{ opacity: 0 }}
         animate={started ? { opacity: 1 } : {}}
-        transition={{ delay: 4.4, duration: 0.5 }}
+        transition={{ delay: 5.4, duration: 0.5 }}
       >
         <ChromaClip clip="sign_off" cap={cap} className="h-full w-auto" />
       </motion.div>
@@ -800,7 +817,7 @@ function SignOff({ started, cap }: P) {
         className="absolute left-1/2 top-1/2 h-[3px] w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-paper"
         initial={{ opacity: 0, scaleX: 0 }}
         animate={started ? { opacity: [0, 0.9, 0.25], scaleX: [0, 1, 1] } : {}}
-        transition={{ delay: 6.2, duration: 1.2 }}
+        transition={{ delay: 5.8, duration: 1.1 }}
         style={{ filter: "blur(1px)" }}
       />
     </div>
