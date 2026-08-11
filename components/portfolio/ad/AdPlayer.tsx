@@ -11,7 +11,11 @@ import {
   ms,
   type Transition,
 } from "@/data/adCut";
+import { useCapability } from "../avatar/useCapability";
 import { useSafeReducedMotion } from "../avatar/useSafeReducedMotion";
+import Act2Player from "./act2/Act2Player";
+import CursorBeat from "./act2/CursorBeat";
+import Interstitial from "./act2/Interstitial";
 import { AD_CLIPS } from "./adClips";
 import { useAd } from "./AdContext";
 import { Score } from "./score";
@@ -31,8 +35,14 @@ import { Score } from "./score";
 export default function AdPlayer() {
   const { open, runId, close, replay } = useAd();
   const prefersReducedMotion = useSafeReducedMotion();
+  const cap = useCapability();
+  const portrait = typeof window !== "undefined" && window.innerWidth < 768;
 
-  const [state, setState] = useState<"loading" | "playing" | "ended">("loading");
+  // act1 → interstitial → the silent cursor beat → act2 → the end card.
+  const [state, setState] = useState<
+    "loading" | "playing" | "interstitial" | "cursor" | "act2" | "ended"
+  >("loading");
+  const [act2Run, setAct2Run] = useState(0);
   const [scene, setScene] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
@@ -129,7 +139,8 @@ export default function AdPlayer() {
 
         if (e >= total) {
           cancelAnimationFrame(raf.current);
-          setState("ended");
+          // He stays alive on the final frame while the choice is offered.
+          setState("interstitial");
         }
       };
       raf.current = requestAnimationFrame(tick);
@@ -189,8 +200,15 @@ export default function AdPlayer() {
       data-ad-audio={audio}
       className="fixed inset-0 z-[80] overflow-hidden bg-black"
     >
+      {state === "act2" && (
+        <Act2Player key={act2Run} muted={muted} onEnded={() => setState("ended")} />
+      )}
+
       {/* ── the picture ─────────────────────────────────── */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{ visibility: state === "act2" ? "hidden" : "visible" }}
+      >
         {SCENES.map((s, i) => {
           // Only the current shot and its neighbours exist as loaded media.
           const near = Math.abs(i - scene) <= 1;
@@ -301,12 +319,34 @@ export default function AdPlayer() {
       </div>
 
       {/* beat-accurate progress */}
+      {state !== "act2" && (
       <div className="absolute inset-x-0 bottom-0 h-[3px] bg-paper/10">
         <div
           className="h-full bg-accent"
           style={{ width: `${progress * 100}%`, transition: "width 80ms linear" }}
         />
       </div>
+      )}
+
+      {/* ── between the acts ────────────────────────────── */}
+      <AnimatePresence>
+        {state === "interstitial" && (
+          <Interstitial
+            cap={cap}
+            portrait={portrait}
+            onContinue={() => setState("cursor")}
+            onReplayAct1={() => {
+              setState("loading");
+              replay();
+            }}
+            onClose={close}
+          />
+        )}
+      </AnimatePresence>
+
+      {state === "cursor" && (
+        <CursorBeat cap={cap} portrait={portrait} onDone={() => setState("act2")} />
+      )}
 
       {/* ── after ───────────────────────────────────────── */}
       <AnimatePresence>
@@ -327,15 +367,29 @@ export default function AdPlayer() {
                 data-cursor-hover
                 className="rounded-full bg-accent px-7 py-3 text-sm font-semibold text-ink transition hover:bg-accent-soft"
               >
-                baalaabdou@gmail.com
+                Start a project
               </a>
               <button
                 type="button"
                 data-cursor-hover
-                onClick={replay}
+                onClick={() => {
+                  setAct2Run((n) => n + 1);
+                  setState("act2");
+                }}
                 className="rounded-full border border-paper/30 px-6 py-3 text-sm font-medium text-paper transition hover:border-paper/80"
               >
-                Replay
+                Replay Act 2
+              </button>
+              <button
+                type="button"
+                data-cursor-hover
+                onClick={() => {
+                  setState("loading");
+                  replay();
+                }}
+                className="rounded-full border border-paper/30 px-6 py-3 text-sm font-medium text-paper transition hover:border-paper/80"
+              >
+                Replay from Act 1
               </button>
               <button
                 type="button"
