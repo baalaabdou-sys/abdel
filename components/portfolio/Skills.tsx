@@ -29,7 +29,7 @@ export default function Skills() {
   
   const handleActivate = (s: (typeof skills)[number] | null) => {
     setActive(s);
-    if (s) play("tapping", { flip: s.angle > 180 });
+    if (s) play("tapping", { flip: s.angle > 180, force: true });
   };
 
   /**

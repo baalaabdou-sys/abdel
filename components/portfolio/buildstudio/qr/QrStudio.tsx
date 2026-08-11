@@ -118,7 +118,7 @@ export default function QrStudio({ onRestart }: { onRestart: () => void }) {
   const create = () => {
     if (!canCreate) return;
     setStage("building");
-    if (!prefersReducedMotion) play("building_qr");
+    if (!prefersReducedMotion) play("building_qr", { force: true });
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setStage("ready"), BUILD_MS);
   };

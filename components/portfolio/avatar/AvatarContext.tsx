@@ -49,14 +49,23 @@ type AvatarContextValue = {
    * Ask the character to do something. Lower-priority requests are dropped
    * while a higher-priority one is still running, so a hover can never
    * interrupt a portal jump or the malfunction easter egg.
+   *
+   * Pass `force` for anything the visitor explicitly clicked: a scroll-driven
+   * warp must never swallow a response the person actually asked for.
    */
-  play: (state: CharacterState, opts?: { flip?: boolean; holdMs?: number; then?: CharacterState }) => void;
+  play: (
+    state: CharacterState,
+    opts?: { flip?: boolean; holdMs?: number; then?: CharacterState; force?: boolean }
+  ) => void;
   warmClip: (clip: ClipKey) => void;
   /** Priority of whatever is on screen right now; 0 when ambient. */
   activePriority: () => number;
 };
 
 const AvatarContext = createContext<AvatarContextValue | null>(null);
+
+/** Floor for user-initiated actions — above every automatic state. */
+const FORCED_PRIORITY = 100;
 
 export function AvatarProvider({ children }: { children: React.ReactNode }) {
   const anchors = useRef(new Map<string, AnchorEntry>()).current;
@@ -80,9 +89,16 @@ export function AvatarProvider({ children }: { children: React.ReactNode }) {
     play: (state, opts) => {
       const def = STATES[state];
       const now = Date.now();
-      if (now < active.current.until && def.priority < active.current.priority) return;
+      if (!opts?.force && now < active.current.until && def.priority < active.current.priority) {
+        return;
+      }
       const hold = opts?.holdMs ?? def.hold;
-      active.current = { priority: def.priority, until: now + hold };
+      // A forced action also outranks anything that follows it for its own
+      // duration, so the next automatic warp cannot cut it short either.
+      active.current = {
+        priority: opts?.force ? Math.max(def.priority, FORCED_PRIORITY) : def.priority,
+        until: now + hold,
+      };
       actionEmitter.emit({ state, flip: opts?.flip, holdMs: hold, then: opts?.then ?? def.then });
     },
     warmClip: (clip) => warmEmitter.emit(clip),

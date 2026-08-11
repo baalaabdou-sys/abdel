@@ -8,7 +8,7 @@ export default function Contact() {
   const anchorRef = useAvatarAnchor("contact", { basePose: "idle", size: 440 });
 
   const handleClick = () => {
-    play("celebrating");
+    play("celebrating", { force: true });
   };
 
   return (

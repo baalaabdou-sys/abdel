@@ -67,7 +67,10 @@ export default function BuildStudio() {
     setStage("building");
 
     if (!prefersReducedMotion) {
-      play(kind === "app" ? "building_app" : "building_website", { holdMs: HOLD_MS });
+      play(kind === "app" ? "building_app" : "building_website", {
+        holdMs: HOLD_MS,
+        force: true,
+      });
     }
 
     clearTimeout(timer.current);

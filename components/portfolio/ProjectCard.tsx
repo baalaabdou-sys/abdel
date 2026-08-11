@@ -38,7 +38,7 @@ export default function ProjectCard({ project, index }: { project: Project; inde
     if (!rect) return;
     e.preventDefault();
     setOrigin({ x: rect.left, y: rect.top, w: rect.width, h: rect.height });
-    play("portal_enter", { flip });
+    play("portal_enter", { flip, force: true });
     clearTimeout(navTimer.current);
     navTimer.current = setTimeout(navigate, PORTAL_MS);
   };

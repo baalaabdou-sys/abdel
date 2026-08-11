@@ -16,7 +16,8 @@ const NOTICE_RADIUS = 320;
 const CATCH_RADIUS = 90;
 
 export default function AvatarStage() {
-  const { anchors, actionEmitter, warmEmitter, pointer, play } = useAvatarContext();
+  const { anchors, actionEmitter, warmEmitter, pointer, play, activePriority } =
+    useAvatarContext();
   const cap = useCapability();
 
   // Horizontal is deliberately much lazier than vertical. Section anchors sit
@@ -194,7 +195,9 @@ export default function AvatarStage() {
           !warpRef.current &&
           !cap.reducedMotion &&
           Date.now() > scrollingUntil.current &&
-          Date.now() - lastWarp.current > 2600
+          Date.now() - lastWarp.current > 2600 &&
+          // Never teleport out from under something the visitor asked for.
+          activePriority() < 90
         ) {
           warpRef.current = true;
           lastWarp.current = Date.now();
@@ -221,7 +224,7 @@ export default function AvatarStage() {
     };
     let raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [anchors, x, y, w, cap.isTouch, cap.reducedMotion, play]);
+  }, [anchors, x, y, w, cap.isTouch, cap.reducedMotion, play, activePriority]);
 
   /* ── fourth wall: he watches the pointer / the last touch ─────── */
   useEffect(() => {
@@ -403,6 +406,9 @@ export default function AvatarStage() {
   return (
     <>
       <motion.div
+        // Surfaces what the engine is actually doing, so the character's
+        // state is observable in devtools and assertable in tests.
+        data-character-state={activeState}
         className="pointer-events-none fixed left-0 top-0 z-30"
         style={{
           x,
