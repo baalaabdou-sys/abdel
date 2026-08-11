@@ -136,3 +136,8 @@ body {
     animation: none !important;
   }
 }
+
+/* "Enter my brain" — the page stays exactly where it is underneath. */
+.brain-open {
+  overflow-x: clip;
+}

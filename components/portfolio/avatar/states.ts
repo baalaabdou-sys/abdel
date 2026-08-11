@@ -24,7 +24,14 @@ export type CharacterState =
   | "permission"
   | "reaching"
   | "slamming"
-  | "signing_off";
+  | "signing_off"
+  | "brain_invite"
+  | "brain_idle"
+  | "brain_arrange"
+  | "brain_present"
+  | "brain_hide"
+  | "brain_pull"
+  | "brain_catch";
 
 type StateDef = {
   clip: ClipKey;
@@ -63,6 +70,16 @@ export const STATES: Record<CharacterState, StateDef> = {
   reaching: { clip: "reach_pull", priority: 95, hold: 1200 },
   slamming: { clip: "slam_down", priority: 95, hold: 1400 },
   signing_off: { clip: "sign_off", priority: 95, hold: 2400 },
+
+  // Inside his own head. brain_idle is ambient (he is comfortable in there);
+  // the rest are set-piece beats that must not be interrupted.
+  brain_idle: { clip: "brain_sit", priority: 0, hold: 0 },
+  brain_invite: { clip: "brain_invite", priority: 95, hold: 1700 },
+  brain_arrange: { clip: "brain_arrange", priority: 95, hold: 3400 },
+  brain_present: { clip: "brain_present", priority: 95, hold: 3000 },
+  brain_hide: { clip: "brain_hide", priority: 95, hold: 2600 },
+  brain_pull: { clip: "brain_pull", priority: 95, hold: 2000 },
+  brain_catch: { clip: "brain_catch", priority: 95, hold: 2400 },
 
   // Workshop.
   building_website: { clip: "build_website", priority: 50, hold: 6500 },

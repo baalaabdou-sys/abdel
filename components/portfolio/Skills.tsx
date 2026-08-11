@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useAvatarAnchor, useAvatarContext } from "./avatar/AvatarContext";
 import AvatarClones from "./avatar/AvatarClones";
+import EnterBrainButton from "./brain/EnterBrainButton";
 import { usePhysics, usePhysicsBody } from "./physics/PhysicsContext";
 
 const skills = [
@@ -99,6 +100,9 @@ export default function Skills() {
         <div className="mx-auto mt-4 h-8 max-w-xl text-center text-sm text-accent-soft">
           {active ? `${active.label} — ${active.desc}` : ""}
         </div>
+
+        {/* The toolbox is what I build with; this is what I'd build next. */}
+        <EnterBrainButton />
       </div>
     </section>
   );

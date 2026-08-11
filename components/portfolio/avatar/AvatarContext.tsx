@@ -9,9 +9,15 @@ export type AnchorConfig = {
   basePose: CharacterState;
   size: number;
   flip?: boolean;
+  /**
+   * Wins over every other anchor while it exists. Used by full-screen
+   * experiences, where the sections underneath are still mounted and would
+   * otherwise keep competing for him.
+   */
+  exclusive?: boolean;
 };
 
-type AnchorEntry = { el: HTMLElement; config: AnchorConfig };
+export type AnchorEntry = { el: HTMLElement; config: AnchorConfig };
 
 export type ActionEvent = {
   state: CharacterState;

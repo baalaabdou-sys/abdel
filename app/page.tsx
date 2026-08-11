@@ -13,17 +13,21 @@ import AvatarStage from "@/components/portfolio/avatar/AvatarStage";
 import AvatarDirector from "@/components/portfolio/avatar/AvatarDirector";
 import { RebuildProvider } from "@/components/portfolio/rebuild/RebuildContext";
 import RebuildStage from "@/components/portfolio/rebuild/RebuildStage";
+import { BrainProvider } from "@/components/portfolio/brain/BrainContext";
+import BrainOverlay from "@/components/portfolio/brain/BrainOverlay";
 
 export default function Home() {
   return (
     <AvatarProvider>
       <PhysicsProvider>
       <RebuildProvider>
+      <BrainProvider>
       <main className="bg-ink">
         <CustomCursor />
         <AvatarStage />
         <AvatarDirector />
         <RebuildStage />
+        <BrainOverlay />
         <Nav />
         <Hero />
         <Projects />
@@ -33,6 +37,7 @@ export default function Home() {
         <Contact />
         <Footer />
       </main>
+      </BrainProvider>
       </RebuildProvider>
       </PhysicsProvider>
     </AvatarProvider>

@@ -17,7 +17,14 @@ export type ClipKey =
   | "permission_smirk"
   | "reach_pull"
   | "slam_down"
-  | "sign_off";
+  | "sign_off"
+  | "brain_invite"
+  | "brain_sit"
+  | "brain_arrange"
+  | "brain_present"
+  | "brain_hide"
+  | "brain_pull"
+  | "brain_catch";
 
 /**
  * `eager` clips preload fully on page load. The rest only fetch metadata
@@ -103,6 +110,37 @@ export const clips: Record<ClipKey, { url: string; loop: boolean; eager?: boolea
   },
   sign_off: {
     url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_105317_c68981ee-2a3b-4e97-b937-55571d0febb3.mp4",
+    loop: false,
+  },
+
+  // "Enter my brain". Lazy like the rebuild clips — only downloaded by
+  // visitors who actually go in.
+  brain_invite: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_6c29381e-218b-4158-bbb8-5e47c56e22fe.mp4",
+    loop: false,
+  },
+  brain_sit: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_50ff1c2c-788f-499b-b1e9-165360cbf0d7.mp4",
+    loop: true,
+  },
+  brain_arrange: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_57b6b428-3b64-4f51-b7fc-cf54b1f8d03c.mp4",
+    loop: false,
+  },
+  brain_present: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_972612b7-0c1e-426b-9905-2d2ba8b220bb.mp4",
+    loop: false,
+  },
+  brain_hide: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_49aa93df-8dd6-461c-b72f-2f1494e51c09.mp4",
+    loop: false,
+  },
+  brain_pull: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_98bcf160-5705-4647-a718-0f7c04e61de3.mp4",
+    loop: false,
+  },
+  brain_catch: {
+    url: "https://d8j0ntlcm91z4.cloudfront.net/user_31t8p9DkfiUU7vdjNVuT6n8wKxq/hf_20260811_112417_86250962-e54d-49c9-ac89-1f8dc5cee333.mp4",
     loop: false,
   },
 };

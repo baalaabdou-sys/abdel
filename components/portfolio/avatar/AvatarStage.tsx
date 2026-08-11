@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { useAvatarContext } from "./AvatarContext";
+import { useAvatarContext, type AnchorConfig, type AnchorEntry } from "./AvatarContext";
 import { clips, posterFallback, type ClipKey } from "./clips";
 import { clipFor, STATES, type CharacterState } from "./states";
 import { useCapability } from "./useCapability";
@@ -54,7 +54,7 @@ export default function AvatarStage() {
     cx: number;
     cy: number;
     size: number;
-    cfg: { basePose: CharacterState; size: number; flip?: boolean };
+    cfg: AnchorConfig;
   } | null>(null);
   ambientRef.current = ambient;
   flipRef.current = baseFlip;
@@ -141,24 +141,39 @@ export default function AvatarStage() {
       const vh = window.innerHeight;
       let bestId: string | null = null;
       let bestEl: HTMLElement | null = null;
-      let bestCfg: { basePose: CharacterState; size: number; flip?: boolean } | null = null;
+      let bestCfg: AnchorConfig | null = null;
       let bestDist = Infinity;
 
+      // An exclusive anchor takes him outright — a full-screen experience is
+      // running and the sections behind it are still mounted.
+      let exclusive: [string, AnchorEntry] | null = null;
       anchors.forEach((entry, id) => {
-        const r = entry.el.getBoundingClientRect();
-        if (r.bottom < 0 || r.top > vh) return;
-        const dist = Math.abs(r.top + r.height / 2 - vh / 2);
-        if (dist < bestDist) {
-          bestDist = dist;
-          bestEl = entry.el;
-          bestCfg = entry.config;
-          bestId = id;
-        }
+        if (entry.config.exclusive) exclusive = [id, entry];
       });
+
+      if (exclusive) {
+        const [id, entry] = exclusive as [string, AnchorEntry];
+        bestId = id;
+        bestEl = entry.el;
+        bestCfg = entry.config;
+        bestDist = 0;
+      } else {
+        anchors.forEach((entry, id) => {
+          const r = entry.el.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > vh) return;
+          const dist = Math.abs(r.top + r.height / 2 - vh / 2);
+          if (dist < bestDist) {
+            bestDist = dist;
+            bestEl = entry.el;
+            bestCfg = entry.config;
+            bestId = id;
+          }
+        });
+      }
 
       // Hysteresis so two near-equidistant anchors can't ping-pong.
       const curId = activeAnchorId.current;
-      if (curId && curId !== bestId) {
+      if (!exclusive && curId && curId !== bestId) {
         const cur = anchors.get(curId);
         if (cur) {
           const r = cur.el.getBoundingClientRect();
@@ -175,7 +190,7 @@ export default function AvatarStage() {
 
       if (bestEl && bestCfg) {
         const r = (bestEl as HTMLElement).getBoundingClientRect();
-        const cfg = bestCfg as { basePose: CharacterState; size: number; flip?: boolean };
+        const cfg = bestCfg as AnchorConfig;
         const vw = window.innerWidth;
         const scale = vw < 480 ? 0.82 : vw < 768 ? 0.9 : vw < 1024 ? 0.95 : 1;
         const cx = r.left + r.width / 2;
@@ -397,7 +412,7 @@ export default function AvatarStage() {
   if (cap.reducedMotion) {
     return (
       <motion.div
-        className="pointer-events-none fixed left-0 top-0 z-30"
+        className="pointer-events-none fixed left-0 top-0 z-[70]"
         style={{ x, y, width: w, translateX: "-50%", translateY: "-50%", opacity: visible ? 1 : 0 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -412,7 +427,7 @@ export default function AvatarStage() {
         // Surfaces what the engine is actually doing, so the character's
         // state is observable in devtools and assertable in tests.
         data-character-state={activeState}
-        className="pointer-events-none fixed left-0 top-0 z-30"
+        className="pointer-events-none fixed left-0 top-0 z-[70]"
         style={{
           x,
           y,
