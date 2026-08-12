@@ -45,6 +45,24 @@ export default function ProjectCard({ project, index }: { project: Project; inde
 
   const content = (
     <>
+      {project.image && (
+        // Sits flush to the card's rounded top: the padding lives on the
+        // wrapper, so the art is pulled back out to the border on three sides.
+        <div className="relative -mx-7 -mt-7 mb-6 overflow-hidden rounded-t-2xl">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={project.image}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-36 w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+          />
+          {/* Grades the art down into the card so the join is a fade rather
+              than an edge, and keeps the copy below it readable. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-soft via-ink-soft/25 to-transparent" />
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <span className="rounded-full border border-ink-line px-3 py-1 text-[11px] font-medium tracking-wide text-accent-soft">
           {project.category}
