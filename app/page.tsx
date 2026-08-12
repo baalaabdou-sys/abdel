@@ -11,6 +11,7 @@ import { AvatarProvider } from "@/components/portfolio/avatar/AvatarContext";
 import { PhysicsProvider } from "@/components/portfolio/physics/PhysicsContext";
 import AvatarStage from "@/components/portfolio/avatar/AvatarStage";
 import AvatarDirector from "@/components/portfolio/avatar/AvatarDirector";
+import AvatarToggle from "@/components/portfolio/avatar/AvatarToggle";
 import { RebuildProvider } from "@/components/portfolio/rebuild/RebuildContext";
 import RebuildStage from "@/components/portfolio/rebuild/RebuildStage";
 import { BrainProvider } from "@/components/portfolio/brain/BrainContext";
@@ -30,6 +31,7 @@ export default function Home() {
         <CustomCursor />
         <AvatarStage />
         <AvatarDirector />
+        <AvatarToggle />
         <RebuildStage />
         <BrainOverlay />
         <AdPlayer />

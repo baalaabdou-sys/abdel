@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 import { useAvatarContext, type AnchorConfig, type AnchorEntry } from "./AvatarContext";
+import { useAvatarOff } from "./avatarPref";
 import { clips, posterFallback, type ClipKey } from "./clips";
 import { clipFor, STATES, type CharacterState } from "./states";
 import { useCapability } from "./useCapability";
@@ -15,7 +16,22 @@ const NOTICE_RADIUS = 320;
 /** How close before the rare catch can fire (px). */
 const CATCH_RADIUS = 90;
 
+/**
+ * Gate, deliberately kept as a separate component from the stage itself.
+ *
+ * Returning null here unmounts everything below: the tracking loop, the
+ * chroma-key loop, and all 27 video elements go with it, and their cleanups
+ * cancel the animation frames. Checking the preference *inside* the stage
+ * would leave those hooks mounted and still running, which is exactly the
+ * cost someone reaching for this switch is trying to get rid of.
+ */
 export default function AvatarStage() {
+  const [off] = useAvatarOff();
+  if (off) return null;
+  return <AvatarStageInner />;
+}
+
+function AvatarStageInner() {
   const { anchors, actionEmitter, warmEmitter, pointer, play, activePriority } =
     useAvatarContext();
   const cap = useCapability();
@@ -60,6 +76,12 @@ export default function AvatarStage() {
     size: number;
     cfg: AnchorConfig;
   } | null>(null);
+  // A candidate anchor has to win several frames in a row before it is
+  // actually adopted. Without this, a boundary between two sections whose
+  // anchors sit on opposite sides of the page could flip the pick every
+  // frame on ordinary scroll jitter (a mouse wheel step, touch momentum),
+  // which read as the character shimmying left and right instead of moving.
+  const switchStreak = useRef<{ id: string | null; count: number }>({ id: null, count: 0 });
   ambientRef.current = ambient;
   flipRef.current = baseFlip;
   visibleRef.current = visible;
@@ -70,12 +92,12 @@ export default function AvatarStage() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const read = () =>
-      setCovered(
-        root.classList.contains("ad-open") ||
-          root.classList.contains("brain-open") ||
-          root.classList.contains("rb-running")
-      );
+    // Only the ad film actually replaces him with its own footage — "Enter
+    // my brain" and "Break the portfolio" both put him on screen through
+    // their own anchors, so suspending his playback for those killed the
+    // very thing they were trying to show (brain_arrange, brain_present,
+    // and everything in the rebuild set piece all went dark).
+    const read = () => setCovered(root.classList.contains("ad-open"));
     read();
     const mo = new MutationObserver(read);
     mo.observe(root, { attributes: true, attributeFilter: ["class"] });
@@ -204,6 +226,31 @@ export default function AvatarStage() {
             }
           }
         }
+      }
+
+      // A candidate switch has to win several frames running before it is
+      // adopted — otherwise a boundary between two sections whose anchors
+      // sit on opposite sides of the page flips the pick on ordinary scroll
+      // jitter, snapping the target x back and forth every frame.
+      if (!exclusive && bestId !== curId) {
+        if (switchStreak.current.id === bestId) {
+          switchStreak.current.count += 1;
+        } else {
+          switchStreak.current = { id: bestId, count: 1 };
+        }
+        if (switchStreak.current.count < 6) {
+          const cur = curId ? anchors.get(curId) : null;
+          if (cur) {
+            const r = cur.el.getBoundingClientRect();
+            if (r.bottom >= 0 && r.top <= vh) {
+              bestId = curId;
+              bestEl = cur.el;
+              bestCfg = cur.config;
+            }
+          }
+        }
+      } else {
+        switchStreak.current = { id: null, count: 0 };
       }
 
       if (bestEl && bestCfg) {

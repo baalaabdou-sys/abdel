@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useAvatarContext } from "./AvatarContext";
+import { useAvatarOff } from "./avatarPref";
 import { useCapability } from "./useCapability";
 import { usePredictivePreload } from "./usePredictivePreload";
 import type { CharacterState } from "./states";
@@ -15,6 +16,12 @@ const IDLE_BEATS: CharacterState[] = ["noticing", "tapping", "pointing", "grabbi
  * stays a renderer and this stays the "brain".
  */
 export default function AvatarDirector() {
+  const [off] = useAvatarOff();
+  if (off) return null;
+  return <AvatarDirectorInner />;
+}
+
+function AvatarDirectorInner() {
   const { play, pointer } = useAvatarContext();
   const cap = useCapability();
   usePredictivePreload(!cap.reducedMotion);
