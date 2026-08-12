@@ -80,6 +80,8 @@ function AvatarStageInner() {
   // adopted once it has held for a moment, so a boundary between two sections
   // cannot flip the pick back and forth on ordinary scroll jitter.
   const switchStreak = useRef<{ id: string | null; since: number }>({ id: null, since: 0 });
+  // Viewport his phone position is measured against; see the effect below.
+  const pinVp = useRef({ w: 0, h: 0 });
   ambientRef.current = ambient;
   flipRef.current = baseFlip;
   visibleRef.current = visible;
@@ -129,6 +131,30 @@ function AvatarStageInner() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  /* The viewport his phone position is measured against.
+     iOS collapses and expands the Safari toolbar as you scroll, which moves
+     window.innerHeight by ~60-90px mid-flick. Reading that live would drift
+     him down and back up the screen for exactly the reason chasing the
+     anchor did, so it is cached and only refreshed when the width changes —
+     a toolbar changes only the height, a rotation changes both. */
+  useEffect(() => {
+    const set = () => {
+      pinVp.current = { w: window.innerWidth, h: window.innerHeight };
+    };
+    set();
+    const onResize = () => {
+      if (window.innerWidth !== pinVp.current.w) set();
+    };
+    // Height is not settled at the moment the rotation event fires.
+    const onRotate = () => setTimeout(set, 250);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onRotate);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onRotate);
+    };
   }, []);
 
   /* ── the journey: portal out here, portal in there ────────────── */
@@ -206,6 +232,10 @@ function AvatarStageInner() {
       anchors.forEach((entry, id) => {
         if (entry.config.exclusive) exclusive = [id, entry];
       });
+      // Read once, as a plain boolean: the assignment above happens inside a
+      // callback, so TypeScript narrows `exclusive` to null everywhere after
+      // it and the checks below would be typed away.
+      const isExclusive = exclusive !== null;
 
       if (exclusive) {
         const [id, entry] = exclusive as [string, AnchorEntry];
@@ -270,15 +300,34 @@ function AvatarStageInner() {
         const cfg = bestCfg as AnchorConfig;
         const vw = window.innerWidth;
         const scale = vw < 480 ? 0.82 : vw < 768 ? 0.9 : vw < 1024 ? 0.95 : 1;
-        // Below the tablet breakpoint every section is a single centred
-        // column, so an anchor's horizontal offset is a desktop affordance
-        // with nothing to sit beside. Honouring it anyway meant the build
-        // section pulled him 100px left of where every other section put him
-        // — a quarter of a 375px screen — and the deliberately lazy x-spring
-        // spent the whole scroll easing him across that gap and back, which
-        // is the sideways drift. On a phone he simply holds the centre line.
-        const cx = vw < 768 ? vw / 2 : r.left + r.width / 2;
-        const cy = r.top + r.height / 2;
+
+        /**
+         * On a phone he holds a fixed spot in the viewport instead of
+         * chasing an anchor down the page.
+         *
+         * A section's anchor lives in scrolling content, so following it
+         * means recomputing his position from a rect on every frame. iOS
+         * scrolls on the compositor and starves rAF while a flick is still
+         * gliding, so those frames arrive late and in bursts — the page
+         * moves smoothly underneath while he updates in steps, which is the
+         * stutter. Nothing about a spring or a frame budget fixes that; the
+         * only reliable answer is to stop making his position a function of
+         * scroll at all. A target that never changes cannot be chased late.
+         *
+         * Below the tablet breakpoint every section is a single centred
+         * column anyway, so there is nothing for him to sit beside: he takes
+         * the centre line, and sections change his pose rather than his
+         * place.
+         *
+         * Exclusive anchors are exempt. Those belong to the full-screen
+         * experiences, which are fixed overlays — their rects do not move
+         * with scroll, so there is nothing to fall behind, and the brain
+         * scene in particular needs the spot it asks for.
+         */
+        const pinned = vw < 768 && !isExclusive;
+        const pinH = pinVp.current.h || vh;
+        const cx = pinned ? vw / 2 : r.left + r.width / 2;
+        const cy = pinned ? pinH * 0.58 : r.top + r.height / 2;
         const size = cfg.size * scale;
 
         // Moving to a different section is a journey, not a slide: he opens a
