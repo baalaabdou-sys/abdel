@@ -76,12 +76,10 @@ function AvatarStageInner() {
     size: number;
     cfg: AnchorConfig;
   } | null>(null);
-  // A candidate anchor has to win several frames in a row before it is
-  // actually adopted. Without this, a boundary between two sections whose
-  // anchors sit on opposite sides of the page could flip the pick every
-  // frame on ordinary scroll jitter (a mouse wheel step, touch momentum),
-  // which read as the character shimmying left and right instead of moving.
-  const switchStreak = useRef<{ id: string | null; count: number }>({ id: null, count: 0 });
+  // How long the current candidate anchor has been winning. A switch is only
+  // adopted once it has held for a moment, so a boundary between two sections
+  // cannot flip the pick back and forth on ordinary scroll jitter.
+  const switchStreak = useRef<{ id: string | null; since: number }>({ id: null, since: 0 });
   ambientRef.current = ambient;
   flipRef.current = baseFlip;
   visibleRef.current = visible;
@@ -173,6 +171,24 @@ function AvatarStageInner() {
     const interval = cap.isTouch ? 50 : 0;
     let last = 0;
 
+    /**
+     * Is this anchor actually laid out?
+     *
+     * An anchor inside a section that is hidden at the current breakpoint —
+     * Projects' is `hidden sm:block` — stays registered and returns a zero
+     * rect at the origin. That rect passes the on-screen test below (its
+     * bottom is not above the viewport and its top is not below it), sits a
+     * constant vh/2 from centre so it never loses on distance no matter how
+     * far you scroll, and reports a centre of x=0.
+     *
+     * The result on every phone was a phantom anchor permanently competing
+     * with the real ones and throwing him at the left edge and back. A box
+     * with no area is not somewhere he can stand.
+     */
+    const laidOut = (r: DOMRect) => r.width > 0 || r.height > 0;
+    const onScreen = (r: DOMRect, vh: number) =>
+      laidOut(r) && r.bottom >= 0 && r.top <= vh;
+
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       if (now - last < interval) return;
@@ -200,7 +216,7 @@ function AvatarStageInner() {
       } else {
         anchors.forEach((entry, id) => {
           const r = entry.el.getBoundingClientRect();
-          if (r.bottom < 0 || r.top > vh) return;
+          if (!onScreen(r, vh)) return;
           const dist = Math.abs(r.top + r.height / 2 - vh / 2);
           if (dist < bestDist) {
             bestDist = dist;
@@ -217,7 +233,7 @@ function AvatarStageInner() {
         const cur = anchors.get(curId);
         if (cur) {
           const r = cur.el.getBoundingClientRect();
-          if (r.bottom >= 0 && r.top <= vh) {
+          if (onScreen(r, vh)) {
             const d = Math.abs(r.top + r.height / 2 - vh / 2);
             if (d <= bestDist + SWITCH_MARGIN) {
               bestId = curId;
@@ -228,29 +244,25 @@ function AvatarStageInner() {
         }
       }
 
-      // A candidate switch has to win several frames running before it is
-      // adopted — otherwise a boundary between two sections whose anchors
-      // sit on opposite sides of the page flips the pick on ordinary scroll
-      // jitter, snapping the target x back and forth every frame.
+      // A candidate has to keep winning for a moment before it is adopted,
+      // so a boundary between two sections cannot flip the pick back and
+      // forth on ordinary scroll jitter. Held in milliseconds rather than a
+      // frame count because this loop runs every frame on a desktop and
+      // every 50ms on a phone — a count would mean two different delays.
       if (!exclusive && bestId !== curId) {
-        if (switchStreak.current.id === bestId) {
-          switchStreak.current.count += 1;
-        } else {
-          switchStreak.current = { id: bestId, count: 1 };
+        if (switchStreak.current.id !== bestId) {
+          switchStreak.current = { id: bestId, since: now };
         }
-        if (switchStreak.current.count < 6) {
+        if (now - switchStreak.current.since < 120) {
           const cur = curId ? anchors.get(curId) : null;
-          if (cur) {
-            const r = cur.el.getBoundingClientRect();
-            if (r.bottom >= 0 && r.top <= vh) {
-              bestId = curId;
-              bestEl = cur.el;
-              bestCfg = cur.config;
-            }
+          if (cur && onScreen(cur.el.getBoundingClientRect(), vh)) {
+            bestId = curId;
+            bestEl = cur.el;
+            bestCfg = cur.config;
           }
         }
       } else {
-        switchStreak.current = { id: null, count: 0 };
+        switchStreak.current = { id: null, since: now };
       }
 
       if (bestEl && bestCfg) {
@@ -258,7 +270,14 @@ function AvatarStageInner() {
         const cfg = bestCfg as AnchorConfig;
         const vw = window.innerWidth;
         const scale = vw < 480 ? 0.82 : vw < 768 ? 0.9 : vw < 1024 ? 0.95 : 1;
-        const cx = r.left + r.width / 2;
+        // Below the tablet breakpoint every section is a single centred
+        // column, so an anchor's horizontal offset is a desktop affordance
+        // with nothing to sit beside. Honouring it anyway meant the build
+        // section pulled him 100px left of where every other section put him
+        // — a quarter of a 375px screen — and the deliberately lazy x-spring
+        // spent the whole scroll easing him across that gap and back, which
+        // is the sideways drift. On a phone he simply holds the centre line.
+        const cx = vw < 768 ? vw / 2 : r.left + r.width / 2;
         const cy = r.top + r.height / 2;
         const size = cfg.size * scale;
 
