@@ -40,7 +40,9 @@ export default function Intro() {
 
   /* ── who sees this ────────────────────────────────────────
      Once per session, and never for someone who has asked for less
-     motion — for them the site is simply already open. */
+     motion — for them the site is simply already open. Everyone else lands
+     on the still first frame and waits for the click that starts the clip —
+     nothing plays until then. */
   useEffect(() => {
     const seen = sessionStorage.getItem(SEEN_KEY) === "1";
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -49,7 +51,7 @@ export default function Intro() {
       return;
     }
     document.documentElement.classList.add("intro-open");
-    setPhase("playing");
+    setPhase("armed");
   }, []);
 
 
@@ -95,9 +97,11 @@ export default function Intro() {
      Held at the top level rather than inside a phase, because the phases
      are exactly what a failure knocks off course. Whatever happens — no
      codec, a stalled fetch, an unplayable file, a paused tab — the portal
-     opens and the site is handed over. */
+     opens and the site is handed over. Only counts down once the clip is
+     actually running: "armed" is someone looking at the still frame,
+     waiting on their own click, and must never be timed out from under them. */
   useEffect(() => {
-    if (phase === "idle" || phase === "done") return;
+    if (phase !== "playing" && phase !== "opening") return;
     const bail = setTimeout(
       () => openPortal(),
       (INTRO.portalStartAt ?? INTRO_DURATION_S) * 1000 + 3000
@@ -296,7 +300,7 @@ export default function Intro() {
         </>
       )}
 
-      {/* ── if the browser refused sound ─────────────────── */}
+      {/* ── waiting on the click that starts the clip ────── */}
       <AnimatePresence>
         {phase === "armed" && (
           <motion.button
@@ -305,11 +309,38 @@ export default function Intro() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 grid place-items-center bg-black/50 backdrop-blur-[2px]"
+            className="absolute inset-0 grid cursor-pointer place-items-center bg-black/35"
           >
-            <span className="rounded-full border border-paper/40 px-8 py-3.5 text-sm font-medium tracking-[0.3em] text-paper transition hover:border-paper">
-              ENTER
-            </span>
+            {/* sits where he grabs it in the clip, so the prompt and the
+                payoff land in the same spot */}
+            <motion.div
+              className="absolute flex flex-col items-center gap-3"
+              style={{
+                left: `${INTRO.focal.x * 100}%`,
+                top: `${INTRO.focal.y * 100}%`,
+                transform: "translate(-50%, -50%)",
+              }}
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <svg
+                width="34"
+                height="34"
+                viewBox="0 0 24 24"
+                className="drop-shadow-[0_4px_18px_rgba(0,0,0,0.6)]"
+              >
+                <path
+                  d="M4 2 L4 19.5 L8.3 15.6 L11.2 21.4 L14.5 19.8 L11.6 14 L17.5 14 Z"
+                  fill="#F4F1EA"
+                  stroke="#05060D"
+                  strokeWidth="1.1"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="rounded-full border border-paper/40 bg-black/40 px-5 py-2 text-[11px] font-medium tracking-[0.3em] text-paper backdrop-blur">
+                CLICK
+              </span>
+            </motion.div>
           </motion.button>
         )}
       </AnimatePresence>

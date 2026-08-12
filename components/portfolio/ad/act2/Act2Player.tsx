@@ -172,8 +172,17 @@ export default function Act2Player({
                 preload="auto"
                 className="h-full w-full object-cover"
               >
-                <source src={ACT2_CLIPS[s.clip].webm} type="video/webm" />
+                {/*
+                  mp4 (H.264) listed first: the browser picks the first
+                  <source> it can play, not the smallest, and most phones
+                  only have H.264 in hardware. VP9 is technically playable
+                  in software on more devices than actually have a VP9
+                  decoder chip, which turned this into the laggiest thing in
+                  the act on real hardware. webm stays as a fallback for the
+                  rare browser without H.264 support.
+                */}
                 <source src={ACT2_CLIPS[s.clip].mp4} type="video/mp4" />
+                <source src={ACT2_CLIPS[s.clip].webm} type="video/webm" />
               </video>
             ) : (
               <LiveScene
