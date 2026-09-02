@@ -21,7 +21,8 @@
     "e2e": "tsx --tsconfig tsconfig.scripts.json scripts/e2e-funnel.ts",
     "dev:session": "tsx --tsconfig tsconfig.scripts.json scripts/dev-session.ts",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "e2e:capture": "tsx --tsconfig tsconfig.scripts.json scripts/e2e-external-capture.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

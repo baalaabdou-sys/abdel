@@ -59,6 +59,7 @@ export default async function CampaignDetailPage({ params }: { params: { id: str
           segmentId: campaign.segmentId,
           emailAccountId: campaign.emailAccountId,
           landingPageId: campaign.landingPageId,
+          externalLandingUrl: campaign.externalLandingUrl,
           scheduledAt: campaign.scheduledAt?.toISOString() ?? null,
           trackOpens: campaign.trackOpens,
           trackClicks: campaign.trackClicks,

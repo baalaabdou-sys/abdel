@@ -269,6 +269,7 @@ model Workspace {
   threads         EmailThread[]
   domains         SendingDomain[]
   FormSubmission  FormSubmission[]
+  CaptureSite     CaptureSite[]
 }
 
 model WorkspaceMember {
@@ -642,16 +643,19 @@ model EmailMessage {
 // ─────────────────────────────────────────────────────────────
 
 model Campaign {
-  id             String            @id @default(cuid())
-  workspaceId    String
-  name           String
-  objective      CampaignObjective @default(QUOTE_REQUEST)
-  product        InsuranceType     @default(AUTO)
-  status         CampaignStatus    @default(DRAFT)
-  segmentId      String?
-  emailAccountId String?
-  landingPageId  String?
-  locale         String            @default("fr")
+  id                 String            @id @default(cuid())
+  workspaceId        String
+  name               String
+  objective          CampaignObjective @default(QUOTE_REQUEST)
+  product            InsuranceType     @default(AUTO)
+  status             CampaignStatus    @default(DRAFT)
+  segmentId          String?
+  emailAccountId     String?
+  landingPageId      String?
+  /// Set instead of landingPageId when the CTA points at a page the client
+  /// hosts themselves. Leads come back through the capture endpoints.
+  externalLandingUrl String?
+  locale             String            @default("fr")
 
   scheduledAt  DateTime?
   startedAt    DateTime?
@@ -851,10 +855,11 @@ model Form {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  fields      FormField[]
-  submissions FormSubmission[]
-  pages       LandingPage[]
+  workspace    Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  fields       FormField[]
+  submissions  FormSubmission[]
+  pages        LandingPage[]
+  captureSites CaptureSite[]
 
   @@index([workspaceId])
 }
@@ -1211,6 +1216,39 @@ model Job {
 
   @@index([status, runAt])
   @@index([queue, status, runAt])
+}
+
+/// An externally hosted page allowed to send funnel events and leads back into
+/// the workspace. The public key identifies the workspace in browser requests
+/// (it is visible in the page source, exactly like an analytics id); trust comes
+/// from the origin allow-list. The secret key is for server-to-server posts.
+model CaptureSite {
+  id                  String        @id @default(cuid())
+  workspaceId         String
+  name                String
+  url                 String        @default("")
+  publicKey           String        @unique
+  secretKeyHash       String?
+  allowedOrigins      String[]      @default([])
+  formId              String?
+  product             InsuranceType @default(AUTRE)
+  /// Maps the client's own field names onto ours, e.g. {"votre_email":"email"}.
+  fieldMapping        Json          @default("{}")
+  consentText         String        @default("")
+  /// When true, a submission without an explicit consent field is still accepted
+  /// but recorded with consent UNKNOWN rather than assumed granted.
+  requireConsentField Boolean       @default(true)
+  active              Boolean       @default(true)
+  lastEventAt         DateTime?
+  viewCount           Int           @default(0)
+  leadCount           Int           @default(0)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  form      Form?     @relation(fields: [formId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
 }
 
 model Session {

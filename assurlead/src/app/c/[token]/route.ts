@@ -31,10 +31,30 @@ export async function GET(_request: Request, { params }: { params: { token: stri
     },
   }).catch(() => undefined); // duplicate within the same minute — ignore
 
-  const page = recipient.campaign.landingPage;
-  const target = page
-    ? `${appUrl()}/p/${page.slug}?r=${encodeURIComponent(params.token)}`
-    : `${appUrl()}/lien-invalide`;
+  return NextResponse.redirect(destinationFor(recipient.campaign, params.token), { status: 302 });
+}
 
-  return NextResponse.redirect(target, { status: 302 });
+/**
+ * Where the CTA sends the visitor: a landing page hosted here, or one the client
+ * hosts themselves. In both cases the tracking token travels with them so the
+ * resulting lead stays attributed to the campaign.
+ */
+function destinationFor(
+  campaign: { landingPage: { slug: string } | null; externalLandingUrl: string | null },
+  token: string,
+): string {
+  if (campaign.externalLandingUrl) {
+    try {
+      const target = new URL(campaign.externalLandingUrl);
+      // `alid` is the parameter the capture snippet reads.
+      target.searchParams.set('alid', token);
+      return target.toString();
+    } catch {
+      return `${appUrl()}/lien-invalide`;
+    }
+  }
+  if (campaign.landingPage) {
+    return `${appUrl()}/p/${campaign.landingPage.slug}?r=${encodeURIComponent(token)}`;
+  }
+  return `${appUrl()}/lien-invalide`;
 }

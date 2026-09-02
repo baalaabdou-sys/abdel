@@ -27,14 +27,15 @@ L'indicateur central du produit est le **nombre de leads qualifiés par jour**
 8. [Authentification de domaine](#8-authentification-de-domaine)
 9. [Webhooks](#9-webhooks)
 10. [Landing pages et domaines](#10-landing-pages-et-domaines)
-11. [Rôles et permissions](#11-rôles-et-permissions)
-12. [Conformité et traçabilité](#12-conformité-et-traçabilité)
-13. [Tests](#13-tests)
-14. [Déploiement en production](#14-déploiement-en-production)
-15. [Sauvegardes](#15-sauvegardes)
-16. [Sécurité](#16-sécurité)
-17. [Comptes de test](#17-comptes-de-test)
-18. [État de livraison](#18-état-de-livraison)
+11. [Pages externes : capture sur un site existant](#11-pages-externes--capture-sur-un-site-existant)
+12. [Rôles et permissions](#12-rôles-et-permissions)
+13. [Conformité et traçabilité](#13-conformité-et-traçabilité)
+14. [Tests](#14-tests)
+15. [Déploiement en production](#15-déploiement-en-production)
+16. [Sauvegardes](#16-sauvegardes)
+17. [Sécurité](#17-sécurité)
+18. [Comptes de test](#18-comptes-de-test)
+19. [État de livraison](#19-état-de-livraison)
 
 ---
 
@@ -410,7 +411,80 @@ prête à être exploitée.
 
 ---
 
-## 11. Rôles et permissions
+## 11. Pages externes : capture sur un site existant
+
+Le client n'est pas obligé d'utiliser les landing pages de l'application. Quand
+la page existe déjà — par exemple `https://choix-senior.online/etude-comparative` —
+une campagne peut pointer directement dessus et les leads reviennent quand même
+dans l'entonnoir, rattachés à la campagne et au contact d'origine.
+
+### Déclarer le site
+
+*Intégrations → Pages externes → Ajouter une page.* On y renseigne l'URL, le
+formulaire de destination (créé en un clic si besoin), le produit, le texte de
+consentement et les **origines autorisées**. Deux clés sont générées :
+
+| Clé | Préfixe | Usage | Visibilité |
+| --- | --- | --- | --- |
+| Clé publique | `alp_…` | appels depuis le navigateur du visiteur | publique, contrôlée par l'origine |
+| Clé secrète | `als_…` | appels serveur-à-serveur (`Authorization: Bearer …`) | affichée **une seule fois**, stockée hachée |
+
+La clé publique seule ne suffit pas : une requête navigateur n'est acceptée que
+si son en-tête `Origin` figure dans la liste des origines autorisées, sinon la
+réponse est `403`.
+
+### Brancher la page
+
+Une seule ligne à ajouter dans le `<head>` de la page du client :
+
+```html
+<script src="https://votre-app.fr/api/embed" data-key="alp_votre_cle" defer></script>
+```
+
+Le script est autonome (aucune dépendance), et :
+
+- mémorise le paramètre `alid` ajouté par le CTA de l'email, pour toute la session ;
+- enregistre la visite (`LANDING_VIEW`) ;
+- surveille les formulaires de la page et transmet leur contenu à la soumission ;
+- expose `window.assurlead.submit(champs)`, `.step(n)` et `.start()` pour les
+  formulaires pilotés en JavaScript ;
+- ignore tout formulaire portant l'attribut `data-assurlead-ignore` ;
+- n'interrompt jamais le fonctionnement de la page hôte en cas d'erreur.
+
+### Envoi depuis le serveur du client
+
+```bash
+curl -X POST https://votre-app.fr/api/capture/lead \
+  -H 'authorization: Bearer als_votre_cle_secrete' \
+  -H 'content-type: application/json' \
+  -d '{"key":"alp_votre_cle","token":"<alid>","fields":{"Prénom":"Simone","E-mail":"s@exemple.fr","Téléphone":"0612345678","consentement_rgpd":true}}'
+```
+
+Les noms de champs sont normalisés puis rapprochés d'une table d'alias
+(`prenom`, `nom`, `e-mail`, `telephone`, `code postal`, …), donc les libellés
+du formulaire existant n'ont pas besoin d'être renommés. Une requête sans email
+**ni** téléphone est refusée (`422`) : sans moyen de contact il n'y a pas de lead.
+
+### Ce que la capture externe ne fait pas
+
+- **Le consentement n'est jamais supposé.** Sans case cochée transmise, le
+  contact est créé avec un consentement `INCONNU` et n'entre pas dans les
+  audiences d'envoi. C'est au client d'ajouter la case sur sa page.
+- **Un jeton `alid` d'un autre espace de travail est rejeté**, jamais rattaché.
+- **La provenance est ajoutée, jamais écrasée** : un contact déjà connu conserve
+  sa source d'origine et reçoit une ligne de provenance supplémentaire.
+
+Vérification de bout en bout, contre l'application lancée :
+
+```bash
+npm run e2e:capture     # 19 étapes : redirection CTA, snippet, capture navigateur,
+                        # origine refusée, capture serveur, clé invalide,
+                        # consentement inconnu, entonnoir, compteurs
+```
+
+---
+
+## 12. Rôles et permissions
 
 | Rôle | Périmètre |
 |---|---|
@@ -426,7 +500,7 @@ toute façon refusé par le serveur.
 
 ---
 
-## 12. Conformité et traçabilité
+## 13. Conformité et traçabilité
 
 L'application fournit des outils ; elle ne rend pas un avis juridique.
 
@@ -462,7 +536,7 @@ modifications de politique, exports.
 
 ---
 
-## 13. Tests
+## 14. Tests
 
 ```bash
 npm run typecheck      # TypeScript
@@ -522,7 +596,7 @@ désinscription.
 
 ---
 
-## 14. Déploiement en production
+## 15. Déploiement en production
 
 ### Avant la mise en ligne
 
@@ -586,7 +660,7 @@ volume partagé ou un stockage objet.
 
 ---
 
-## 15. Sauvegardes
+## 16. Sauvegardes
 
 Toutes les données métier sont dans PostgreSQL.
 
@@ -607,7 +681,7 @@ Points d'attention :
 
 ---
 
-## 16. Sécurité
+## 17. Sécurité
 
 - **Mots de passe** : bcrypt, coût 11.
 - **Sessions** : cookie httpOnly, `SameSite=Lax`, `Secure` en production ; JWT signé HS256 ; ligne `Session` en base permettant une révocation immédiate.
@@ -630,7 +704,7 @@ centralisée, surveillance des erreurs, et une limitation de débit partagée
 
 ---
 
-## 17. Comptes de test
+## 18. Comptes de test
 
 Créés par `npm run seed` — **à supprimer avant toute mise en production**.
 
@@ -650,7 +724,7 @@ portent le marqueur DÉMO** et sont supprimables en un clic depuis
 
 ---
 
-## 18. État de livraison
+## 19. État de livraison
 
 ### Livré et vérifié
 
@@ -666,7 +740,9 @@ IA et réponse validée par un humain · automatisations · analytics d'entonnoi
 objectifs quotidiens et prévisions étiquetées comme estimations · délivrabilité
 avec vérification DNS réelle · webhooks idempotents et signés · liste de
 suppression · journal d'audit · rôles et permissions · interface française et
-anglaise · thèmes clair, sombre et système · PWA installable.
+anglaise · thèmes clair, sombre et système · PWA installable · capture de leads
+depuis une page hébergée par le client (script embarquable, API navigateur et
+API serveur-à-serveur, contrôle d'origine et clé secrète hachée).
 
 ### Partiellement livré
 

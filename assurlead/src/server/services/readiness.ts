@@ -122,22 +122,48 @@ export async function evaluateCampaignReadiness(campaignId: string): Promise<Rea
   });
 
   const page = campaign.landingPage;
-  push({
-    key: 'landing',
-    label: 'Landing page publiée',
-    status: page ? (page.status === 'PUBLISHED' ? 'PASS' : 'FAIL') : 'FAIL',
-    detail: page
-      ? page.status === 'PUBLISHED'
-        ? `${appUrl()}/p/${page.slug}`
-        : `« ${page.name} » est en brouillon : les destinataires arriveraient sur une page indisponible.`
-      : 'Aucune landing page rattachée à la campagne.',
-    weight: 12,
-    blocking: !page || page.status !== 'PUBLISHED',
-  });
+  const external = campaign.externalLandingUrl;
+  const captureSite = external ? await findCaptureSiteFor(campaign.workspaceId, external) : null;
 
-  const form = page?.form;
+  if (external) {
+    push({
+      key: 'landing',
+      label: 'Page de destination externe',
+      status: captureSite ? 'PASS' : 'WARN',
+      detail: captureSite
+        ? `${external} — capture active (${captureSite.name}).`
+        : `${external} — aucun site de capture ne couvre ce domaine : les visites et les leads de cette page ne remonteront pas.`,
+      weight: 12,
+      blocking: false,
+    });
+    push({
+      key: 'capture_form',
+      label: 'Formulaire de capture rattaché',
+      status: captureSite?.formId ? 'PASS' : 'FAIL',
+      detail: captureSite?.formId
+        ? 'Les soumissions de la page externe créent un lead scoré.'
+        : 'Sans formulaire rattaché au site de capture, aucune soumission ne peut devenir un lead.',
+      weight: 12,
+      blocking: !captureSite?.formId,
+    });
+  } else {
+    push({
+      key: 'landing',
+      label: 'Landing page publiée',
+      status: page ? (page.status === 'PUBLISHED' ? 'PASS' : 'FAIL') : 'FAIL',
+      detail: page
+        ? page.status === 'PUBLISHED'
+          ? `${appUrl()}/p/${page.slug}`
+          : `« ${page.name} » est en brouillon : les destinataires arriveraient sur une page indisponible.`
+        : 'Aucune landing page rattachée à la campagne.',
+      weight: 12,
+      blocking: !page || page.status !== 'PUBLISHED',
+    });
+  }
+
+  const form = external ? null : page?.form;
   const requiredFields = form?.fields.filter((f) => f.required) ?? [];
-  push({
+  if (!external) push({
     key: 'form',
     label: 'Formulaire opérationnel',
     status: form && form.fields.length >= 2 ? 'PASS' : 'FAIL',
@@ -149,7 +175,7 @@ export async function evaluateCampaignReadiness(campaignId: string): Promise<Rea
   });
 
   const hasContactField = form?.fields.some((f) => ['email', 'tel'].includes(f.type)) ?? false;
-  push({
+  if (!external) push({
     key: 'form_contact',
     label: 'Coordonnées collectées',
     status: hasContactField ? 'PASS' : 'FAIL',
@@ -161,7 +187,7 @@ export async function evaluateCampaignReadiness(campaignId: string): Promise<Rea
   });
 
   const hasConsentField = form?.fields.some((f) => f.type === 'checkbox') ?? false;
-  push({
+  if (!external) push({
     key: 'form_consent',
     label: 'Case de consentement',
     status: hasConsentField ? 'PASS' : 'WARN',
@@ -293,6 +319,20 @@ export async function evaluateCampaignReadiness(campaignId: string): Promise<Rea
     data: { readinessScore: score, readinessReport: report as never },
   });
   return report;
+}
+
+/** Finds the capture site whose allowed origins cover an external URL. */
+async function findCaptureSiteFor(workspaceId: string, url: string) {
+  let host: string;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch {
+    return null;
+  }
+  const sites = await prisma.captureSite.findMany({ where: { workspaceId, active: true } });
+  return sites.find((site) =>
+    site.allowedOrigins.some((origin) => origin.toLowerCase().replace(/^https?:\/\//, '').replace(/\/+$/, '') === host),
+  ) ?? null;
 }
 
 const SPAM_PATTERNS: [RegExp, string][] = [

@@ -21,6 +21,8 @@ export type SubmissionInput = {
   userAgent?: string | null;
   variantLabel?: string | null;
   isDemo?: boolean;
+  /// Present when the submission came from a page the client hosts themselves.
+  externalSource?: { captureSiteId: string; channel: 'browser' | 'server'; pageUrl: string | null } | null;
 };
 
 export type IntakeResult = { submissionId: string; leadId: string; score: number; band: string };
@@ -79,12 +81,26 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
     : null;
 
   // ── Contact upsert with provenance ────────────────────────────
-  let contactId: string | null = recipient?.contactId ?? null;
-  if (!contactId && email && isSyntacticallyValidEmail(email)) {
-    const emailNormalized = normalizeEmail(email);
-    const existing = await prisma.contact.findUnique({
-      where: { workspaceId_emailNormalized: { workspaceId: input.workspaceId, emailNormalized } },
-    });
+  let contactId: string | null = null;
+  // A visitor who arrived from a tracked email is already a known contact; one
+  // who arrived cold is matched on their normalised email. Either way the same
+  // enrichment and provenance path runs, so a tracked submission is never
+  // silently dropped on the floor.
+  const known =
+    recipient?.contact ??
+    (email && isSyntacticallyValidEmail(email)
+      ? await prisma.contact.findUnique({
+          where: {
+            workspaceId_emailNormalized: {
+              workspaceId: input.workspaceId,
+              emailNormalized: normalizeEmail(email),
+            },
+          },
+        })
+      : null);
+
+  if (known || (email && isSyntacticallyValidEmail(email))) {
+    const existing = known;
     if (existing) {
       contactId = existing.id;
       // Enrich without overwriting existing values.
@@ -107,7 +123,7 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
             ? {
                 consentEmail: 'GRANTED' as const,
                 consentDate: new Date(),
-                consentSource: 'landing_form',
+                consentSource: input.externalSource ? 'landing_externe' : 'landing_form',
                 emailMarketingAllowed: true,
                 phoneContactAllowed: true,
                 consentPhone: 'GRANTED' as const,
@@ -115,12 +131,24 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
             : {}),
         },
       });
-    } else {
+      // Provenance is appended, never overwritten: `sourceDetail` still names
+      // where the contact originally came from, and this row records that the
+      // same person came back through an external page.
+      await prisma.contactSource.create({
+        data: {
+          contactId: existing.id,
+          source: input.externalSource ? 'landing_externe' : 'landing_form',
+          detail: input.externalSource
+            ? `Page externe${input.externalSource.pageUrl ? ` — ${input.externalSource.pageUrl}` : ''}${campaign ? ` · Campagne ${campaign.name}` : ''}`
+            : campaign ? `Campagne ${campaign.name}` : form.name,
+        },
+      });
+    } else if (email) {
       const created = await prisma.contact.create({
         data: {
           workspaceId: input.workspaceId,
           email,
-          emailNormalized,
+          emailNormalized: normalizeEmail(email),
           firstName,
           lastName,
           phone,
@@ -131,12 +159,14 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
           renewalDate,
           renewalMonth: renewalDate ? renewalDate.getMonth() + 1 : null,
           insuranceInterests: [form.product],
-          source: 'landing_form',
-          sourceDetail: campaign ? `Campagne ${campaign.name}` : form.name,
+          source: input.externalSource ? 'landing_externe' : 'landing_form',
+          sourceDetail: input.externalSource
+            ? `Page externe${input.externalSource.pageUrl ? ` — ${input.externalSource.pageUrl}` : ''}${campaign ? ` · Campagne ${campaign.name}` : ''}`
+            : campaign ? `Campagne ${campaign.name}` : form.name,
           consentEmail: input.consentGiven ? 'GRANTED' : 'UNKNOWN',
           consentPhone: input.consentGiven ? 'GRANTED' : 'UNKNOWN',
           consentDate: input.consentGiven ? new Date() : null,
-          consentSource: input.consentGiven ? 'landing_form' : null,
+          consentSource: input.consentGiven ? (input.externalSource ? 'landing_externe' : 'landing_form') : null,
           legalBasisNote: input.consentText.slice(0, 500),
           emailMarketingAllowed: input.consentGiven,
           phoneContactAllowed: input.consentGiven,
@@ -145,15 +175,21 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
       });
       contactId = created.id;
       await prisma.contactSource.create({
-        data: { contactId: created.id, source: 'landing_form', detail: campaign ? `Campagne ${campaign.name}` : form.name },
+        data: {
+          contactId: created.id,
+          source: input.externalSource ? 'landing_externe' : 'landing_form',
+          detail: input.externalSource
+            ? `Page externe${input.externalSource.pageUrl ? ` — ${input.externalSource.pageUrl}` : ''}`
+            : campaign ? `Campagne ${campaign.name}` : form.name,
+        },
       });
     }
 
     if (contactId && input.consentGiven) {
       await prisma.consentRecord.createMany({
         data: [
-          { contactId, channel: 'email', state: 'GRANTED', source: 'landing_form', evidence: input.consentText.slice(0, 500) },
-          { contactId, channel: 'phone', state: 'GRANTED', source: 'landing_form', evidence: input.consentText.slice(0, 500) },
+          { contactId, channel: 'email', state: 'GRANTED', source: input.externalSource ? 'landing_externe' : 'landing_form', evidence: input.consentText.slice(0, 500) },
+          { contactId, channel: 'phone', state: 'GRANTED', source: input.externalSource ? 'landing_externe' : 'landing_form', evidence: input.consentText.slice(0, 500) },
         ],
       });
     }
@@ -169,13 +205,18 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
       contactId,
       recipientToken: input.recipientToken ?? null,
       sessionId: input.sessionId ?? null,
-      answers: input.answers as Prisma.InputJsonValue,
       consentGiven: input.consentGiven,
       consentText: input.consentText,
       ipHash: input.ipHash ?? null,
       userAgent: input.userAgent?.slice(0, 300) ?? null,
       variantLabel: input.variantLabel ?? null,
       isDemo: input.isDemo ?? false,
+      answers: {
+        ...(input.answers as Record<string, unknown>),
+        ...(input.externalSource
+          ? { __capture: { siteId: input.externalSource.captureSiteId, channel: input.externalSource.channel, pageUrl: input.externalSource.pageUrl } }
+          : {}),
+      } as Prisma.InputJsonValue,
     },
   });
 
@@ -234,8 +275,8 @@ export async function intakeSubmission(input: SubmissionInput): Promise<IntakeRe
     data: {
       leadId: lead.id,
       type: 'FORM',
-      title: 'Formulaire soumis',
-      body: `${Object.keys(input.answers).length} réponses · score ${scoring.score}/100`,
+      title: input.externalSource ? 'Formulaire soumis (page externe)' : 'Formulaire soumis',
+      body: `${Object.keys(input.answers).length} réponses · score ${scoring.score}/100${input.externalSource ? ` · capture ${input.externalSource.channel === 'server' ? 'serveur' : 'navigateur'}` : ''}`,
       metadata: { submissionId: submission.id, campaignId } as Prisma.InputJsonValue,
     },
   });

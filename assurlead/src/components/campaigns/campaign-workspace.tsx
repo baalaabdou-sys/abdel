@@ -35,6 +35,7 @@ import { formatNumber, cn } from '@/lib/utils';
 type Campaign = {
   id: string; name: string; status: string; product: string; objective: string; locale: string;
   segmentId: string | null; emailAccountId: string | null; landingPageId: string | null;
+  externalLandingUrl: string | null;
   scheduledAt: string | null; trackOpens: boolean; trackClicks: boolean;
   batchSize: number; batchIntervalMinutes: number; dailyCap: number;
   abEnabled: boolean; readinessScore: number; recipientCount: number;
@@ -360,14 +361,74 @@ export function CampaignWorkspace({
         <TabsContent value="landing">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Landing page de destination</CardTitle>
-              <CardDescription>Le bouton de l’email redirige vers cette page, avec un jeton de suivi unique par destinataire.</CardDescription>
+              <CardTitle>Page de destination</CardTitle>
+              <CardDescription>
+                Le bouton de l’email y redirige avec un jeton de suivi unique par destinataire, que la
+                page soit hébergée ici ou chez vous.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={!editable}
+                  onClick={() => patch({ externalLandingUrl: null })}
+                  className={cn(
+                    'flex-1 rounded-lg border p-3 text-left text-sm transition-colors disabled:opacity-60',
+                    !settings.externalLandingUrl ? 'border-primary bg-primary/5' : 'hover:bg-accent',
+                  )}
+                >
+                  <span className="block font-medium">Page hébergée ici</span>
+                  <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                    Construite dans ASSURLEAD AI : suivi et formulaire déjà branchés.
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  disabled={!editable}
+                  onClick={() => patch({ landingPageId: null, externalLandingUrl: settings.externalLandingUrl || 'https://' })}
+                  className={cn(
+                    'flex-1 rounded-lg border p-3 text-left text-sm transition-colors disabled:opacity-60',
+                    settings.externalLandingUrl ? 'border-primary bg-primary/5' : 'hover:bg-accent',
+                  )}
+                >
+                  <span className="block font-medium">Votre page existante</span>
+                  <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                    Gardez votre page actuelle : un script y remonte visites et leads.
+                  </span>
+                </button>
+              </div>
+
+              {settings.externalLandingUrl !== null ? (
+                <div className="space-y-2">
+                  <Label>URL de votre page</Label>
+                  <Input
+                    value={settings.externalLandingUrl}
+                    disabled={!editable}
+                    placeholder="https://exemple.fr/etude-comparative"
+                    onChange={(e) => setSettings((s) => ({ ...s, externalLandingUrl: e.target.value }))}
+                    onBlur={(e) => patch({ externalLandingUrl: e.target.value })}
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Le lien du CTA deviendra{' '}
+                    <code className="rounded bg-muted px-1">
+                      {settings.externalLandingUrl.split('?')[0] || 'https://votre-page'}?alid=&lt;jeton&gt;
+                    </code>{' '}
+                    — le jeton permet de rattacher le lead à cette campagne.
+                  </p>
+                  <p className="rounded-lg border border-warning/40 bg-warning/5 p-2.5 text-[11px] text-warning">
+                    Pour que les visites et les demandes remontent, déclarez ce domaine dans{' '}
+                    <Link href="/integrations" className="underline">Intégrations → Pages externes</Link>{' '}
+                    et collez le script fourni sur la page. Sans cela, le clic est suivi mais aucun lead
+                    n’est créé.
+                  </p>
+                </div>
+              ) : null}
+
               <Select
                 value={settings.landingPageId ?? 'none'}
-                onValueChange={(v) => patch({ landingPageId: v === 'none' ? null : v })}
-                disabled={!editable}
+                onValueChange={(v) => patch({ landingPageId: v === 'none' ? null : v, externalLandingUrl: null })}
+                disabled={!editable || settings.externalLandingUrl !== null}
               >
                 <SelectTrigger className="max-w-lg"><SelectValue placeholder="Sélectionner une landing page" /></SelectTrigger>
                 <SelectContent>
@@ -379,7 +440,7 @@ export function CampaignWorkspace({
                   ))}
                 </SelectContent>
               </Select>
-              {settings.landingPageId ? (
+              {settings.landingPageId && settings.externalLandingUrl === null ? (
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/landing-pages/${settings.landingPageId}`}>Modifier la page</Link>
@@ -394,11 +455,11 @@ export function CampaignWorkspace({
                     <Badge variant="warning">Cette page est en brouillon : publiez-la avant le lancement.</Badge>
                   )}
                 </div>
-              ) : (
+              ) : settings.externalLandingUrl === null ? (
                 <p className="text-xs text-muted-foreground">
                   Aucune page sélectionnée. <Link href="/landing-pages" className="text-primary hover:underline">Créer une landing page</Link>.
                 </p>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>
