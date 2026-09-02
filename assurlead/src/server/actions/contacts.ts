@@ -278,3 +278,24 @@ export async function exportContactAction(id: string): Promise<ActionResult<Reco
     return ok(contact as unknown as Record<string, unknown>);
   });
 }
+
+export async function findDuplicatesAction() {
+  return guard(async () => {
+    const ctx = await requireWorkspace('contacts:read');
+    const { findDuplicates } = await import('../services/duplicates');
+    const groups = await findDuplicates(ctx.workspaceId);
+    return ok(groups);
+  });
+}
+
+export async function mergeContactsAction(primaryId: string, duplicateIds: string[]) {
+  return guard(async () => {
+    const ctx = await requireWorkspace('contacts:write');
+    if (duplicateIds.length === 0) return fail('Aucun doublon sélectionné');
+    const { mergeContacts } = await import('../services/duplicates');
+    const outcome = await mergeContacts(ctx.workspaceId, primaryId, duplicateIds, ctx.user.id);
+    revalidatePath('/contacts');
+    revalidatePath('/contacts/duplicates');
+    return ok(outcome);
+  });
+}

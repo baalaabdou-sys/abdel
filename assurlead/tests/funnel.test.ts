@@ -250,3 +250,74 @@ describe('Enregistrement des visites de landing page', () => {
     }
   });
 });
+
+describe('Détection et fusion des doublons', () => {
+  it('détecte les contacts partageant un numéro et fusionne sans perdre d’historique', async () => {
+    const ws = await createWorkspace('Doublons');
+    try {
+      const { findDuplicates, mergeContacts } = await import('@/server/services/duplicates');
+
+      const primary = await prisma.contact.create({
+        data: {
+          workspaceId: ws.id, email: 'jean.dupont@exemple.fr', emailNormalized: 'jean.dupont@exemple.fr',
+          firstName: 'Jean', lastName: 'Dupont', phone: '0612345678', phoneNormalized: '+33612345678',
+          city: 'Lyon', source: 'site', consentEmail: 'GRANTED', emailMarketingAllowed: true,
+        },
+      });
+      const duplicate = await prisma.contact.create({
+        data: {
+          workspaceId: ws.id, email: 'j.dupont@exemple.fr', emailNormalized: 'j.dupont@exemple.fr',
+          firstName: 'Jean', lastName: 'Dupont', phone: '06 12 34 56 78', phoneNormalized: '+33612345678',
+          postalCode: '69003', currentInsurer: 'AXA', consentEmail: 'GRANTED',
+          // The duplicate opted out: the merged record must inherit that.
+          unsubscribed: true, suppressed: true,
+        },
+      });
+      const lead = await prisma.lead.create({
+        data: { workspaceId: ws.id, contactId: duplicate.id, product: 'AUTO', score: 70, scoreBand: 'GOOD' },
+      });
+
+      const groups = await findDuplicates(ws.id);
+      expect(groups.length).toBeGreaterThan(0);
+      expect(groups[0].kind).toBe('PHONE');
+      expect(groups[0].contacts.map((c) => c.id).sort()).toEqual([primary.id, duplicate.id].sort());
+
+      const outcome = await mergeContacts(ws.id, primary.id, [duplicate.id]);
+      expect(outcome.mergedCount).toBe(1);
+      expect(outcome.movedLeads).toBe(1);
+
+      const merged = await prisma.contact.findUniqueOrThrow({ where: { id: primary.id } });
+      // Empty fields were filled from the duplicate…
+      expect(merged.postalCode).toBe('69003');
+      expect(merged.currentInsurer).toBe('AXA');
+      // …existing values were kept…
+      expect(merged.city).toBe('Lyon');
+      // …and the most restrictive state won.
+      expect(merged.suppressed).toBe(true);
+      expect(merged.unsubscribed).toBe(true);
+      expect(merged.emailMarketingAllowed).toBe(false);
+
+      // The lead followed the merge; the duplicate is gone.
+      const movedLead = await prisma.lead.findUniqueOrThrow({ where: { id: lead.id } });
+      expect(movedLead.contactId).toBe(primary.id);
+      expect(await prisma.contact.findUnique({ where: { id: duplicate.id } })).toBeNull();
+
+      // The merge is traceable.
+      const audit = await prisma.auditLog.count({ where: { workspaceId: ws.id, action: 'contact.merge' } });
+      expect(audit).toBe(1);
+    } finally {
+      await cleanupWorkspace(ws.id);
+    }
+  });
+
+  it('refuse de fusionner un contact avec lui-même', async () => {
+    const ws = await createWorkspace('DoublonsSelf');
+    try {
+      const { mergeContacts } = await import('@/server/services/duplicates');
+      const contact = await createContact(ws.id);
+      await expect(mergeContacts(ws.id, contact.id, [contact.id])).rejects.toThrow(/Aucun doublon/);
+    } finally {
+      await cleanupWorkspace(ws.id);
+    }
+  });
+});

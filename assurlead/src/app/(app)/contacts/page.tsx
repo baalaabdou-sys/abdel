@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Upload, Plus, Users } from 'lucide-react';
+import { Upload, Plus, Users, CopyCheck } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { requireWorkspace } from '@/server/context';
 import { contactWhere, type ContactFilters } from '@/server/services/contact-filters';
@@ -50,6 +50,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Rec
         actions={
           can(ctx.role, 'contacts:import') ? (
             <>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/contacts/duplicates"><CopyCheck /> Doublons</Link>
+              </Button>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/contacts/import"><Upload /> Importer</Link>
               </Button>
