@@ -1,0 +1,1226 @@
+// ASSURLEAD AI — Prisma schema
+// Multi-tenant (workspace-isolated) insurance lead generation platform.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  ADMIN
+  MARKETING
+  SALES
+  VIEWER
+}
+
+enum ContactStatus {
+  PROSPECT
+  CUSTOMER
+  FORMER_CUSTOMER
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  VALID
+  LIKELY_VALID
+  CATCH_ALL
+  RISKY
+  UNKNOWN
+  INVALID
+}
+
+enum ConsentState {
+  UNKNOWN
+  GRANTED
+  DENIED
+  WITHDRAWN
+}
+
+enum InsuranceType {
+  AUTO
+  MOTO
+  HABITATION
+  SANTE
+  PREVOYANCE
+  EMPRUNTEUR
+  PROFESSIONNELLE
+  DECENNALE
+  RC_PRO
+  AUTRE
+}
+
+enum SegmentKind {
+  STATIC
+  DYNAMIC
+}
+
+enum CampaignObjective {
+  QUOTE_REQUEST
+  CALLBACK_REQUEST
+  RENEWAL
+  CROSS_SELL
+  REACTIVATION
+  NEWSLETTER
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum RecipientStatus {
+  PENDING
+  QUEUED
+  PROCESSING
+  SENT
+  FAILED
+  BOUNCED
+  SUPPRESSED
+  CANCELLED
+  SKIPPED
+}
+
+enum CampaignEventType {
+  QUEUED
+  SENT
+  DELIVERED
+  BOUNCED
+  SOFT_BOUNCED
+  OPENED
+  CLICKED
+  COMPLAINT
+  UNSUBSCRIBED
+  REPLIED
+  LANDING_VIEW
+  FORM_START
+  FORM_STEP
+  FORM_SUBMIT
+  FAILED
+}
+
+enum EmailProviderKind {
+  DEMO
+  SMTP
+  BREVO
+  MAILGUN
+  SES
+  POSTMARK
+}
+
+enum DnsCheckStatus {
+  UNKNOWN
+  CONFIGURED
+  MISSING
+  INVALID
+  NEEDS_ATTENTION
+}
+
+enum SuppressionReason {
+  UNSUBSCRIBED
+  DO_NOT_CONTACT
+  HARD_BOUNCE
+  COMPLAINT
+  MANUAL_BLOCK
+  INVALID
+  OTHER
+}
+
+enum LeadStatus {
+  NOUVEAU
+  A_CONTACTER
+  CONTACTE
+  QUALIFIE
+  TRES_INTERESSE
+  RENDEZ_VOUS
+  DEVIS_ENVOYE
+  GAGNE
+  PERDU
+  NON_ELIGIBLE
+  NE_PAS_CONTACTER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  DONE
+  FAILED
+  CANCELLED
+}
+
+enum ReplyCategory {
+  UNCLASSIFIED
+  INTERESTED
+  CALLBACK_REQUEST
+  QUOTE_REQUEST
+  QUESTION
+  NOT_INTERESTED
+  NOT_NOW
+  UNSUBSCRIBE
+  OUT_OF_OFFICE
+  OTHER
+}
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum IntegrationStatus {
+  DISCONNECTED
+  CONNECTED
+  ERROR
+}
+
+enum NotificationLevel {
+  INFO
+  SUCCESS
+  WARNING
+  CRITICAL
+}
+
+// ─────────────────────────────────────────────────────────────
+// TENANCY & IDENTITY
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  locale       String    @default("fr")
+  avatarUrl    String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  memberships     WorkspaceMember[]
+  auditLogs       AuditLog[]
+  notifications   Notification[]
+  assignedLeads   Lead[]            @relation("LeadOwner")
+  leadAssignments LeadAssignment[]
+  tasks           Task[]            @relation("TaskAssignee")
+  activities      LeadActivity[]
+}
+
+model Workspace {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  logoUrl        String?
+  locale         String   @default("fr")
+  timezone       String   @default("Europe/Paris")
+  country        String   @default("FR")
+  isDemo         Boolean  @default(false)
+  onboardingStep Int      @default(0)
+  onboardingDone Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  members         WorkspaceMember[]
+  contacts        Contact[]
+  segments        Segment[]
+  campaigns       Campaign[]
+  emailAccounts   EmailAccount[]
+  landingPages    LandingPage[]
+  forms           Form[]
+  leads           Lead[]
+  tasks           Task[]
+  templates       Template[]
+  suppressions    SuppressionEntry[]
+  automationRules AutomationRule[]
+  integrations    Integration[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  dailyGoals      DailyGoal[]
+  apiUsage        ApiUsage[]
+  jobs            Job[]
+  imports         ImportBatch[]
+  policy          CompliancePolicy?
+  customFields    ContactCustomField[]
+  products        InsuranceProduct[]
+  threads         EmailThread[]
+  domains         SendingDomain[]
+  FormSubmission  FormSubmission[]
+}
+
+model WorkspaceMember {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        Role     @default(VIEWER)
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId])
+}
+
+model CompliancePolicy {
+  id          String @id @default(cuid())
+  workspaceId String @unique
+
+  // Campaign eligibility rules — configurable, never hardcoded legal interpretation.
+  requireExplicitConsent Boolean  @default(true)
+  allowUnknownConsent    Boolean  @default(false)
+  requireSourceRecorded  Boolean  @default(true)
+  allowCatchAll          Boolean  @default(true)
+  allowRisky             Boolean  @default(false)
+  allowUnverified        Boolean  @default(true)
+  blockOnUnknownConsent  Boolean  @default(true)
+  blockOnMissingSource   Boolean  @default(false)
+  blockOnLowReadiness    Boolean  @default(true)
+  minReadinessScore      Int      @default(60)
+  retentionMonths        Int      @default(36)
+  unsubscribeRequired    Boolean  @default(true)
+  legalNotice            String   @default("")
+  privacyUrl             String   @default("")
+  dpoEmail               String   @default("")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model InsuranceProduct {
+  id          String        @id @default(cuid())
+  workspaceId String
+  type        InsuranceType
+  label       String
+  description String        @default("")
+  active      Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, type])
+}
+
+// ─────────────────────────────────────────────────────────────
+// CONTACTS
+// ─────────────────────────────────────────────────────────────
+
+model Contact {
+  id          String @id @default(cuid())
+  workspaceId String
+
+  email           String
+  emailNormalized String
+  firstName       String?
+  lastName        String?
+  phone           String?
+  phoneNormalized String?
+  address         String?
+  city            String?
+  postalCode      String?
+  country         String        @default("FR")
+  birthDate       DateTime?
+  age             Int?
+  profession      String?
+  company         String?
+  status          ContactStatus @default(PROSPECT)
+
+  insuranceInterests InsuranceType[]
+  currentInsurer     String?
+  renewalDate        DateTime?
+  renewalMonth       Int?
+  requestedCoverage  String?
+  budgetMin          Int?
+  budgetMax          Int?
+  notes              String?
+  tags               String[]        @default([])
+  customData         Json            @default("{}")
+
+  // Provenance & consent
+  source                String?
+  sourceDetail          String?
+  importedAt            DateTime?
+  consentEmail          ConsentState @default(UNKNOWN)
+  consentPhone          ConsentState @default(UNKNOWN)
+  consentDate           DateTime?
+  consentSource         String?
+  legalBasisNote        String?
+  emailMarketingAllowed Boolean      @default(false)
+  phoneContactAllowed   Boolean      @default(false)
+  unsubscribed          Boolean      @default(false)
+  unsubscribedAt        DateTime?
+  suppressed            Boolean      @default(false)
+
+  // Verification
+  verificationStatus     VerificationStatus @default(UNVERIFIED)
+  verifiedAt             DateTime?
+  verificationProvider   String?
+  verificationConfidence Int?
+
+  leadScoreHint Int      @default(0)
+  isDemo        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sources       ContactSource[]
+  consents      ConsentRecord[]
+  recipients    CampaignRecipient[]
+  events        CampaignEvent[]
+  leads         Lead[]
+  submissions   FormSubmission[]
+  verifications VerificationResult[]
+  messages      EmailMessage[]
+  segmentLinks  SegmentContact[]
+
+  @@unique([workspaceId, emailNormalized])
+  @@index([workspaceId, verificationStatus])
+  @@index([workspaceId, suppressed])
+  @@index([workspaceId, city])
+  @@index([workspaceId, renewalMonth])
+  @@index([workspaceId, phoneNormalized])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, isDemo])
+}
+
+model ContactSource {
+  id            String   @id @default(cuid())
+  contactId     String
+  source        String
+  detail        String?
+  importBatchId String?
+  recordedAt    DateTime @default(now())
+
+  contact Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  batch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@index([contactId])
+}
+
+model ConsentRecord {
+  id         String       @id @default(cuid())
+  contactId  String
+  channel    String // email | phone | sms
+  state      ConsentState
+  source     String?
+  evidence   String?
+  note       String?
+  actorId    String?
+  recordedAt DateTime     @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId, channel])
+}
+
+model ContactCustomField {
+  id          String   @id @default(cuid())
+  workspaceId String
+  key         String
+  label       String
+  type        String   @default("text") // text | number | date | boolean | select
+  options     String[] @default([])
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, key])
+}
+
+model ImportBatch {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  filename       String
+  totalRows      Int       @default(0)
+  imported       Int       @default(0)
+  updated        Int       @default(0)
+  skipped        Int       @default(0)
+  invalid        Int       @default(0)
+  duplicates     Int       @default(0)
+  suppressedHits Int       @default(0)
+  strategy       String    @default("SKIP") // SKIP | UPDATE | MERGE | NEW_ONLY
+  mapping        Json      @default("{}")
+  defaults       Json      @default("{}")
+  status         String    @default("PENDING")
+  errorSample    Json      @default("[]")
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  finishedAt     DateTime?
+
+  workspace Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  sources   ContactSource[]
+
+  @@index([workspaceId, createdAt])
+}
+
+model VerificationResult {
+  id         String             @id @default(cuid())
+  contactId  String
+  provider   String
+  status     VerificationStatus
+  confidence Int?
+  raw        Json               @default("{}")
+  createdAt  DateTime           @default(now())
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@index([contactId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// SEGMENTS
+// ─────────────────────────────────────────────────────────────
+
+model Segment {
+  id          String      @id @default(cuid())
+  workspaceId String
+  name        String
+  description String      @default("")
+  kind        SegmentKind @default(DYNAMIC)
+  rules       Json        @default("{\"match\":\"AND\",\"conditions\":[]}")
+  cachedCount Int         @default(0)
+  countedAt   DateTime?
+  createdById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  workspace Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contacts  SegmentContact[]
+  campaigns Campaign[]
+
+  @@index([workspaceId])
+}
+
+model SegmentContact {
+  segmentId String
+  contactId String
+  addedAt   DateTime @default(now())
+
+  segment Segment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  @@id([segmentId, contactId])
+  @@index([contactId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// EMAIL INFRASTRUCTURE
+// ─────────────────────────────────────────────────────────────
+
+model SendingDomain {
+  id            String         @id @default(cuid())
+  workspaceId   String
+  domain        String
+  spf           DnsCheckStatus @default(UNKNOWN)
+  dkim          DnsCheckStatus @default(UNKNOWN)
+  dmarc         DnsCheckStatus @default(UNKNOWN)
+  trackingCname DnsCheckStatus @default(UNKNOWN)
+  spfRecord     String?
+  dkimRecord    String?
+  dmarcRecord   String?
+  lastCheckedAt DateTime?
+  notes         String?
+  createdAt     DateTime       @default(now())
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  accounts  EmailAccount[]
+
+  @@unique([workspaceId, domain])
+}
+
+model EmailAccount {
+  id               String            @id @default(cuid())
+  workspaceId      String
+  domainId         String?
+  provider         EmailProviderKind @default(DEMO)
+  label            String
+  fromEmail        String
+  fromName         String
+  replyTo          String?
+  credentials      Json              @default("{}") // encrypted at rest (AES-256-GCM)
+  status           IntegrationStatus @default(DISCONNECTED)
+  statusMessage    String?
+  dailyLimit       Int               @default(500)
+  hourlyLimit      Int               @default(100)
+  warmupEnabled    Boolean           @default(true)
+  warmupStartAt    DateTime?
+  warmupStartLimit Int               @default(50)
+  warmupIncrement  Int               @default(50)
+  sentToday        Int               @default(0)
+  sentTodayDate    DateTime?
+  bounceCount      Int               @default(0)
+  sentTotal        Int               @default(0)
+  lastSyncAt       DateTime?
+  active           Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  domain    SendingDomain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  campaigns Campaign[]
+  messages  EmailMessage[]
+  threads   EmailThread[]
+
+  @@index([workspaceId])
+}
+
+model EmailThread {
+  id             String        @id @default(cuid())
+  workspaceId    String
+  emailAccountId String?
+  subject        String
+  participants   String[]      @default([])
+  category       ReplyCategory @default(UNCLASSIFIED)
+  unread         Boolean       @default(true)
+  archived       Boolean       @default(false)
+  campaignId     String?
+  leadId         String?
+  lastMessageAt  DateTime      @default(now())
+  createdAt      DateTime      @default(now())
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  account   EmailAccount?  @relation(fields: [emailAccountId], references: [id], onDelete: SetNull)
+  campaign  Campaign?      @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  lead      Lead?          @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  messages  EmailMessage[]
+
+  @@index([workspaceId, unread])
+  @@index([workspaceId, lastMessageAt])
+}
+
+model EmailMessage {
+  id                String        @id @default(cuid())
+  threadId          String
+  emailAccountId    String?
+  contactId         String?
+  direction         String        @default("INBOUND") // INBOUND | OUTBOUND
+  fromEmail         String
+  toEmail           String
+  subject           String
+  bodyText          String        @default("")
+  bodyHtml          String        @default("")
+  providerMessageId String?
+  category          ReplyCategory @default(UNCLASSIFIED)
+  aiSuggestion      String?
+  aiReasoning       String?
+  sentAt            DateTime      @default(now())
+  createdAt         DateTime      @default(now())
+
+  thread  EmailThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  account EmailAccount? @relation(fields: [emailAccountId], references: [id], onDelete: SetNull)
+  contact Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([threadId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// CAMPAIGNS
+// ─────────────────────────────────────────────────────────────
+
+model Campaign {
+  id             String            @id @default(cuid())
+  workspaceId    String
+  name           String
+  objective      CampaignObjective @default(QUOTE_REQUEST)
+  product        InsuranceType     @default(AUTO)
+  status         CampaignStatus    @default(DRAFT)
+  segmentId      String?
+  emailAccountId String?
+  landingPageId  String?
+  locale         String            @default("fr")
+
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  launchedById String?
+  launchedAt   DateTime?
+
+  trackOpens  Boolean @default(false)
+  trackClicks Boolean @default(true)
+
+  batchSize            Int @default(200)
+  batchIntervalMinutes Int @default(10)
+  dailyCap             Int @default(2000)
+
+  readinessScore  Int  @default(0)
+  readinessReport Json @default("{}")
+
+  abEnabled   Boolean @default(false)
+  abDimension String? // SUBJECT | BODY | CTA | LANDING_HEADLINE | LANDING_VERSION | FORM_LENGTH
+
+  recipientCount Int      @default(0)
+  isDemo         Boolean  @default(false)
+  createdById    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  workspace    Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  segment      Segment?            @relation(fields: [segmentId], references: [id], onDelete: SetNull)
+  emailAccount EmailAccount?       @relation(fields: [emailAccountId], references: [id], onDelete: SetNull)
+  landingPage  LandingPage?        @relation(fields: [landingPageId], references: [id], onDelete: SetNull)
+  variants     CampaignVariant[]
+  recipients   CampaignRecipient[]
+  events       CampaignEvent[]
+  leads        Lead[]
+  submissions  FormSubmission[]
+  threads      EmailThread[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, createdAt])
+}
+
+model CampaignVariant {
+  id          String   @id @default(cuid())
+  campaignId  String
+  label       String   @default("A")
+  weight      Int      @default(100)
+  subject     String
+  previewText String   @default("")
+  bodyHtml    String   @default("")
+  bodyText    String   @default("")
+  ctaLabel    String   @default("Demander mon devis")
+  isControl   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campaign   Campaign            @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipients CampaignRecipient[]
+  events     CampaignEvent[]
+
+  @@index([campaignId])
+}
+
+model CampaignRecipient {
+  id                String          @id @default(cuid())
+  campaignId        String
+  contactId         String
+  variantId         String?
+  status            RecipientStatus @default(PENDING)
+  // Idempotency key — guarantees one send per (campaign, contact) even on job retry.
+  sendKey           String          @unique
+  trackingToken     String          @unique
+  scheduledAt       DateTime?
+  sentAt            DateTime?
+  failedAt          DateTime?
+  error             String?
+  providerMessageId String?
+  attempts          Int             @default(0)
+  skipReason        String?
+  createdAt         DateTime        @default(now())
+
+  campaign Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contact  Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  variant  CampaignVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  events   CampaignEvent[]
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+  @@index([contactId])
+}
+
+model CampaignEvent {
+  id          String            @id @default(cuid())
+  workspaceId String
+  campaignId  String?
+  recipientId String?
+  contactId   String?
+  variantId   String?
+  type        CampaignEventType
+  // Idempotency for provider webhooks: duplicate deliveries are no-ops.
+  dedupeKey   String?           @unique
+  metadata    Json              @default("{}")
+  occurredAt  DateTime          @default(now())
+  createdAt   DateTime          @default(now())
+
+  campaign  Campaign?          @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  recipient CampaignRecipient? @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  contact   Contact?           @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  variant   CampaignVariant?   @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, type, occurredAt])
+  @@index([campaignId, type])
+  @@index([occurredAt])
+}
+
+model Template {
+  id          String        @id @default(cuid())
+  workspaceId String
+  name        String
+  category    String        @default("AUTRE")
+  product     InsuranceType @default(AUTRE)
+  locale      String        @default("fr")
+  subject     String
+  previewText String        @default("")
+  bodyHtml    String        @default("")
+  bodyText    String        @default("")
+  version     Int           @default(1)
+  archived    Boolean       @default(false)
+  isDemo      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, category])
+}
+
+// ─────────────────────────────────────────────────────────────
+// LANDING PAGES & FORMS
+// ─────────────────────────────────────────────────────────────
+
+model LandingPage {
+  id             String        @id @default(cuid())
+  workspaceId    String
+  name           String
+  slug           String
+  product        InsuranceType @default(AUTO)
+  locale         String        @default("fr")
+  status         PageStatus    @default(DRAFT)
+  customDomain   String?
+  seoTitle       String        @default("")
+  seoDescription String        @default("")
+  noIndex        Boolean       @default(true)
+  theme          Json          @default("{}")
+  sections       Json          @default("[]")
+  formId         String?
+  publishedAt    DateTime?
+  isDemo         Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  workspace   Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  form        Form?                @relation(fields: [formId], references: [id], onDelete: SetNull)
+  versions    LandingPageVersion[]
+  campaigns   Campaign[]
+  submissions FormSubmission[]
+
+  @@unique([workspaceId, slug])
+  @@index([slug])
+}
+
+model LandingPageVersion {
+  id            String   @id @default(cuid())
+  landingPageId String
+  version       Int
+  sections      Json     @default("[]")
+  theme         Json     @default("{}")
+  label         String   @default("")
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  page LandingPage @relation(fields: [landingPageId], references: [id], onDelete: Cascade)
+
+  @@unique([landingPageId, version])
+}
+
+model Form {
+  id             String        @id @default(cuid())
+  workspaceId    String
+  name           String
+  product        InsuranceType @default(AUTO)
+  locale         String        @default("fr")
+  multiStep      Boolean       @default(true)
+  steps          Json          @default("[]") // [{key,title,description}]
+  consentText    String        @default("")
+  successMessage String        @default("")
+  isDemo         Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  fields      FormField[]
+  submissions FormSubmission[]
+  pages       LandingPage[]
+
+  @@index([workspaceId])
+}
+
+model FormField {
+  id             String   @id @default(cuid())
+  formId         String
+  key            String
+  label          String
+  type           String   @default("text") // text|email|tel|number|date|select|radio|checkbox|textarea|postal
+  step           Int      @default(1)
+  order          Int      @default(0)
+  required       Boolean  @default(false)
+  options        Json     @default("[]")
+  placeholder    String   @default("")
+  helpText       String   @default("")
+  conditionField String?
+  conditionValue String?
+  createdAt      DateTime @default(now())
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@unique([formId, key])
+  @@index([formId, step, order])
+}
+
+model FormSubmission {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  formId         String
+  landingPageId  String?
+  campaignId     String?
+  contactId      String?
+  recipientToken String?
+  sessionId      String?
+  answers        Json     @default("{}")
+  consentGiven   Boolean  @default(false)
+  consentText    String   @default("")
+  ipHash         String?
+  userAgent      String?
+  variantLabel   String?
+  isDemo         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  workspace Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  form      Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  page      LandingPage? @relation(fields: [landingPageId], references: [id], onDelete: SetNull)
+  campaign  Campaign?    @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  contact   Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  lead      Lead?
+
+  @@index([workspaceId, createdAt])
+  @@index([formId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// LEADS / CRM
+// ─────────────────────────────────────────────────────────────
+
+model Lead {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  contactId    String?
+  campaignId   String?
+  submissionId String?       @unique
+  product      InsuranceType @default(AUTO)
+  status       LeadStatus    @default(NOUVEAU)
+  score        Int           @default(0)
+  scoreBand    String        @default("LOW")
+
+  firstName      String?
+  lastName       String?
+  email          String?
+  phone          String?
+  city           String?
+  postalCode     String?
+  currentInsurer String?
+  renewalDate    DateTime?
+  answers        Json      @default("{}")
+  tags           String[]  @default([])
+  notes          String?
+
+  ownerId         String?
+  assignedAt      DateTime?
+  firstActionAt   DateTime?
+  responseMinutes Int?
+  contactedAt     DateTime?
+  appointmentAt   DateTime?
+  wonAt           DateTime?
+  lostAt          DateTime?
+  lostReason      String?
+  value           Int?
+  isDemo          Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact     Contact?         @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  campaign    Campaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  submission  FormSubmission?  @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+  owner       User?            @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  scores      LeadScore[]
+  assignments LeadAssignment[]
+  activities  LeadActivity[]
+  tasks       Task[]
+  threads     EmailThread[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, ownerId])
+  @@index([workspaceId, score])
+}
+
+model LeadScore {
+  id        String   @id @default(cuid())
+  leadId    String
+  score     Int
+  band      String
+  breakdown Json     @default("[]") // [{factor,label,points,detail}]
+  model     String   @default("default-v1")
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, createdAt])
+}
+
+model LeadAssignment {
+  id         String   @id @default(cuid())
+  leadId     String
+  userId     String?
+  strategy   String   @default("MANUAL") // MANUAL|ROUND_ROBIN|PRODUCT|REGION|WORKLOAD
+  assignedAt DateTime @default(now())
+  note       String?
+
+  lead Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+}
+
+model LeadActivity {
+  id        String   @id @default(cuid())
+  leadId    String
+  userId    String?
+  type      String // NOTE|CALL|EMAIL|STATUS_CHANGE|ASSIGNMENT|TASK|APPOINTMENT|SYSTEM|FORM
+  title     String
+  body      String?
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  lead Lead  @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([leadId, createdAt])
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  workspaceId String
+  leadId      String?
+  assigneeId  String?
+  title       String
+  description String       @default("")
+  type        String       @default("CALL") // CALL|QUOTE|FOLLOW_UP|DOCUMENT|APPOINTMENT|OTHER
+  status      TaskStatus   @default(TODO)
+  priority    TaskPriority @default(NORMAL)
+  dueAt       DateTime?
+  completedAt DateTime?
+  isDemo      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lead      Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  assignee  User?     @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, status])
+  @@index([assigneeId, status])
+}
+
+// ─────────────────────────────────────────────────────────────
+// SUPPRESSION / COMPLIANCE
+// ─────────────────────────────────────────────────────────────
+
+model SuppressionEntry {
+  id              String            @id @default(cuid())
+  workspaceId     String
+  email           String?
+  emailNormalized String?
+  phone           String?
+  reason          SuppressionReason @default(UNSUBSCRIBED)
+  source          String?
+  campaignId      String?
+  notes           String?
+  createdById     String?
+  createdAt       DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, emailNormalized])
+  @@index([workspaceId, reason])
+  @@index([emailNormalized])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  workspaceId String
+  userId      String?
+  action      String
+  entityType  String
+  entityId    String?
+  summary     String   @default("")
+  before      Json?
+  after       Json?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, createdAt])
+  @@index([workspaceId, entityType, entityId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTOMATION / INTEGRATIONS / OPS
+// ─────────────────────────────────────────────────────────────
+
+model AutomationRule {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  description String    @default("")
+  trigger     String // LEAD_CREATED|LEAD_SCORE_ABOVE|LEAD_NOT_CONTACTED|FORM_SUBMITTED|HARD_BOUNCE|UNSUBSCRIBE|LEAD_WON
+  conditions  Json      @default("[]")
+  actions     Json      @default("[]")
+  enabled     Boolean   @default(true)
+  runCount    Int       @default(0)
+  lastRunAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace  Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  executions AutomationExecution[]
+
+  @@index([workspaceId, trigger, enabled])
+}
+
+model AutomationExecution {
+  id         String   @id @default(cuid())
+  ruleId     String
+  entityType String
+  entityId   String
+  status     String   @default("SUCCESS")
+  detail     Json     @default("{}")
+  dedupeKey  String?  @unique
+  createdAt  DateTime @default(now())
+
+  rule AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId, createdAt])
+}
+
+model Integration {
+  id            String            @id @default(cuid())
+  workspaceId   String
+  kind          String // EMAIL|VERIFICATION|AI|NOTIFICATION|CRM|STORAGE
+  provider      String
+  label         String
+  status        IntegrationStatus @default(DISCONNECTED)
+  config        Json              @default("{}") // encrypted secrets
+  statusMessage String?
+  lastSyncAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, kind, provider])
+}
+
+model Notification {
+  id          String            @id @default(cuid())
+  workspaceId String
+  userId      String?
+  level       NotificationLevel @default(INFO)
+  type        String
+  title       String
+  body        String            @default("")
+  link        String?
+  read        Boolean           @default(false)
+  emailSent   Boolean           @default(false)
+  dedupeKey   String?           @unique
+  createdAt   DateTime          @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, read, createdAt])
+  @@index([userId, read])
+}
+
+model DailyGoal {
+  id            String   @id @default(cuid())
+  workspaceId   String
+  date          DateTime @db.Date
+  minTarget     Int      @default(10)
+  stretchTarget Int      @default(20)
+  achieved      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, date])
+}
+
+model ApiUsage {
+  id          String   @id @default(cuid())
+  workspaceId String
+  kind        String // EMAIL_SEND|VERIFICATION|AI_REQUEST|AI_TOKENS|SMS|STORAGE
+  provider    String   @default("")
+  quantity    Int      @default(1)
+  cost        Float    @default(0)
+  metadata    Json     @default("{}")
+  periodMonth String // YYYY-MM
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId, periodMonth, kind])
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  workspaceId String?
+  queue       String    @default("default")
+  type        String
+  payload     Json      @default("{}")
+  status      JobStatus @default(PENDING)
+  runAt       DateTime  @default(now())
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  lockedAt    DateTime?
+  lockedBy    String?
+  lastError   String?
+  dedupeKey   String?   @unique
+  finishedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAt])
+  @@index([queue, status, runAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  userAgent String?
+  ip        String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
