@@ -7,6 +7,7 @@ import type { InsuranceType, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { normalizeEmail, normalizePhone, isSyntacticallyValidEmail, ageFromBirthDate } from '@/lib/utils';
 import { INSURANCE_TYPES } from '@/lib/domain';
+import type { ContactFieldKey, ImportPreview, PreviewIssue } from '@/lib/import-fields';
 
 /**
  * CSV / XLSX contact import.
@@ -17,37 +18,8 @@ import { INSURANCE_TYPES } from '@/lib/domain';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), '.uploads');
 
-export const CONTACT_FIELDS: { key: string; label: string; required?: boolean }[] = [
-  { key: 'email', label: 'Email', required: true },
-  { key: 'firstName', label: 'Prénom' },
-  { key: 'lastName', label: 'Nom' },
-  { key: 'phone', label: 'Téléphone' },
-  { key: 'address', label: 'Adresse' },
-  { key: 'postalCode', label: 'Code postal' },
-  { key: 'city', label: 'Ville' },
-  { key: 'country', label: 'Pays' },
-  { key: 'birthDate', label: 'Date de naissance' },
-  { key: 'age', label: 'Âge' },
-  { key: 'company', label: 'Entreprise' },
-  { key: 'profession', label: 'Profession' },
-  { key: 'status', label: 'Client / Prospect' },
-  { key: 'insuranceInterests', label: 'Type d’assurance' },
-  { key: 'currentInsurer', label: 'Assureur actuel' },
-  { key: 'renewalDate', label: 'Date d’échéance' },
-  { key: 'requestedCoverage', label: 'Garanties demandées' },
-  { key: 'source', label: 'Source' },
-  { key: 'consentDate', label: 'Date de consentement' },
-  { key: 'consentEmail', label: 'Consentement email' },
-  { key: 'consentPhone', label: 'Consentement téléphone' },
-  { key: 'tags', label: 'Tags' },
-  { key: 'notes', label: 'Notes' },
-];
-
-export type ContactFieldKey =
-  | 'email' | 'firstName' | 'lastName' | 'phone' | 'address' | 'postalCode' | 'city'
-  | 'country' | 'birthDate' | 'age' | 'company' | 'profession' | 'status'
-  | 'insuranceInterests' | 'currentInsurer' | 'renewalDate' | 'requestedCoverage'
-  | 'source' | 'consentDate' | 'consentEmail' | 'consentPhone' | 'tags' | 'notes';
+export { CONTACT_FIELDS } from '@/lib/import-fields';
+export type { ContactFieldKey, PreviewIssue, ImportPreview } from '@/lib/import-fields';
 
 /** Header aliases used by the automatic column matcher. */
 const ALIASES: Record<ContactFieldKey, string[]> = {
@@ -140,25 +112,6 @@ export async function parseFile(filePath: string, limit?: number): Promise<Parse
     totalRows: normalized.length,
   };
 }
-
-export type PreviewIssue = {
-  invalidEmails: number;
-  missingEmails: number;
-  duplicatesInFile: number;
-  existingContacts: number;
-  suppressedHits: number;
-  duplicatePhones: number;
-};
-
-export type ImportPreview = {
-  uploadId: string;
-  filename: string;
-  headers: string[];
-  sampleRows: Record<string, string>[];
-  totalRows: number;
-  mapping: Record<string, ContactFieldKey | ''>;
-  issues: PreviewIssue;
-};
 
 export async function buildPreview(workspaceId: string, uploadId: string, filename: string): Promise<ImportPreview> {
   const filePath = path.join(UPLOAD_DIR, uploadId);

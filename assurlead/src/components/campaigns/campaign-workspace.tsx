@@ -25,7 +25,7 @@ import {
   launchCampaignAction, pauseCampaignAction, resumeCampaignAction, cancelCampaignAction,
   tickCampaignAction, generateEmailAction, rewriteEmailAction,
 } from '@/server/actions/campaigns';
-import { EMAIL_STYLES, type EmailStyle } from '@/server/ai/email-writer';
+import { EMAIL_STYLES, type EmailStyle } from '@/lib/email-styles';
 import type { ReadinessReport } from '@/server/services/readiness';
 import type { Funnel } from '@/server/services/analytics';
 import { SUPPORTED_VARIABLES } from '@/server/services/personalization';

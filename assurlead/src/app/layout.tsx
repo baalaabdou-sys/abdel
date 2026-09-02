@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { PwaRegister } from '@/components/layout/pwa-register';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
+          <PwaRegister />
           <Toaster richColors closeButton position="bottom-right" />
         </ThemeProvider>
       </body>

@@ -12,7 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { CONTACT_FIELDS, type ImportPreview } from '@/server/services/import';
+import { CONTACT_FIELDS, type ImportPreview } from '@/lib/import-fields';
 import { previewImportAction, runImportAction } from '@/server/actions/import';
 import { INSURANCE_TYPES, insuranceLabel } from '@/lib/domain';
 import { formatNumber, cn } from '@/lib/utils';

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ASSURLEAD AI">
+  <rect width="512" height="512" rx="112" fill="#1d4ed8"/>
+  <g fill="none" stroke="#ffffff" stroke-width="30" stroke-linecap="round">
+    <circle cx="256" cy="256" r="132"/>
+    <circle cx="256" cy="256" r="70"/>
+  </g>
+  <circle cx="256" cy="256" r="26" fill="#ffffff"/>
+  <path d="M256 92V54M256 458v-38M92 256H54M458 256h-38" stroke="#ffffff" stroke-width="26" stroke-linecap="round"/>
+</svg>

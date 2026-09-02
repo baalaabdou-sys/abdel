@@ -6,7 +6,7 @@ import { requireWorkspace } from '@/server/context';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { SegmentBuilder } from '@/components/segments/segment-builder';
-import type { SegmentRules } from '@/server/services/segments';
+import type { SegmentRules } from '@/lib/segment-rules';
 
 export const dynamic = 'force-dynamic';
 

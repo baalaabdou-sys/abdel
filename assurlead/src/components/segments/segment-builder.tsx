@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SEGMENT_FIELDS, type SegmentRules } from '@/server/services/segments';
+import { SEGMENT_FIELDS, type SegmentRules } from '@/lib/segment-rules';
 import { createSegmentAction, updateSegmentAction, previewSegmentAction, proposeSegmentAction } from '@/server/actions/segments';
 import { INSURANCE_TYPES, insuranceLabel, verificationLabel } from '@/lib/domain';
 import { formatNumber } from '@/lib/utils';

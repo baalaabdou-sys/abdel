@@ -3,7 +3,8 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireWorkspace, guard, ok, fail, writeAudit, type ActionResult } from '../context';
-import { buildSegmentWhere, countSegment, refreshSegmentCount, segmentRulesSchema } from '../services/segments';
+import { buildSegmentWhere, countSegment, refreshSegmentCount } from '../services/segments';
+import { segmentRulesSchema } from '@/lib/segment-rules';
 import { proposeSegment } from '../ai/segment-builder';
 
 const segmentSchema = z.object({

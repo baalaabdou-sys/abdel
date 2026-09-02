@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/ui/empty-state';
-import { EMAIL_PROVIDER_FIELDS } from '@/server/providers/email';
+import { EMAIL_PROVIDER_FIELDS } from '@/lib/email-provider-fields';
 import { dnsStatusLabel, dnsStatusTone } from '@/lib/domain';
 import {
   saveEmailAccountAction, testEmailAccountAction, sendTestEmailAction,

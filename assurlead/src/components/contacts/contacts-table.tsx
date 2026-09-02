@@ -17,7 +17,7 @@ import {
   verificationLabel, verificationTone, consentLabel, consentTone,
   insuranceLabel, INSURANCE_TYPES, contactStatusLabel,
 } from '@/lib/domain';
-import type { ContactFilters } from '@/server/actions/contacts';
+import type { ContactFilters } from '@/server/services/contact-filters';
 import { deleteContactsAction, suppressContactsAction, verifyContactsAction, bulkTagAction } from '@/server/actions/contacts';
 import type { ConsentState, InsuranceType, VerificationStatus, ContactStatus } from '@prisma/client';
 

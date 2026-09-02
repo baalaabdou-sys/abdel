@@ -2,18 +2,47 @@
 import { headers, cookies } from 'next/headers';
 import crypto from 'crypto';
 import { prisma } from '@/lib/db';
-import { hashIp } from '@/lib/crypto';
+import { hashIp, sha256 } from '@/lib/crypto';
 import { guard, ok, fail, type ActionResult } from '../context';
 import { intakeSubmission } from '../services/lead-intake';
 import { checkRateLimit } from '../services/rate-limit';
 
 const SESSION_COOKIE = 'al_sid';
 
+/**
+ * Visitor key used to deduplicate funnel events.
+ *
+ * `cookies().set()` is only legal inside a server action or route handler — it
+ * throws during a Server Component render. So the cookie is *issued* by
+ * `ensureFunnelSession` (called from actions only) and merely *read* here.
+ * When no cookie exists yet, we fall back to a short-lived fingerprint derived
+ * from the request, which keeps the landing-view dedupe working on the very
+ * first page view.
+ */
 function funnelSession(): string {
   const existing = cookies().get(SESSION_COOKIE)?.value;
   if (existing) return existing;
+
+  const h = headers();
+  const fingerprint = [
+    h.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
+    h.get('user-agent') ?? '',
+    new Date().toISOString().slice(0, 13),
+  ].join('|');
+  return `anon-${sha256(fingerprint).slice(0, 24)}`;
+}
+
+/** Issues the visitor cookie. Safe only from a server action or route handler. */
+function ensureFunnelSession(): string {
+  const existing = cookies().get(SESSION_COOKIE)?.value;
+  if (existing) return existing;
   const sid = crypto.randomBytes(12).toString('base64url');
-  cookies().set(SESSION_COOKIE, sid, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 });
+  try {
+    cookies().set(SESSION_COOKIE, sid, { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 });
+  } catch {
+    // Called from a render context — fall back to the request fingerprint.
+    return funnelSession();
+  }
   return sid;
 }
 
@@ -26,6 +55,7 @@ export async function recordLandingView(landingPageId: string, recipientToken: s
     });
     if (!page) return;
 
+    // Render context: read the cookie, never issue one.
     const sid = funnelSession();
     const recipient = recipientToken
       ? await prisma.campaignRecipient.findUnique({
@@ -45,8 +75,12 @@ export async function recordLandingView(landingPageId: string, recipientToken: s
         metadata: { landingPageId } as never,
       },
     });
-  } catch {
-    // Duplicate view within the hour, or transient failure — never block the page.
+  } catch (err) {
+    // A duplicate view within the hour is expected and ignored; anything else is
+    // logged, because a silently missing view would corrupt the funnel.
+    if ((err as { code?: string }).code !== 'P2002') {
+      console.error('[funnel] landing view not recorded', err);
+    }
   }
 }
 
@@ -54,7 +88,7 @@ export async function recordFormStartAction(landingPageId: string, recipientToke
   return guard(async () => {
     const page = await prisma.landingPage.findUnique({ where: { id: landingPageId }, select: { workspaceId: true } });
     if (!page) return fail('Page introuvable');
-    const sid = funnelSession();
+    const sid = ensureFunnelSession();
     const recipient = recipientToken
       ? await prisma.campaignRecipient.findUnique({ where: { trackingToken: recipientToken }, select: { id: true, campaignId: true, contactId: true } })
       : null;
@@ -77,7 +111,7 @@ export async function recordFormStepAction(landingPageId: string, step: number):
   return guard(async () => {
     const page = await prisma.landingPage.findUnique({ where: { id: landingPageId }, select: { workspaceId: true } });
     if (!page) return ok(null);
-    const sid = funnelSession();
+    const sid = ensureFunnelSession();
     await prisma.campaignEvent.create({
       data: {
         workspaceId: page.workspaceId,
@@ -152,7 +186,7 @@ export async function submitFormAction(payload: SubmitPayload): Promise<ActionRe
       formId: form.id,
       landingPageId: page.id,
       recipientToken: payload.recipientToken ?? null,
-      sessionId: funnelSession(),
+      sessionId: ensureFunnelSession(),
       answers,
       consentGiven,
       consentText: form.consentText,

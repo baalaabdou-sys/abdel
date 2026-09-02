@@ -2,18 +2,10 @@ import 'server-only';
 import type { CampaignObjective, InsuranceType } from '@prisma/client';
 import { runAi, parseAiJson } from '../providers/ai';
 import { insuranceLabel, objectiveLabel } from '@/lib/domain';
+import type { EmailStyle } from '@/lib/email-styles';
 
-export const EMAIL_STYLES = [
-  { key: 'SHORT', label: 'Court et direct' },
-  { key: 'PROFESSIONAL', label: 'Professionnel' },
-  { key: 'FRIENDLY', label: 'Chaleureux' },
-  { key: 'URGENCY', label: 'Urgence factuelle (sans exagération)' },
-  { key: 'OFFER', label: 'Orienté offre' },
-  { key: 'RENEWAL', label: 'Rappel d’échéance' },
-  { key: 'QUOTE', label: 'Demande de devis' },
-] as const;
-
-export type EmailStyle = (typeof EMAIL_STYLES)[number]['key'];
+export { EMAIL_STYLES } from '@/lib/email-styles';
+export type { EmailStyle } from '@/lib/email-styles';
 
 export type GeneratedEmail = {
   subject: string;

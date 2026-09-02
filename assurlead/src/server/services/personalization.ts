@@ -10,7 +10,9 @@ import { insuranceLabel } from '@/lib/domain';
 export type PersonalizationVars = Record<string, string>;
 
 export const SUPPORTED_VARIABLES: { key: string; label: string; fallback: string }[] = [
-  { key: 'first_name', label: 'Prénom', fallback: 'Bonjour' },
+  // Empty rather than a word: "Bonjour {{first_name}}," must collapse to
+  // "Bonjour," and never to "Bonjour Bonjour," or "Bonjour undefined,".
+  { key: 'first_name', label: 'Prénom', fallback: '' },
   { key: 'last_name', label: 'Nom', fallback: '' },
   { key: 'full_name', label: 'Nom complet', fallback: '' },
   { key: 'city', label: 'Ville', fallback: 'votre ville' },
@@ -26,8 +28,7 @@ const FALLBACKS: Record<string, string> = Object.fromEntries(
   SUPPORTED_VARIABLES.map((v) => [v.key, v.fallback]),
 );
 
-/** Special-cased so "Bonjour {{first_name}}," reads correctly without a name. */
-const GREETING_FALLBACK = '';
+const EMPTY_FALLBACK = '';
 
 export function contactVariables(contact: Partial<Contact>, locale: 'fr' | 'en' = 'fr'): PersonalizationVars {
   const first = (contact.firstName ?? '').trim();
@@ -60,7 +61,7 @@ export function renderTemplate(template: string, vars: PersonalizationVars): str
   let out = template.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_m, key: string) => {
     const value = vars[key];
     if (value !== undefined && value !== '') return value;
-    return FALLBACKS[key] ?? GREETING_FALLBACK;
+    return FALLBACKS[key] ?? EMPTY_FALLBACK;
   });
   // Tidy the artefacts an empty substitution leaves behind.
   out = out

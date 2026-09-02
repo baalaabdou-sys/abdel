@@ -1,6 +1,6 @@
 import 'server-only';
 import { runAi, parseAiJson } from '../providers/ai';
-import { segmentRulesSchema, SEGMENT_FIELDS, type SegmentRules } from '../services/segments';
+import { segmentRulesSchema, SEGMENT_FIELDS, type SegmentRules } from '@/lib/segment-rules';
 
 const SYSTEM = `[TASK:SEGMENT_RULES]
 Tu convertis une instruction en français en filtres structurés pour une base de contacts assurance.

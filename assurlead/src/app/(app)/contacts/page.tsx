@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Upload, Plus, Users } from 'lucide-react';
 import { prisma } from '@/lib/db';
 import { requireWorkspace } from '@/server/context';
-import { contactWhere, type ContactFilters } from '@/server/actions/contacts';
+import { contactWhere, type ContactFilters } from '@/server/services/contact-filters';
 import { can } from '@/lib/rbac';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
