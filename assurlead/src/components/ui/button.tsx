@@ -39,12 +39,21 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, loading = false, children, disabled, ...props }, ref) => {
-    const Comp = asChild ? Slot : 'button';
+    // `Slot` requires exactly one element child, so an `asChild` button must
+    // forward its child untouched — no spinner, no extra null sibling.
+    if (asChild) {
+      return (
+        <Slot className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props}>
+          {children}
+        </Slot>
+      );
+    }
+
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} disabled={disabled || loading} {...props}>
-        {loading && !asChild ? <Loader2 className="animate-spin" /> : null}
+      <button className={cn(buttonVariants({ variant, size, className }))} ref={ref} disabled={disabled || loading} {...props}>
+        {loading ? <Loader2 className="animate-spin" /> : null}
         {children}
-      </Comp>
+      </button>
     );
   },
 );
