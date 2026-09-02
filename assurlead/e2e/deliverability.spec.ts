@@ -8,7 +8,9 @@ test.describe('Délivrabilité', () => {
     const body = await page.locator('body').innerText();
     expect(body).toMatch(/Aucune garantie de placement en boîte de réception/i);
     expect(body).toMatch(/Aucun contournement des filtres anti-spam/i);
-    expect(body).not.toMatch(/garantie?\s+(de\s+)?(100\s*%|placement garanti)/i);
+    expect(body).not.toMatch(/placement garanti/i);
+    expect(body).not.toMatch(/(boîte de réception|inbox)\s+garantie?/i);
+    expect(body).not.toMatch(/100\s*%\s*(inbox|délivrabilité|en boîte)/i);
   });
 
   test('affiche les enregistrements DNS à créer', async ({ authedPage: page }) => {

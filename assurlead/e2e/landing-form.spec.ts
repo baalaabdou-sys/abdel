@@ -7,6 +7,8 @@ test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe('Landing page publique et formulaire', () => {
   test('affiche la page publiée et valide le formulaire multi-étapes', async ({ page }) => {
     const landing = await prisma.landingPage.findFirst({

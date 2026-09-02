@@ -1,4 +1,11 @@
 import { test, expect } from './fixtures';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+test.afterAll(async () => {
+  await prisma.$disconnect();
+});
 
 test.describe('Cycle de vie d’une campagne', () => {
   test('crée un brouillon sans déclencher aucun envoi', async ({ authedPage: page }) => {
@@ -21,10 +28,12 @@ test.describe('Cycle de vie d’une campagne', () => {
   });
 
   test('le lancement exige une confirmation explicite', async ({ authedPage: page }) => {
-    await page.goto('/campaigns');
-    const firstCampaign = page.locator('table tbody tr a').first();
-    await firstCampaign.click();
-    await page.waitForURL(/\/campaigns\/[a-z0-9]+/);
+    const campaign = await prisma.campaign.findFirst({
+      where: { status: { in: ['DRAFT', 'SCHEDULED'] } },
+      orderBy: { createdAt: 'desc' },
+    });
+    test.skip(!campaign, 'Aucune campagne lançable.');
+    await page.goto(`/campaigns/${campaign!.id}`);
 
     const launch = page.getByRole('button', { name: 'Lancer la campagne' });
     if (await launch.isVisible().catch(() => false)) {
@@ -38,9 +47,15 @@ test.describe('Cycle de vie d’une campagne', () => {
   });
 
   test('le contrôle de préparation liste des vérifications concrètes', async ({ authedPage: page }) => {
-    await page.goto('/campaigns');
-    await page.locator('table tbody tr a').first().click();
-    await page.waitForURL(/\/campaigns\/[a-z0-9]+/);
+    // Audience-related checks only exist once a segment is attached, so target a
+    // configured campaign rather than whichever row happens to be first.
+    const campaign = await prisma.campaign.findFirst({
+      where: { NOT: { segmentId: null }, emailAccountId: { not: null } },
+      orderBy: { launchedAt: 'desc' },
+    });
+    test.skip(!campaign, 'Aucune campagne configurée — lancez `npm run seed:demo`.');
+
+    await page.goto(`/campaigns/${campaign!.id}`);
 
     await page.getByRole('button', { name: 'Vérifier la campagne' }).click();
     await expect(page.getByText('Score de préparation').first()).toBeVisible({ timeout: 30_000 });

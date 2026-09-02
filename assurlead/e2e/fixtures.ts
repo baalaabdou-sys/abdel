@@ -8,14 +8,16 @@ export async function signIn(page: Page, credentials = TEST_USER) {
   await page.getByLabel('Adresse email').fill(credentials.email);
   await page.getByLabel('Mot de passe').fill(credentials.password);
   await page.getByRole('button', { name: 'Se connecter' }).click();
-  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 20_000 });
-  // The dashboard streams in: wait for its content, not just the URL.
+  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 30_000 });
   await page.locator('main h1').first().waitFor({ state: 'visible', timeout: 30_000 });
 }
 
+/**
+ * `authedPage` reuses the session captured by `auth.setup.ts`, so the suite
+ * signs in once rather than on every test.
+ */
 export const test = base.extend<{ authedPage: Page }>({
   authedPage: async ({ page }, use) => {
-    await signIn(page);
     await use(page);
   },
 });

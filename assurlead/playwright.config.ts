@@ -32,16 +32,33 @@ export default defineConfig({
   },
   projects: [
     {
+      name: 'setup',
+      testMatch: /auth\.setup\.ts/,
+      use: { ...devices['Desktop Chrome'], ...(PRESET_CHROMIUM ? { launchOptions: { executablePath: PRESET_CHROMIUM } } : {}) },
+    },
+    {
+      // The login form itself is exercised with a fresh, unauthenticated context.
+      name: 'auth',
+      testMatch: /auth\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'], ...(PRESET_CHROMIUM ? { launchOptions: { executablePath: PRESET_CHROMIUM } } : {}) },
+    },
+    {
       name: 'chromium',
+      testIgnore: [/auth\.spec\.ts/, /auth\.setup\.ts/],
+      dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
+        storageState: '.playwright/state.json',
         ...(PRESET_CHROMIUM ? { launchOptions: { executablePath: PRESET_CHROMIUM } } : {}),
       },
     },
     {
       name: 'mobile',
+      testIgnore: [/auth\.spec\.ts/, /auth\.setup\.ts/],
+      dependencies: ['setup'],
       use: {
         ...devices['Pixel 5'],
+        storageState: '.playwright/state.json',
         ...(PRESET_CHROMIUM ? { launchOptions: { executablePath: PRESET_CHROMIUM } } : {}),
       },
     },

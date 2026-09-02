@@ -13,10 +13,15 @@ test.describe('Tableau de bord', () => {
     // Forecasts must always be presented as estimates, never as promises.
     await expect(page.getByText(/Estimation, pas une garantie/i).first()).toBeVisible();
 
-    // Inbox placement must never be guaranteed anywhere in the product.
+    // Inbox placement must never be claimed. The page may — and does — state the
+    // opposite, so match affirmative claims only, not the disclaimer denying them.
     const body = await page.locator('body').innerText();
-    expect(body).not.toMatch(/garanti.{0,30}(boîte de réception|inbox)/i);
-    expect(body).not.toMatch(/100\s*%\s*(inbox|délivrabilité)/i);
+    expect(body).not.toMatch(/placement garanti/i);
+    expect(body).not.toMatch(/(boîte de réception|inbox)\s+garantie?/i);
+    expect(body).not.toMatch(/garantie de (placement|délivrabilité)/i);
+    expect(body).not.toMatch(/100\s*%\s*(inbox|délivrabilité|en boîte)/i);
+    // And the honest statement must actually be present.
+    expect(body).toMatch(/aucun outil ne peut garantir le placement/i);
   });
 
   test('navigue vers les modules principaux depuis la barre latérale', async ({ authedPage: page }) => {
