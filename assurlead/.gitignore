@@ -8,3 +8,8 @@ build
 .env.local
 .env*.local
 coverage
+.uploads
+test-results
+playwright-report
+blob-report
+.playwright
