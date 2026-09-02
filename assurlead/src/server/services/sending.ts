@@ -198,9 +198,23 @@ export async function dispatchCampaignBatch(campaignId: string): Promise<{ queue
   });
   if (!campaign) return { queued: 0, done: true, reason: 'not_found' };
 
+  // A scheduled campaign was already launched explicitly; its dispatch job
+  // fires at the scheduled moment and is what actually starts the sending.
+  if (campaign.status === 'SCHEDULED') {
+    if (!campaign.launchedAt) return { queued: 0, done: true, reason: 'never_launched' };
+    if (campaign.scheduledAt && campaign.scheduledAt > new Date()) {
+      return { queued: 0, done: false, reason: 'not_due_yet' };
+    }
+    campaign.status = 'SENDING';
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data: { status: 'SENDING', startedAt: new Date() },
+    });
+  }
+
   // Nothing is ever sent unless the campaign was explicitly launched.
   if (campaign.status !== 'SENDING') {
-    return { queued: 0, done: campaign.status !== 'SCHEDULED', reason: `status_${campaign.status}` };
+    return { queued: 0, done: true, reason: `status_${campaign.status}` };
   }
   if (!campaign.emailAccount || !campaign.emailAccount.active) {
     return { queued: 0, done: false, reason: 'no_account' };

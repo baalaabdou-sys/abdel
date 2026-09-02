@@ -240,3 +240,71 @@ describe('La politique de conformité pilote l’éligibilité', () => {
     }
   });
 });
+
+describe('Campagne programmée', () => {
+  it('démarre à l’heure prévue, et pas avant', async () => {
+    const ws = await createWorkspace('Programmee');
+    try {
+      const account = await createEmailAccount(ws.id);
+      const segment = await createSegment(ws.id);
+      const { page } = await createLandingPage(ws.id);
+      await createContact(ws.id);
+
+      const campaign = await createCampaign(ws.id, {
+        segmentId: segment.id, emailAccountId: account.id, landingPageId: page.id,
+      });
+      await buildRecipients(campaign.id);
+
+      const { dispatchCampaignBatch } = await import('@/server/services/sending');
+
+      // Launched, but scheduled for later: nothing must be queued.
+      await prisma.campaign.update({
+        where: { id: campaign.id },
+        data: { status: 'SCHEDULED', launchedAt: new Date(), scheduledAt: new Date(Date.now() + 3_600_000) },
+      });
+      const early = await dispatchCampaignBatch(campaign.id);
+      expect(early.queued).toBe(0);
+      expect(early.reason).toBe('not_due_yet');
+      expect((await prisma.campaign.findUniqueOrThrow({ where: { id: campaign.id } })).status).toBe('SCHEDULED');
+
+      // Once the scheduled moment has passed, the dispatch starts the sending.
+      await prisma.campaign.update({
+        where: { id: campaign.id },
+        data: { scheduledAt: new Date(Date.now() - 60_000) },
+      });
+      const due = await dispatchCampaignBatch(campaign.id);
+      expect(due.queued).toBe(1);
+      expect((await prisma.campaign.findUniqueOrThrow({ where: { id: campaign.id } })).status).toBe('SENDING');
+    } finally {
+      await cleanupWorkspace(ws.id);
+    }
+  });
+
+  it('ne démarre jamais une campagne programmée qui n’a pas été lancée', async () => {
+    const ws = await createWorkspace('JamaisLancee');
+    try {
+      const account = await createEmailAccount(ws.id);
+      const segment = await createSegment(ws.id);
+      const { page } = await createLandingPage(ws.id);
+      await createContact(ws.id);
+
+      const campaign = await createCampaign(ws.id, {
+        segmentId: segment.id, emailAccountId: account.id, landingPageId: page.id,
+      });
+      await buildRecipients(campaign.id);
+      // Scheduled date in the past, but never launched: must stay put.
+      await prisma.campaign.update({
+        where: { id: campaign.id },
+        data: { status: 'SCHEDULED', scheduledAt: new Date(Date.now() - 60_000), launchedAt: null },
+      });
+
+      const { dispatchCampaignBatch } = await import('@/server/services/sending');
+      const result = await dispatchCampaignBatch(campaign.id);
+      expect(result.queued).toBe(0);
+      expect(result.reason).toBe('never_launched');
+      expect((await prisma.campaign.findUniqueOrThrow({ where: { id: campaign.id } })).status).toBe('SCHEDULED');
+    } finally {
+      await cleanupWorkspace(ws.id);
+    }
+  });
+});

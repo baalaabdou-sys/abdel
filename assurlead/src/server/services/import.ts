@@ -259,7 +259,11 @@ export async function runImport(batchId: string): Promise<ImportOutcome> {
 
   await prisma.importBatch.update({ where: { id: batchId }, data: { status: 'PROCESSING' } });
 
-  const filePath = path.join(UPLOAD_DIR, batch.id.startsWith('upload_') ? batch.id : String((batch.defaults as Record<string, unknown>).uploadId ?? ''));
+  const uploadId = String((batch.defaults as Record<string, unknown>).uploadId ?? '');
+  if (!/^[a-zA-Z0-9._-]+$/.test(uploadId)) {
+    throw new Error("Fichier d'import introuvable ou identifiant invalide");
+  }
+  const filePath = path.join(UPLOAD_DIR, uploadId);
   const parsed = await parseFile(filePath);
 
   const outcome: ImportOutcome = {
