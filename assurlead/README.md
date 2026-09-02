@@ -476,6 +476,22 @@ Les tests Vitest utilisent la base configurée par `DATABASE_URL` et créent un
 espace de travail isolé qu'ils suppriment ensuite. Pour une base dédiée, créez
 un `.env.test`.
 
+Les tests Playwright ont besoin d'une base peuplée (`npm run seed` puis
+`npm run seed:demo`). Ils démarrent le serveur de développement par défaut ;
+pour les exécuter contre un build de production — plus rapide et plus proche du
+réel :
+
+```bash
+npm run build && npx next start -p 3100 &
+APP_URL=http://localhost:3100 PLAYWRIGHT_NO_SERVER=1 npm run test:e2e
+```
+
+La suite se connecte **une seule fois** (projet `setup`) et réutilise la
+session : se reconnecter à chaque test déclencherait la limitation de débit sur
+la page de connexion. Le formulaire de connexion lui-même est testé dans un
+contexte non authentifié dédié. Le projet `mobile` rejoue les parcours au format
+téléphone et vérifie qu'aucune page ne déborde horizontalement.
+
 ### Invariants couverts
 
 | # | Invariant | Fichier |
