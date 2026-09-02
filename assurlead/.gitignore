@@ -13,3 +13,5 @@ test-results
 playwright-report
 blob-report
 .playwright
+*.tsbuildinfo
+next-env.d.ts
