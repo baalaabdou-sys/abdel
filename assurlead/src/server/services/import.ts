@@ -17,7 +17,7 @@ import { INSURANCE_TYPES } from '@/lib/domain';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), '.uploads');
 
-export const CONTACT_FIELDS = [
+export const CONTACT_FIELDS: { key: string; label: string; required?: boolean }[] = [
   { key: 'email', label: 'Email', required: true },
   { key: 'firstName', label: 'Prénom' },
   { key: 'lastName', label: 'Nom' },
@@ -41,9 +41,13 @@ export const CONTACT_FIELDS = [
   { key: 'consentPhone', label: 'Consentement téléphone' },
   { key: 'tags', label: 'Tags' },
   { key: 'notes', label: 'Notes' },
-] as const;
+];
 
-export type ContactFieldKey = (typeof CONTACT_FIELDS)[number]['key'];
+export type ContactFieldKey =
+  | 'email' | 'firstName' | 'lastName' | 'phone' | 'address' | 'postalCode' | 'city'
+  | 'country' | 'birthDate' | 'age' | 'company' | 'profession' | 'status'
+  | 'insuranceInterests' | 'currentInsurer' | 'renewalDate' | 'requestedCoverage'
+  | 'source' | 'consentDate' | 'consentEmail' | 'consentPhone' | 'tags' | 'notes';
 
 /** Header aliases used by the automatic column matcher. */
 const ALIASES: Record<ContactFieldKey, string[]> = {
