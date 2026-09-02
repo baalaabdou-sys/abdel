@@ -19,5 +19,9 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // `assurlead/` is a separate Next.js application with its own package.json,
+  // tsconfig and dependencies. Without this exclusion the root project's
+  // `**/*.ts` glob sweeps its sources and Playwright specs into this build,
+  // which then fails on imports this project does not (and should not) have.
+  "exclude": ["node_modules", "assurlead"]
 }

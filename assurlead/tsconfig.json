@@ -17,5 +17,8 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  // The Playwright and Vitest suites import dev-only packages. They are typed
+  // by `tsconfig.test.json` (see `npm run typecheck`), not by `next build`, so
+  // a production install that prunes devDependencies still builds.
+  "exclude": ["node_modules", "e2e", "tests"]
 }
