@@ -10,14 +10,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "worker": "tsx src/worker/main.ts",
+    "worker": "tsx --tsconfig tsconfig.scripts.json src/worker/main.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "seed": "tsx prisma/seed.ts",
-    "seed:demo": "tsx prisma/seed-demo.ts"
+    "seed": "tsx --tsconfig tsconfig.scripts.json prisma/seed.ts",
+    "seed:demo": "tsx --tsconfig tsconfig.scripts.json prisma/seed-demo.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -48,6 +48,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.13.3",
+    "server-only": "^0.0.1",
     "sonner": "^1.7.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",

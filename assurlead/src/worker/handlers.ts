@@ -19,6 +19,11 @@ export const handlers: Record<string, JobHandler> = {
     await sendRecipient(String(job.payload.recipientId));
   },
 
+  'contacts.import': async (job) => {
+    const { runImport } = await import('@/server/services/import');
+    await runImport(String(job.payload.batchId));
+  },
+
   'segment.refresh': async (job) => {
     await refreshSegmentCount(String(job.payload.workspaceId), String(job.payload.segmentId));
   },
