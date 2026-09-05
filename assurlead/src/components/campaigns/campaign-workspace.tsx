@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ManualRecipients } from './manual-recipients';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -229,6 +230,15 @@ export function CampaignWorkspace({
               ) : null}
             </CardContent>
           </Card>
+          <div className="mt-4">
+            {/* Unlike the segment, a hand-picked recipient can still be added to
+                a campaign already sending — the service only refuses once the
+                campaign is completed or cancelled. */}
+            <ManualRecipients
+              campaignId={campaign.id}
+              editable={canWrite && !['COMPLETED', 'CANCELLED'].includes(campaign.status)}
+            />
+          </div>
         </TabsContent>
 
         {/* ── Contenu ── */}

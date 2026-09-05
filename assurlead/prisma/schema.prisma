@@ -734,6 +734,10 @@ model CampaignRecipient {
   providerMessageId String?
   attempts          Int             @default(0)
   skipReason        String?
+  /// True when a person added this recipient by hand instead of through the
+  /// segment. Manual rows survive a segment rebuild and are never removed by it.
+  manual            Boolean         @default(false)
+  addedById         String?
   createdAt         DateTime        @default(now())
 
   campaign Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)

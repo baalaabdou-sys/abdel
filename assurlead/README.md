@@ -411,6 +411,39 @@ prête à être exploitée.
 
 ---
 
+## 10 bis. Destinataires ajoutés à la main
+
+Une campagne n'est pas obligée de viser un segment. Dans l'onglet *Audience*,
+« Destinataires ajoutés à la main » accepte une adresse ou plusieurs (séparées
+par une virgule, un point-virgule, un espace ou un retour à la ligne). Deux
+usages : s'envoyer un exemplaire de test avant le lancement, et adresser une
+campagne à quelques personnes nommées sans construire de segment.
+
+Un ajout manuel est une décision humaine explicite : il n'est donc **pas** filtré
+par la politique d'audience comme l'est un segment — un contact au consentement
+« inconnu » peut être ajouté, et l'ajout est inscrit au journal d'audit avec son
+auteur. Les invariants durs, eux, restent absolus et sont refusés à l'ajout comme
+au moment de l'envoi :
+
+| Situation | Résultat |
+| --- | --- |
+| Adresse sur la liste de suppression | refusée |
+| Contact désinscrit | refusé |
+| Adresse vérifiée `INVALID` | refusée |
+| Adresse mal formée | refusée |
+| Déjà destinataire de la campagne | signalée, aucune ligne en double |
+
+Le consentement n'est jamais inventé : une adresse inconnue de la base devient un
+contact avec `consentEmail = UNKNOWN`, et l'interface le dit. Si le statut de
+vérification du contact est exclu par la politique, l'ajout réussit mais un
+avertissement annonce que l'envoi sera ignoré — plutôt que de laisser chercher
+pourquoi rien n'est parti.
+
+Un destinataire ajouté à la main peut être retiré tant qu'il n'a pas été envoyé.
+Une ligne déjà envoyée n'est jamais supprimée : c'est la trace de l'envoi.
+
+---
+
 ## 11. Pages externes : capture sur un site existant
 
 Le client n'est pas obligé d'utiliser les landing pages de l'application. Quand

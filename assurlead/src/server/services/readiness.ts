@@ -290,10 +290,20 @@ export async function evaluateCampaignReadiness(campaignId: string): Promise<Rea
       });
     }
   } else {
-    push({
-      key: 'audience_size', label: 'Segment sélectionné', status: 'FAIL',
-      detail: 'Aucun segment n’est associé à la campagne.', weight: 12, blocking: true,
-    });
+    // A campaign may be addressed to a hand-picked list instead of a segment.
+    const manual = await prisma.campaignRecipient.count({ where: { campaignId: campaign.id } });
+    push(
+      manual > 0
+        ? {
+            key: 'audience_size', label: 'Destinataires ajoutés manuellement', status: 'PASS',
+            detail: `${manual} destinataire(s) ajouté(s) à la main, sans segment.`, weight: 12, blocking: false,
+          }
+        : {
+            key: 'audience_size', label: 'Segment sélectionné', status: 'FAIL',
+            detail: 'Aucun segment n’est associé à la campagne et aucun destinataire n’a été ajouté manuellement.',
+            weight: 12, blocking: true,
+          },
+    );
   }
 
   const scored = checks.filter((c) => c.status !== 'SKIP' && c.weight > 0);

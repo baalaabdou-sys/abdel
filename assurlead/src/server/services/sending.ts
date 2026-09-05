@@ -129,19 +129,28 @@ export async function buildRecipients(campaignId: string): Promise<{ created: nu
     include: { workspace: { include: { policy: true } }, variants: true },
   });
   if (!campaign) throw new Error('Campagne introuvable');
-  if (!campaign.segmentId) throw new Error('Aucun segment sélectionné');
 
   const policy = campaign.workspace.policy ?? (await prisma.compliancePolicy.create({ data: { workspaceId: campaign.workspaceId } }));
-  const { segmentContactWhere } = await import('./segments');
-  const segWhere = await segmentContactWhere(campaign.workspaceId, campaign.segmentId);
-  if (!segWhere) throw new Error('Segment introuvable');
-
-  const where = eligibilityWhere(segWhere as Record<string, unknown>, policy);
   const variants = campaign.variants.length > 0 ? campaign.variants : [];
 
   let created = 0;
   let cursor: string | undefined;
   const CHUNK = 1000;
+
+  // A campaign may target a segment, a hand-picked list, or both. Manually
+  // added recipients already exist as rows, so with no segment there is simply
+  // nothing to expand — that is not an error.
+  if (!campaign.segmentId) {
+    const totalManual = await prisma.campaignRecipient.count({ where: { campaignId } });
+    await prisma.campaign.update({ where: { id: campaignId }, data: { recipientCount: totalManual } });
+    return { created: 0, total: totalManual };
+  }
+
+  const { segmentContactWhere } = await import('./segments');
+  const segWhere = await segmentContactWhere(campaign.workspaceId, campaign.segmentId);
+  if (!segWhere) throw new Error('Segment introuvable');
+
+  const where = eligibilityWhere(segWhere as Record<string, unknown>, policy);
 
   // Streamed in chunks — a 100k-contact segment never lands in memory at once.
   for (;;) {
@@ -458,4 +467,178 @@ export async function sendRecipient(recipientId: string): Promise<SendOutcome> {
 function isToday(d: Date) {
   const t = new Date();
   return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Manually added recipients
+// ─────────────────────────────────────────────────────────────────
+
+export type ManualRecipientOutcome =
+  | 'ADDED'
+  | 'ALREADY_PRESENT'
+  | 'CONTACT_CREATED'
+  | 'INVALID_SYNTAX'
+  | 'SUPPRESSED'
+  | 'UNSUBSCRIBED'
+  | 'INVALID_EMAIL';
+
+export type ManualRecipientResult = {
+  email: string;
+  outcome: ManualRecipientOutcome;
+  /** Non-blocking notes — the row was added, but something is worth knowing. */
+  warnings: string[];
+};
+
+const MANUAL_ADD_LIMIT = 200;
+
+/**
+ * Adds hand-picked recipients to a campaign, by email address.
+ *
+ * A manual add is an explicit human decision, so it is not filtered by the
+ * workspace's audience policy the way a segment is — but the hard invariants
+ * still hold and are enforced here as well as at send time:
+ * a suppressed, unsubscribed or INVALID address is refused outright.
+ *
+ * Consent is never invented. An address that is not yet a contact becomes one
+ * with `consentEmail: UNKNOWN`, and the caller is told so it can be surfaced.
+ */
+export async function addManualRecipients(
+  campaignId: string,
+  emails: string[],
+  options: { addedById?: string | null } = {},
+): Promise<{ results: ManualRecipientResult[]; added: number; total: number }> {
+  const campaign = await prisma.campaign.findUnique({
+    where: { id: campaignId },
+    include: { workspace: { include: { policy: true } }, variants: true },
+  });
+  if (!campaign) throw new Error('Campagne introuvable');
+  if (['COMPLETED', 'CANCELLED'].includes(campaign.status)) {
+    throw new Error(`Campagne au statut « ${campaign.status} » : aucun destinataire ne peut être ajouté.`);
+  }
+
+  const { normalizeEmail, isSyntacticallyValidEmail } = await import('@/lib/utils');
+  const policy = campaign.workspace.policy;
+  const variants = campaign.variants;
+
+  // De-duplicate the input itself, preserving the address as typed for reporting.
+  const seen = new Map<string, string>();
+  for (const raw of emails) {
+    const trimmed = raw.trim();
+    if (!trimmed) continue;
+    const key = normalizeEmail(trimmed);
+    if (!seen.has(key)) seen.set(key, trimmed);
+    if (seen.size >= MANUAL_ADD_LIMIT) break;
+  }
+
+  const results: ManualRecipientResult[] = [];
+  let added = 0;
+
+  for (const [emailNormalized, typed] of seen) {
+    const warnings: string[] = [];
+
+    if (!isSyntacticallyValidEmail(typed)) {
+      results.push({ email: typed, outcome: 'INVALID_SYNTAX', warnings });
+      continue;
+    }
+
+    // The suppression list is checked by address, not only by contact flag:
+    // an address can be suppressed before any contact row exists for it.
+    const suppression = await prisma.suppressionEntry.findUnique({
+      where: { workspaceId_emailNormalized: { workspaceId: campaign.workspaceId, emailNormalized } },
+      select: { reason: true },
+    });
+    if (suppression) {
+      results.push({ email: typed, outcome: 'SUPPRESSED', warnings });
+      continue;
+    }
+
+    let contact = await prisma.contact.findUnique({
+      where: { workspaceId_emailNormalized: { workspaceId: campaign.workspaceId, emailNormalized } },
+    });
+
+    let createdContact = false;
+    if (!contact) {
+      contact = await prisma.contact.create({
+        data: {
+          workspaceId: campaign.workspaceId,
+          email: typed,
+          emailNormalized,
+          source: 'ajout_manuel',
+          sourceDetail: `Ajout manuel — campagne « ${campaign.name} »`,
+          // Consent is never inferred from a manual add.
+          consentEmail: 'UNKNOWN',
+          consentPhone: 'UNKNOWN',
+          emailMarketingAllowed: false,
+          isDemo: campaign.isDemo,
+          sources: { create: { source: 'ajout_manuel', detail: `Campagne « ${campaign.name} »` } },
+        },
+      });
+      createdContact = true;
+      warnings.push('Contact créé sans consentement documenté (« inconnu »).');
+    }
+
+    if (contact.suppressed) {
+      results.push({ email: typed, outcome: 'SUPPRESSED', warnings });
+      continue;
+    }
+    if (contact.unsubscribed) {
+      results.push({ email: typed, outcome: 'UNSUBSCRIBED', warnings });
+      continue;
+    }
+    if (contact.verificationStatus === 'INVALID') {
+      results.push({ email: typed, outcome: 'INVALID_EMAIL', warnings });
+      continue;
+    }
+
+    // Not blocking, but the send-time re-check would skip these, so say it now
+    // rather than letting the user wonder why nothing arrived.
+    if (policy && !verificationAllowed(contact.verificationStatus, policy)) {
+      warnings.push(
+        `Statut de vérification « ${contact.verificationStatus} » exclu par la politique : l'envoi sera ignoré tant que la politique ou le statut ne change pas.`,
+      );
+    }
+
+    const existing = await prisma.campaignRecipient.findUnique({
+      where: { campaignId_contactId: { campaignId, contactId: contact.id } },
+      select: { id: true },
+    });
+    if (existing) {
+      results.push({ email: typed, outcome: 'ALREADY_PRESENT', warnings });
+      continue;
+    }
+
+    await prisma.campaignRecipient.create({
+      data: {
+        campaignId,
+        contactId: contact.id,
+        variantId: variants.length ? assignVariant(variants, `${campaignId}:${contact.id}`, added) : null,
+        sendKey: sendKeyFor(campaignId, contact.id),
+        trackingToken: trackingToken(),
+        status: 'PENDING',
+        manual: true,
+        addedById: options.addedById ?? null,
+      },
+    });
+    added += 1;
+    results.push({ email: typed, outcome: createdContact ? 'CONTACT_CREATED' : 'ADDED', warnings });
+  }
+
+  const total = await prisma.campaignRecipient.count({ where: { campaignId } });
+  await prisma.campaign.update({ where: { id: campaignId }, data: { recipientCount: total } });
+  return { results, added, total };
+}
+
+/**
+ * Removes a manually added recipient that has not been sent to yet.
+ * Sent rows are never deleted — they are the record that the email went out.
+ */
+export async function removeManualRecipient(campaignId: string, recipientId: string): Promise<boolean> {
+  const removed = await prisma.campaignRecipient.deleteMany({
+    where: { id: recipientId, campaignId, manual: true, status: { in: ['PENDING', 'QUEUED'] } },
+  });
+  if (removed.count > 0) {
+    const total = await prisma.campaignRecipient.count({ where: { campaignId } });
+    await prisma.campaign.update({ where: { id: campaignId }, data: { recipientCount: total } });
+  }
+  return removed.count > 0;
 }

@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { requireWorkspace, guard, ok, fail, writeAudit, type ActionResult } from '../context';
-import { buildRecipients, dispatchCampaignBatch } from '../services/sending';
+import { buildRecipients, dispatchCampaignBatch, addManualRecipients, removeManualRecipient } from '../services/sending';
 import { evaluateCampaignReadiness } from '../services/readiness';
 import { enqueue } from '../services/queue';
 import { contactVariables, renderTemplate } from '../services/personalization';
@@ -159,12 +159,20 @@ export async function previewRecipientsAction(campaignId: string) {
     if (!campaign) return fail('Campagne introuvable');
     const variant = campaign.variants[0];
     if (!variant) return fail("Aucun contenu d'email à prévisualiser");
-    if (!campaign.segmentId) return fail('Aucun segment sélectionné');
-
-    const where = await segmentContactWhere(ctx.workspaceId, campaign.segmentId);
-    if (!where) return fail('Segment introuvable');
-
-    const contacts = await prisma.contact.findMany({ where, take: 3, orderBy: { updatedAt: 'desc' } });
+    // With no segment the campaign is addressed to a hand-picked list, so the
+    // preview is built from those recipients instead.
+    let contacts;
+    if (campaign.segmentId) {
+      const where = await segmentContactWhere(ctx.workspaceId, campaign.segmentId);
+      if (!where) return fail('Segment introuvable');
+      contacts = await prisma.contact.findMany({ where, take: 3, orderBy: { updatedAt: 'desc' } });
+    } else {
+      const rows = await prisma.campaignRecipient.findMany({
+        where: { campaignId }, take: 3, orderBy: { createdAt: 'asc' }, include: { contact: true },
+      });
+      contacts = rows.map((r) => r.contact);
+    }
+    if (contacts.length === 0) return fail('Aucun destinataire à prévisualiser');
     const previews = contacts.map((c) => {
       const vars = contactVariables(c, campaign.locale === 'en' ? 'en' : 'fr');
       return {
@@ -362,5 +370,93 @@ export async function rewriteEmailAction(params: { campaignId: string; instructi
       productLabel: insuranceLabel(campaign.product),
     });
     return ok(result);
+  });
+}
+
+const manualEmailsSchema = z.object({
+  emails: z.string().min(3, 'Saisissez au moins une adresse').max(20_000),
+});
+
+/**
+ * Adds hand-picked recipients to a campaign. Accepts one address or many,
+ * separated by commas, semicolons, spaces or newlines.
+ */
+export async function addManualRecipientsAction(
+  campaignId: string,
+  raw: unknown,
+): Promise<ActionResult<{ results: Awaited<ReturnType<typeof addManualRecipients>>['results']; added: number; total: number }>> {
+  return guard(async () => {
+    const ctx = await requireWorkspace('campaigns:write');
+    const parsed = manualEmailsSchema.safeParse(raw);
+    if (!parsed.success) return fail('Adresses invalides', parsed.error.flatten().fieldErrors);
+
+    const campaign = await prisma.campaign.findFirst({
+      where: { id: campaignId, workspaceId: ctx.workspaceId },
+      select: { id: true, name: true },
+    });
+    if (!campaign) return fail('Campagne introuvable');
+
+    const emails = parsed.data.emails.split(/[\s,;]+/).filter(Boolean);
+    if (emails.length === 0) return fail('Aucune adresse fournie');
+
+    const outcome = await addManualRecipients(campaignId, emails, { addedById: ctx.user.id });
+
+    if (outcome.added > 0) {
+      await writeAudit({
+        workspaceId: ctx.workspaceId, userId: ctx.user.id, action: 'campaign.recipients.add_manual',
+        entityType: 'Campaign', entityId: campaignId,
+        summary: `${outcome.added} destinataire(s) ajouté(s) manuellement à « ${campaign.name} »`,
+        after: { added: outcome.added, total: outcome.total },
+      });
+    }
+
+    revalidatePath(`/campaigns/${campaignId}`);
+    return ok(outcome);
+  });
+}
+
+/** Lists the hand-picked recipients of a campaign. */
+export async function listManualRecipientsAction(campaignId: string) {
+  return guard(async () => {
+    const ctx = await requireWorkspace('campaigns:read');
+    const campaign = await prisma.campaign.findFirst({ where: { id: campaignId, workspaceId: ctx.workspaceId }, select: { id: true } });
+    if (!campaign) return fail('Campagne introuvable');
+    const rows = await prisma.campaignRecipient.findMany({
+      where: { campaignId, manual: true },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: { contact: { select: { email: true, firstName: true, lastName: true, consentEmail: true, verificationStatus: true } } },
+    });
+    return ok({
+      recipients: rows.map((r) => ({
+        id: r.id,
+        email: r.contact.email,
+        name: [r.contact.firstName, r.contact.lastName].filter(Boolean).join(' '),
+        status: r.status,
+        consentEmail: r.contact.consentEmail,
+        verificationStatus: r.contact.verificationStatus,
+        removable: ['PENDING', 'QUEUED'].includes(r.status),
+      })),
+    });
+  });
+}
+
+/** Removes a hand-picked recipient that has not been sent to yet. */
+export async function removeManualRecipientAction(campaignId: string, recipientId: string): Promise<ActionResult<null>> {
+  return guard(async () => {
+    const ctx = await requireWorkspace('campaigns:write');
+    const campaign = await prisma.campaign.findFirst({ where: { id: campaignId, workspaceId: ctx.workspaceId }, select: { id: true, name: true } });
+    if (!campaign) return fail('Campagne introuvable');
+
+    const removed = await removeManualRecipient(campaignId, recipientId);
+    if (!removed) return fail('Destinataire introuvable, déjà envoyé ou non ajouté manuellement.');
+
+    await writeAudit({
+      workspaceId: ctx.workspaceId, userId: ctx.user.id, action: 'campaign.recipients.remove_manual',
+      entityType: 'Campaign', entityId: campaignId,
+      summary: `Destinataire manuel retiré de « ${campaign.name} »`,
+    });
+    revalidatePath(`/campaigns/${campaignId}`);
+    return ok(null);
   });
 }
