@@ -1,0 +1,35 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Club 2AMECA//Site//FR
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:journees-portes-ouvertes-2026-2026-10-28@2ameca
+DTSTAMP:20261016T160210Z
+DTSTART:20261028T080000Z
+DTEND:20261028T160000Z
+SUMMARY:Journées portes ouvertes d'intégration — Club 2AMECA
+LOCATION:FSAC — Amphithéâtre\, juste à côté de la buvette
+DESCRIPTION:Trois jours pour découvrir le Club 2AMECA\, rencontrer l'équipe et participer à nos activités. Ouvert à tous les étudiants de la FSAC.
+URL:https://baalaabdou-sys.github.io/abdel/evenements/journees-portes-ouvertes-2026/
+END:VEVENT
+BEGIN:VEVENT
+UID:journees-portes-ouvertes-2026-2026-10-29@2ameca
+DTSTAMP:20261016T160210Z
+DTSTART:20261029T080000Z
+DTEND:20261029T160000Z
+SUMMARY:Journées portes ouvertes d'intégration — Club 2AMECA
+LOCATION:FSAC — Amphithéâtre\, juste à côté de la buvette
+DESCRIPTION:Trois jours pour découvrir le Club 2AMECA\, rencontrer l'équipe et participer à nos activités. Ouvert à tous les étudiants de la FSAC.
+URL:https://baalaabdou-sys.github.io/abdel/evenements/journees-portes-ouvertes-2026/
+END:VEVENT
+BEGIN:VEVENT
+UID:journees-portes-ouvertes-2026-2026-10-30@2ameca
+DTSTAMP:20261016T160210Z
+DTSTART:20261030T080000Z
+DTEND:20261030T160000Z
+SUMMARY:Journées portes ouvertes d'intégration — Club 2AMECA
+LOCATION:FSAC — Amphithéâtre\, juste à côté de la buvette
+DESCRIPTION:Trois jours pour découvrir le Club 2AMECA\, rencontrer l'équipe et participer à nos activités. Ouvert à tous les étudiants de la FSAC.
+URL:https://baalaabdou-sys.github.io/abdel/evenements/journees-portes-ouvertes-2026/
+END:VEVENT
+END:VCALENDAR

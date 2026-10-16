@@ -1,0 +1,15 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Club 2AMECA//Site//FR
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+UID:de-l-amphi-a-l-entreprise-2025-2025-12-06@2ameca
+DTSTAMP:20261016T160210Z
+DTSTART:20251206T080000Z
+DTEND:20251206T160000Z
+SUMMARY:De l'Amphi à l'Entreprise — 1re édition — Club 2AMECA
+LOCATION:FSAC — Amphithéâtre
+DESCRIPTION:Une rencontre entre formation académique et monde professionnel : des intervenants sont venus partager leurs parcours et leurs perspectives avec les étudiants.
+URL:https://baalaabdou-sys.github.io/abdel/evenements/de-l-amphi-a-l-entreprise-2025/
+END:VEVENT
+END:VCALENDAR
