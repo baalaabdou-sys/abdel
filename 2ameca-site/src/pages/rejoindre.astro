@@ -2,25 +2,31 @@
 import Base from '../layouts/Base.astro';
 import EnTetePage from '../components/EnTetePage.astro';
 import Lignes from '../components/Lignes.astro';
-import { FORMSPREE_ENDPOINT, INTERETS, FILIERES, ANNEES, CONTACT } from '../config';
-
-const configure = !FORMSPREE_ENDPOINT.includes('VOTRE_ID');
+import { INSCRIPTION_URL } from '../config';
 
 const raisons = [
   { titre: 'Pratiquer', texte: 'Passer des cours à la réalisation : concevoir, modéliser, fabriquer et tester en équipe.' },
-  { titre: 'Apprendre', texte: 'Des ateliers pour découvrir les outils de la mécanique, à votre rythme, avec des étudiants plus avancés.' },
-  { titre: 'Rencontrer', texte: 'Des étudiants d’autres filières et des professionnels lors de nos événements.' },
+  { titre: 'Apprendre', texte: 'Des formations et des ateliers pour découvrir de nouveaux outils, à votre rythme, avec des étudiants plus avancés.' },
+  { titre: 'Rencontrer', texte: 'Des étudiants d’autres filières, d’autres clubs et des professionnels lors de nos événements.' },
   { titre: 'S’engager', texte: 'Organiser, communiquer, porter un projet : des compétences utiles bien au-delà de la mécanique.' },
 ];
+
+const etapes = [
+  { titre: 'Remplissez le formulaire', texte: 'Quelques questions sur vous, votre filière et ce qui vous intéresse. Deux minutes suffisent.' },
+  { titre: 'Le bureau vous recontacte', texte: 'Un membre du bureau revient vers vous pour vous présenter le club et les prochaines activités.' },
+  { titre: 'Participez', texte: 'Rejoignez un projet, une formation ou l’organisation d’un événement, selon vos envies.' },
+];
 ---
-<Base titre="Rejoindre le club" description="Rejoignez le Club 2AMECA à la FSAC : aucune expérience en mécanique n’est demandée. Remplissez le formulaire d’adhésion en ligne.">
+<Base titre="Rejoindre le club" description="Rejoignez le Club 2AMECA à la FSAC : aucune expérience en mécanique n’est demandée. Inscription en ligne en deux minutes.">
   <EnTetePage
     surtitre="Adhésion 2026–2027"
     titre="Rejoindre 2AMECA"
     chapo="Aucune expérience en mécanique n’est demandée. Si vous êtes curieux et motivé, il y a une place pour vous dans l’atelier."
   >
     <div class="boutons haut">
-      <a class="btn btn-clair" href="#formulaire">Remplir le formulaire <span class="fleche" aria-hidden="true">↓</span></a>
+      <a class="btn btn-clair" href={INSCRIPTION_URL} target="_blank" rel="noopener">
+        S’inscrire maintenant <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (formulaire Google, nouvel onglet)</span>
+      </a>
     </div>
   </EnTetePage>
 
@@ -30,9 +36,8 @@ const raisons = [
       <h2 id="pourquoi" class="titre-2 reveal">Quatre bonnes raisons</h2>
       <hr class="trait" />
       <ul class="raisons grille" role="list">
-        {raisons.map((r, i) => (
+        {raisons.map((r) => (
           <li class="reveal">
-            <span class="num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
             <h3 class="titre-3">{r.titre}</h3>
             <p>{r.texte}</p>
           </li>
@@ -56,91 +61,33 @@ const raisons = [
     </div>
   </section>
 
-  <section class="section" id="formulaire" aria-labelledby="form-titre">
+  <section class="section" id="inscription" aria-labelledby="form-titre">
     <div class="conteneur mise-form">
-      <div class="aside reveal">
-        <span class="surtitre">Formulaire d’adhésion</span>
-        <h2 id="form-titre" class="titre-2">Inscrivez-vous</h2>
+      <div class="reveal">
+        <span class="surtitre">Inscription</span>
+        <h2 id="form-titre" class="titre-2">Comment ça marche</h2>
         <hr class="trait" />
-        <p>Remplissez ce formulaire : un membre du bureau vous recontactera par e-mail ou WhatsApp pour la suite.</p>
-        <p class="petit">Les champs marqués <span aria-hidden="true">*</span><span class="sr-only">d’un astérisque</span> sont obligatoires. Vos informations servent uniquement à la gestion des adhésions du club.</p>
+        <ol class="etapes" role="list">
+          {etapes.map((e, i) => (
+            <li>
+              <span class="num" aria-hidden="true">{i + 1}</span>
+              <div>
+                <h3 class="titre-3">{e.titre}</h3>
+                <p>{e.texte}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
 
-      <form
-        class="form"
-        action={FORMSPREE_ENDPOINT}
-        method="POST"
-        data-configure={String(configure)}
-        novalidate
-      >
-        <input type="hidden" name="_subject" value="Nouvelle demande d’adhésion — Club 2AMECA" />
-        <input type="text" name="_gotcha" class="piege" tabindex="-1" autocomplete="off" aria-hidden="true" />
-
-        <div class="ligne-2">
-          <div class="champ">
-            <label for="nom">Nom <span aria-hidden="true">*</span></label>
-            <input id="nom" name="nom" type="text" autocomplete="family-name" required />
-          </div>
-          <div class="champ">
-            <label for="prenom">Prénom <span aria-hidden="true">*</span></label>
-            <input id="prenom" name="prenom" type="text" autocomplete="given-name" required />
-          </div>
-        </div>
-
-        <div class="ligne-2">
-          <div class="champ">
-            <label for="filiere">Filière <span aria-hidden="true">*</span></label>
-            <select id="filiere" name="filiere" required>
-              <option value="">Choisir…</option>
-              {FILIERES.map((f) => <option>{f}</option>)}
-            </select>
-          </div>
-          <div class="champ">
-            <label for="annee">Année d’études <span aria-hidden="true">*</span></label>
-            <select id="annee" name="annee" required>
-              <option value="">Choisir…</option>
-              {ANNEES.map((a) => <option>{a}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div class="ligne-2">
-          <div class="champ">
-            <label for="email">E-mail <span aria-hidden="true">*</span></label>
-            <input id="email" name="email" type="email" autocomplete="email" inputmode="email" required />
-          </div>
-          <div class="champ">
-            <label for="telephone">Téléphone / WhatsApp <span aria-hidden="true">*</span></label>
-            <input id="telephone" name="telephone" type="tel" autocomplete="tel" inputmode="tel" placeholder="06 00 00 00 00" pattern="[\d\s+().\-]{8,}" required aria-describedby="tel-aide" />
-            <small id="tel-aide" class="aide">Numéro marocain ou international.</small>
-          </div>
-        </div>
-
-        <fieldset class="champ interets">
-          <legend>Centres d’intérêt <span class="aide-inline">(plusieurs choix possibles)</span></legend>
-          <div class="cases">
-            {INTERETS.map((i, n) => (
-              <label class="case" for={`interet-${n}`}>
-                <input type="checkbox" id={`interet-${n}`} name="interets[]" value={i} />
-                <span>{i}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        <div class="champ">
-          <label for="message">Message <span class="aide-inline">(facultatif)</span></label>
-          <textarea id="message" name="message" rows="4" placeholder="Vos motivations, une idée de projet, une question…"></textarea>
-        </div>
-
-        <div class="envoi">
-          <button type="submit" class="btn">
-            <span class="texte-bouton">Envoyer ma demande</span> <span class="fleche" aria-hidden="true">→</span>
-          </button>
-        </div>
-
-        <div class="retour" role="status" aria-live="polite" tabindex="-1" hidden></div>
-      </form>
+      <div class="carte-form reveal">
+        <span class="label">Formulaire d’adhésion</span>
+        <p class="carte-titre">Inscription au Club 2AMECA</p>
+        <p class="carte-texte">Le formulaire s’ouvre dans Google Forms, dans un nouvel onglet.</p>
+        <a class="btn btn-clair grand" href={INSCRIPTION_URL} target="_blank" rel="noopener">
+          Ouvrir le formulaire <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span>
+        </a>
+      </div>
     </div>
   </section>
 </Base>
@@ -152,157 +99,38 @@ const raisons = [
   @media (min-width: 640px) { .raisons { grid-template-columns: repeat(2, 1fr); } }
   @media (min-width: 1040px) { .raisons { grid-template-columns: repeat(4, 1fr); } }
   .raisons li { border-top: 2px solid var(--bleu); padding-top: 1.1rem; }
-  .raisons .num { font-family: var(--f-titre); color: var(--bleu); font-size: 1.1rem; }
-  .raisons .titre-3 { color: var(--marine); margin: .5rem 0; }
+  .raisons .titre-3 { color: var(--marine); margin: 0 0 .5rem; }
   .raisons p { color: var(--encre-70); margin: 0; }
 
   .qui { display: grid; gap: 2rem 4rem; }
   @media (min-width: 900px) { .qui { grid-template-columns: 1fr 1.1fr; align-items: center; } }
-  .conditions { list-style: none; padding: 0; display: grid; gap: 0; }
+  .conditions { list-style: none; padding: 0; display: grid; }
   .conditions li { padding: 1rem 0 1rem 2rem; border-top: 1px solid var(--ciel-18); position: relative; color: var(--blanc-70); }
   .conditions li::before { content: ''; position: absolute; left: 0; top: 1.55rem; width: 1rem; height: 1.5px; background: var(--ciel); }
   .conditions strong { color: var(--blanc); font-weight: 600; }
 
   .mise-form { display: grid; gap: 2.5rem; }
-  @media (min-width: 980px) { .mise-form { grid-template-columns: 340px minmax(0, 1fr); gap: 4rem; align-items: start; } .aside { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
-  .petit { font-size: .95rem; color: var(--encre-70); }
+  @media (min-width: 980px) { .mise-form { grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; } }
 
-  .form {
-    display: grid; gap: 1.25rem;
-    background: var(--blanc); border: 1.5px solid var(--bleu); border-radius: var(--rayon);
-    padding: clamp(1.1rem, 4vw, 2.25rem);
+  /* Les étapes forment une vraie séquence : la numérotation est justifiée. */
+  .etapes { list-style: none; padding: 0; display: grid; gap: 1.5rem; }
+  .etapes li { display: grid; grid-template-columns: 2.6rem 1fr; gap: 1rem; align-items: start; }
+  .etapes .num {
+    display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border-radius: 50%;
+    border: 1.5px solid var(--bleu); color: var(--bleu); font-family: var(--f-titre); font-size: 1.2rem;
   }
-  .ligne-2 { display: grid; gap: 1.25rem; }
-  @media (min-width: 640px) { .ligne-2 { grid-template-columns: 1fr 1fr; } }
-  .champ { display: grid; gap: .4rem; min-width: 0; align-content: start; }
-  label, legend {
-    font-family: var(--f-label); font-weight: 500; font-size: .85rem;
-    letter-spacing: .1em; text-transform: uppercase; color: var(--marine);
-  }
-  .aide-inline { text-transform: none; letter-spacing: 0; font-family: var(--f-texte); font-weight: 400; color: var(--encre-70); font-size: .9rem; }
-  .aide { color: var(--encre-70); font-size: .85rem; }
-  input:not([type='checkbox']), select, textarea {
-    width: 100%; min-height: 48px; padding: .7rem .9rem;
-    font: inherit; font-size: 1rem; color: var(--encre);
-    background: var(--blanc); border: 1.5px solid rgb(45 45 45 / .35); border-radius: 10px;
-    transition: border-color .15s, box-shadow .15s;
-  }
-  select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--bleu) 50%), linear-gradient(135deg, var(--bleu) 50%, transparent 50%); background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 2.5rem; }
-  textarea { resize: vertical; min-height: 7rem; }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--bleu); box-shadow: 0 0 0 3px var(--ciel); }
-  .champ.erreur input, .champ.erreur select { border: 2px solid var(--encre); }
-  .msg-erreur { color: var(--encre); font-weight: 600; font-size: .92rem; margin: 0; }
-  .msg-erreur::before { content: 'Erreur : '; }
+  .etapes .titre-3 { color: var(--marine); font-size: 1.15rem; margin: .35rem 0 .3rem; }
+  .etapes p { margin: 0; color: var(--encre-70); }
 
-  fieldset { border: 0; padding: 0; margin: 0; }
-  legend { padding: 0; margin-bottom: .6rem; }
-  .cases { display: grid; gap: .5rem; }
-  @media (min-width: 520px) { .cases { grid-template-columns: 1fr 1fr; } }
-  .case {
-    display: flex; align-items: center; gap: .7rem; min-height: 48px; padding: .5rem .8rem;
-    border: 1.5px solid var(--bleu-12); border-radius: 10px; cursor: pointer;
-    font-family: var(--f-texte); text-transform: none; letter-spacing: 0; font-weight: 400; font-size: 1rem; color: var(--encre);
-    transition: border-color .15s, background-color .15s;
+  .carte-form {
+    position: relative; overflow: hidden;
+    background: var(--bleu); color: var(--blanc);
+    border-radius: var(--rayon); padding: clamp(1.5rem, 5vw, 2.5rem);
+    display: grid; gap: .75rem; justify-items: start;
   }
-  .case:hover { border-color: var(--bleu); }
-  .case:has(input:checked) { border-color: var(--bleu); background: var(--bleu-06); }
-  .case:has(input:focus-visible) { box-shadow: 0 0 0 3px var(--ciel); }
-  .case input { width: 20px; height: 20px; accent-color: var(--bleu); flex-shrink: 0; margin: 0; }
-
-  .piege { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
-  .envoi .btn { width: 100%; }
-  @media (min-width: 640px) { .envoi .btn { width: auto; } }
-  .btn[disabled] { opacity: .7; cursor: progress; }
-
-  .retour { border-radius: 10px; padding: 1rem 1.1rem; font-size: 1rem; }
-  .retour:focus { outline: none; }
-  .retour.succes { background: var(--bleu); color: var(--blanc); }
-  .retour.echec { background: var(--bleu-06); color: var(--encre); border: 1.5px solid var(--encre); border-left-width: 6px; }
-  .retour strong { display: block; font-family: var(--f-label); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .2rem; }
-  .retour p { margin: 0; }
-  .retour a { color: inherit; }
+  .carte-form .label { color: var(--ciel); letter-spacing: .24em; font-size: .72rem; }
+  .carte-titre { font-family: var(--f-titre); text-transform: uppercase; font-size: clamp(1.8rem, 6vw, 2.6rem); line-height: 1; margin: 0; }
+  .carte-texte { color: var(--blanc-70); margin: 0 0 .75rem; }
+  .grand { min-height: 56px; padding-inline: 1.8em; font-size: 1rem; }
+  @media (max-width: 519px) { .grand { width: 100%; } }
 </style>
-
-<script define:vars={{ email: CONTACT.email }}>
-  // Envoi via Formspree sans quitter la page, avec messages clairs.
-  const form = document.querySelector('form.form');
-  if (form) {
-    const retour = form.querySelector('.retour');
-    const bouton = form.querySelector('button[type="submit"]');
-    const texteBouton = bouton.querySelector('.texte-bouton');
-
-    const afficher = (type, titre, texte) => {
-      retour.hidden = false;
-      retour.className = `retour ${type}`;
-      retour.innerHTML = '';
-      const s = document.createElement('strong'); s.textContent = titre;
-      const p = document.createElement('p'); p.textContent = texte;
-      retour.append(s, p);
-      retour.focus();
-    };
-
-    const nettoyer = (champ) => {
-      champ.classList.remove('erreur');
-      champ.querySelector('.msg-erreur')?.remove();
-      champ.querySelector('[aria-invalid]')?.removeAttribute('aria-invalid');
-    };
-
-    const messages = {
-      valueMissing: 'Ce champ est obligatoire.',
-      typeMismatch: 'Adresse e-mail invalide.',
-      patternMismatch: 'Numéro invalide (8 chiffres minimum).',
-    };
-
-    const valider = () => {
-      let premier = null;
-      form.querySelectorAll('input[required], select[required]').forEach((el) => {
-        const champ = el.closest('.champ');
-        nettoyer(champ);
-        if (!el.checkValidity()) {
-          const v = el.validity;
-          const msg = v.valueMissing ? messages.valueMissing : v.typeMismatch ? messages.typeMismatch : messages.patternMismatch;
-          champ.classList.add('erreur');
-          el.setAttribute('aria-invalid', 'true');
-          const p = document.createElement('p');
-          p.className = 'msg-erreur'; p.id = `${el.id}-erreur`; p.textContent = msg;
-          champ.append(p);
-          el.setAttribute('aria-describedby', [el.dataset.aide, p.id].filter(Boolean).join(' '));
-          premier ??= el;
-        }
-      });
-      return premier;
-    };
-
-    form.querySelectorAll('input, select').forEach((el) => {
-      if (el.getAttribute('aria-describedby')) el.dataset.aide = el.getAttribute('aria-describedby');
-      el.addEventListener('input', () => { const c = el.closest('.champ'); if (c?.classList.contains('erreur') && el.checkValidity()) nettoyer(c); });
-    });
-
-    form.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      const invalide = valider();
-      if (invalide) { invalide.focus(); return; }
-
-      if (form.dataset.configure !== 'true') {
-        afficher('echec', 'Formulaire pas encore activé',
-          'L’adresse Formspree n’est pas encore configurée (src/config.ts).' + (email ? ` En attendant, écrivez-nous à ${email}.` : ''));
-        return;
-      }
-
-      bouton.disabled = true;
-      texteBouton.textContent = 'Envoi en cours…';
-      try {
-        const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
-        if (!res.ok) throw new Error(String(res.status));
-        form.reset();
-        afficher('succes', 'Demande envoyée, merci !', 'Nous avons bien reçu votre inscription. Un membre du bureau vous recontactera très vite.');
-      } catch {
-        afficher('echec', 'L’envoi a échoué',
-          'Vérifiez votre connexion et réessayez dans un instant.' + (email ? ` Si le problème persiste, écrivez-nous à ${email}.` : ''));
-      } finally {
-        bouton.disabled = false;
-        texteBouton.textContent = 'Envoyer ma demande';
-      }
-    });
-  }
-</script>

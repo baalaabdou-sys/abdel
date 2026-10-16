@@ -16,19 +16,20 @@ export const SITE = {
 };
 
 /**
- * Formulaire « Rejoindre » — Formspree (https://formspree.io).
- * 1. Créer un compte gratuit et un formulaire.
- * 2. Copier l'adresse fournie (https://formspree.io/f/xxxxxxx) ci-dessous.
+ * Formulaire d'inscription — Google Forms.
+ * Tous les boutons « S'inscrire » du site ouvrent ce lien.
+ * Pour en changer : coller ici le lien « Envoyer → lien » du formulaire.
  */
-export const FORMSPREE_ENDPOINT = 'https://formspree.io/f/VOTRE_ID_FORMSPREE';
+export const INSCRIPTION_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSeOE51y_t9fpp6j0MiJB6xGt-ZFVQR4KPaVknp-bSmnsXn9JQ/viewform';
 
 export const CONTACT = {
   /** ex. 'club2ameca@gmail.com' */
   email: null as string | null,
   /** Identifiant Instagram sans @, ex. '2ameca.fsac' */
-  instagram: null as string | null,
+  instagram: '2ameca_fsac' as string | null,
   /** Adresse complète de la page LinkedIn, ex. 'https://www.linkedin.com/company/…' */
-  linkedin: null as string | null,
+  linkedin: 'https://www.linkedin.com/company/2ameca' as string | null,
   /** Numéro WhatsApp au format international sans + ni espaces, ex. '212600000000' */
   whatsapp: null as string | null,
   lieu: 'Faculté des Sciences Aïn Chock',
@@ -43,30 +44,3 @@ export const FSAC = {
   universite: 'Université Hassan II de Casablanca',
   url: 'https://fsac.univh2c.ma',
 };
-
-/** Centres d'intérêt proposés dans le formulaire d'adhésion. */
-export const INTERETS = [
-  'Conception & CAO',
-  'Fabrication & atelier',
-  'Automobile',
-  'Aéronautique',
-  'Robotique & mécatronique',
-  'Impression 3D',
-  'Organisation d’événements',
-  'Communication & design',
-];
-
-/** Filières proposées (la dernière option permet une saisie libre). */
-export const FILIERES = [
-  'Physique',
-  'Mécanique',
-  'Mathématiques',
-  'Informatique',
-  'Chimie',
-  'Biologie',
-  'Géologie',
-  'Master / Licence professionnelle',
-  'Autre',
-];
-
-export const ANNEES = ['1re année', '2e année', '3e année', 'Master 1', 'Master 2', 'Doctorat'];

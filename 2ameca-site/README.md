@@ -32,24 +32,22 @@ Autres commandes :
 
 **C'est le seul fichier à modifier** pour :
 
-- l'adresse **Formspree** du formulaire d'adhésion (`FORMSPREE_ENDPOINT`) ;
+- le lien du **formulaire d'inscription** Google Forms (`INSCRIPTION_URL`) : tous les boutons « S'inscrire » l'ouvrent ;
 - l'e-mail, l'Instagram, le LinkedIn et le WhatsApp du club (`CONTACT`) ;
-- le local du club à la FSAC (`lieuDetail`) ;
-- la liste des centres d'intérêt, des filières et des années proposées dans le formulaire.
+- le local du club à la FSAC (`lieuDetail`).
 
 Une valeur laissée à `null` s'affiche sur le site comme « [À fournir] ».
 
-### Activer le formulaire (Formspree)
+### Changer le formulaire d'inscription
 
-1. Créer un compte gratuit sur [formspree.io](https://formspree.io), puis un nouveau formulaire.
-2. Copier l'adresse fournie, de la forme `https://formspree.io/f/abcdwxyz`.
-3. La coller dans `src/config.ts` :
-   ```ts
-   export const FORMSPREE_ENDPOINT = 'https://formspree.io/f/abcdwxyz';
-   ```
-4. Republier le site. Les demandes d'adhésion arrivent par e-mail et dans le tableau de bord Formspree.
+Les inscriptions passent par Google Forms : les réponses arrivent dans le Google Sheet du formulaire.
+Pour utiliser un autre formulaire, ouvrez-le dans Google Forms, cliquez sur **Envoyer → icône lien**, copiez le lien et collez-le dans `src/config.ts` :
 
-Tant que l'adresse n'est pas renseignée, le formulaire affiche un message clair au lieu d'envoyer.
+```ts
+export const INSCRIPTION_URL = 'https://docs.google.com/forms/d/e/…/viewform';
+```
+
+Un événement peut avoir son propre lien d'inscription grâce au champ `inscription:` (voir ci-dessous).
 
 ---
 
@@ -75,7 +73,7 @@ programme:
 anneeUniversitaire: "2026–2027"
 affiche: ./images/atelier-cao.jpg   # facultatif : image placée dans src/content/evenements/images/
 afficheAlt: "Description de l'affiche pour les personnes malvoyantes"
-inscription: "https://…"       # facultatif : lien d'inscription externe (sinon → page Rejoindre)
+inscription: "https://…"       # facultatif : lien d'inscription propre à l'événement (sinon → formulaire du club)
 ---
 
 Texte libre de la page, en Markdown : **gras**, listes, sous-titres `## …`
@@ -114,7 +112,7 @@ enAvant: true                  # afficher dans « Projets à la une » sur l'acc
 Description du projet : objectif, démarche, outils, résultats…
 ```
 
-**Supprimez les trois exemples** `exemple-1.md`, `exemple-2.md` et `exemple-3.md` une fois les vrais projets ajoutés.
+Ajoutez `aVerifier: true` pour afficher une mention « à confirmer » sur la page, le temps de vérifier les informations.
 
 ## 5. Modifier le bureau (l'équipe)
 
@@ -134,7 +132,7 @@ Le fichier `src/data/bureau.json` contient un bloc par membre :
 | ------------------------------------------ | --------------------------- |
 | Histoire, mission, valeurs                 | `src/pages/le-club.astro`   |
 | Présentation sur l'accueil                 | `src/pages/index.astro`     |
-| Raisons de rejoindre, qui peut rejoindre   | `src/pages/rejoindre.astro` |
+| Raisons de rejoindre, étapes d'inscription | `src/pages/rejoindre.astro` |
 | Questions fréquentes (FAQ)                 | `src/pages/contact.astro`   |
 
 Les passages à compléter sont signalés entre crochets, par exemple `[Texte à fournir : …]`.
@@ -181,7 +179,7 @@ L'adresse et le sous-dossier (`https://<compte>.github.io/<depot>/`) sont régl�
 │  ├─ equipe/                photos du bureau
 │  └─ og.jpg                 image de partage (WhatsApp, Instagram, Facebook)
 └─ src/
-   ├─ config.ts              ← réglages : Formspree, contacts, réseaux
+   ├─ config.ts              ← réglages : formulaire, contacts, réseaux
    ├─ content.config.ts      champs autorisés pour les événements et les projets
    ├─ content/evenements/    un fichier .md par événement (+ images/)
    ├─ content/projets/       un fichier .md par projet ou atelier (+ images/)

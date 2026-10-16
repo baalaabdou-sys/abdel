@@ -9,6 +9,7 @@ import AppelRejoindre from '../../components/AppelRejoindre.astro';
 import { getEvenements } from '../../lib/collections';
 import { plageDates, plageJours, heureFr } from '../../lib/dates';
 import { u } from '../../lib/url';
+import { INSCRIPTION_URL } from '../../config';
 
 export async function getStaticPaths() {
   const evts = await getEvenements();
@@ -18,7 +19,7 @@ export async function getStaticPaths() {
 const { evenement: e } = Astro.props;
 const { Content } = await render(e);
 const aVenir = e.fin.getTime() >= Date.now();
-const inscription = e.data.inscription ?? u('/rejoindre/');
+const inscription = e.data.inscription ?? INSCRIPTION_URL;
 ---
 <Base titre={e.data.titre} description={e.data.resume} image={e.data.affiche?.src} imageAlt={e.data.afficheAlt} type="article">
   <section class="tete sombre">
@@ -38,7 +39,7 @@ const inscription = e.data.inscription ?? u('/rejoindre/');
           <div class="rebours-zone" data-a-venir>
             <CompteARebours debut={e.debut} fin={e.fin} />
             <div class="boutons">
-              <a class="btn btn-clair" href={inscription}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+              <a class="btn btn-clair" href={inscription} target="_blank" rel="noopener">S’inscrire <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
               <a class="btn btn-contour" href={u(`/evenements/${e.id}.ics`)} download>Ajouter à mon agenda</a>
             </div>
           </div>
@@ -83,7 +84,7 @@ const inscription = e.data.inscription ?? u('/rejoindre/');
 
       {aVenir && (
         <div class="boutons fin">
-          <a class="btn" href={inscription}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+          <a class="btn" href={inscription} target="_blank" rel="noopener">S’inscrire <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
           <a class="btn btn-contour" href={u('/contact/')}>Une question ?</a>
         </div>
       )}

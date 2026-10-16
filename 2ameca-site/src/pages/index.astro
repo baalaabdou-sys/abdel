@@ -8,7 +8,7 @@ import AppelRejoindre from '../components/AppelRejoindre.astro';
 import { getEvenementsParPeriode, getProjets } from '../lib/collections';
 import { plageDates, plageJours, heureFr, ymd } from '../lib/dates';
 import { u } from '../lib/url';
-import { SITE } from '../config';
+import { SITE, INSCRIPTION_URL } from '../config';
 
 const { aVenir } = await getEvenementsParPeriode();
 const vedette = aVenir[0];
@@ -19,11 +19,11 @@ const enAvant = [...projets.filter((p) => p.data.enAvant), ...projets.filter((p)
 const nbJours = vedette
   ? Math.round((Date.parse(ymd(vedette.data.dateFin ?? vedette.data.dateDebut)) - Date.parse(ymd(vedette.data.dateDebut))) / 864e5) + 1
   : 0;
-const inscription = vedette?.data.inscription ?? u('/rejoindre/');
+const inscription = vedette?.data.inscription ?? INSCRIPTION_URL;
 
 const piliers = [
   { n: '01', titre: 'Projets', texte: 'Concevoir, modéliser et fabriquer en équipe : de l’idée sur papier à la pièce qui fonctionne.' },
-  { n: '02', titre: 'Ateliers', texte: 'Des séances pratiques pour apprendre les outils et les méthodes de la mécanique appliquée.' },
+  { n: '02', titre: 'Ateliers', texte: 'Des formations pratiques : outils de la mécanique, mais aussi data et intelligence artificielle avec nos clubs partenaires.' },
   { n: '03', titre: 'Rencontres', texte: 'Des événements qui relient l’amphi au monde professionnel, comme « De l’Amphi à l’Entreprise ».' },
 ];
 ---
@@ -64,7 +64,7 @@ const piliers = [
           <div class="action">
             <CompteARebours debut={vedette.debut} fin={vedette.fin} />
             <div class="boutons">
-              <a class="btn btn-clair" href={inscription}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+              <a class="btn btn-clair" href={inscription} target="_blank" rel="noopener">S’inscrire <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
               <a class="btn btn-contour" href={u(`/evenements/${vedette.id}/`)}>Voir le programme</a>
             </div>
           </div>
@@ -141,7 +141,7 @@ const piliers = [
           </div>
           <a class="btn btn-contour" href={u('/activites/')}>Toutes les activités</a>
         </div>
-        <div class="grille grille-3">
+        <div class:list={['grille', enAvant.length >= 3 ? 'grille-3' : 'grille-2']}>
           {enAvant.map((p) => <CarteProjet projet={p} />)}
         </div>
       </div>

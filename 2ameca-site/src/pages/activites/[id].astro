@@ -31,6 +31,9 @@ const ogImage = p.data.couverture?.src;
             <Emplacement texte="[Photo du projet]" ratio="16 / 9" />
           )}
         </div>
+        {p.data.aVerifier && (
+          <p class="verifier"><span class="a-fournir">[Informations reprises des publications du club — dates et participants à confirmer.]</span></p>
+        )}
         <div class="texte reveal"><Content /></div>
 
         <h2 class="titre-3 titre-photos">Photos</h2>
@@ -75,6 +78,7 @@ const ogImage = p.data.couverture?.src;
   @media (min-width: 980px) { .mise { grid-template-columns: minmax(0, 1fr) 300px; gap: 4rem; align-items: start; } }
   .couverture { border-radius: var(--rayon); overflow: hidden; margin-bottom: 2rem; }
   .couverture :global(img) { width: 100%; }
+  .verifier { margin: 0 0 1.5rem; }
   .titre-photos { color: var(--marine); margin: 2.5rem 0 1rem; }
   .photos { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
   .photos :global(img) { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }

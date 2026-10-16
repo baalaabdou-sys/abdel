@@ -21,7 +21,7 @@ const faq = [
   },
   {
     q: 'Comment s’inscrire ?',
-    r: 'Remplissez le formulaire de la page « Rejoindre », ou venez nous voir lors des Journées portes ouvertes d’intégration (28, 29 et 30 octobre 2026, amphithéâtre de la FSAC). Un membre du bureau vous recontactera.',
+    r: 'Remplissez le formulaire d’inscription en ligne (bouton « S’inscrire » sur le site), ou venez nous voir lors des Journées portes ouvertes d’intégration (28, 29 et 30 octobre 2026, amphithéâtre de la FSAC). Un membre du bureau vous recontactera.',
   },
   {
     q: 'L’adhésion est-elle payante ?',
@@ -110,7 +110,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
         <span class="surtitre">FAQ</span>
         <h2 id="faq" class="titre-2">Questions fréquentes</h2>
         <hr class="trait" />
-        <p>Vous ne trouvez pas votre réponse ? <a href={u('/rejoindre/')}>Inscrivez-vous</a> et posez votre question dans le message du formulaire.</p>
+        <p>Vous ne trouvez pas votre réponse ? Écrivez-nous sur Instagram ou passez nous voir à la faculté.</p>
       </div>
       <div class="faq">
         {faq.map((f, i) => (

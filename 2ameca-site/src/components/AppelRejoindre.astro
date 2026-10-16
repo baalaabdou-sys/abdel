@@ -1,6 +1,7 @@
 ---
 import Lignes from './Lignes.astro';
 import { u } from '../lib/url';
+import { INSCRIPTION_URL } from '../config';
 interface Props { titre?: string; texte?: string }
 const {
   titre = 'Rejoignez l’atelier',
@@ -17,7 +18,7 @@ const {
     <div class="droite">
       <p class="chapo">{texte}</p>
       <div class="boutons">
-        <a class="btn btn-clair" href={u('/rejoindre/')}>S’inscrire au club <span class="fleche" aria-hidden="true">→</span></a>
+        <a class="btn btn-clair" href={INSCRIPTION_URL} target="_blank" rel="noopener">S’inscrire au club <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
         <a class="btn btn-contour" href={u('/contact/')}>Poser une question</a>
       </div>
     </div>

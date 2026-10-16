@@ -42,6 +42,7 @@ const projets = defineCollection({
       couvertureAlt: z.string().optional(),
       photos: z.array(z.object({ src: image(), alt: z.string() })).default([]),
       enAvant: z.boolean().default(false).describe('Afficher sur la page d’accueil'),
+      aVerifier: z.boolean().default(false),
       brouillon: z.boolean().default(false),
     }),
 });
