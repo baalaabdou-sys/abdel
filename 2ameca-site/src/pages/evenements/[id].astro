@@ -1,0 +1,115 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Lignes from '../../components/Lignes.astro';
+import CompteARebours from '../../components/CompteARebours.astro';
+import Emplacement from '../../components/Emplacement.astro';
+import AppelRejoindre from '../../components/AppelRejoindre.astro';
+import { getEvenements } from '../../lib/collections';
+import { plageDates, plageJours, heureFr } from '../../lib/dates';
+import { u } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const evts = await getEvenements();
+  return evts.map((e) => ({ params: { id: e.id }, props: { evenement: e } }));
+}
+
+const { evenement: e } = Astro.props;
+const { Content } = await render(e);
+const aVenir = e.fin.getTime() >= Date.now();
+const inscription = e.data.inscription ?? u('/rejoindre/');
+---
+<Base titre={e.data.titre} description={e.data.resume} image={e.data.affiche?.src} imageAlt={e.data.afficheAlt} type="article">
+  <section class="tete sombre">
+    <Lignes variante="haut-droite" />
+    <div class="conteneur mise">
+      <div class="infos">
+        <a class="retour lien-fleche" href={u('/evenements/')}><span aria-hidden="true">←</span> Agenda</a>
+        <span class="surtitre">
+          {aVenir ? 'Événement à venir' : 'Événement passé'}
+          {e.data.anneeUniversitaire && ` · ${e.data.anneeUniversitaire}`}
+        </span>
+        <h1 class="titre-1">{e.data.titre}</h1>
+        <p class="dates">{plageDates(e.data.dateDebut, e.data.dateFin)}</p>
+        <p class="heure"><span class="jours">{plageJours(e.data.dateDebut, e.data.dateFin)}</span>{' · '}à partir de {heureFr(e.data.heure)}</p>
+
+        {aVenir && (
+          <div class="rebours-zone" data-a-venir>
+            <CompteARebours debut={e.debut} fin={e.fin} />
+            <div class="boutons">
+              <a class="btn btn-clair" href={inscription}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+              <a class="btn btn-contour" href={u(`/evenements/${e.id}.ics`)} download>Ajouter à mon agenda</a>
+            </div>
+          </div>
+        )}
+      </div>
+      <div class="affiche">
+        {e.data.affiche ? (
+          <Image src={e.data.affiche} alt={e.data.afficheAlt ?? `Affiche : ${e.data.titre}`} widths={[400, 640, 900]} sizes="(min-width: 980px) 420px, 90vw" loading="eager" />
+        ) : (
+          <Emplacement texte="[Affiche de l’événement]" ratio="4 / 5" sombre />
+        )}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="conteneur">
+      <div class="cartouche clair reveal">
+        <div>
+          <span class="label">Dates</span>
+          <strong>{plageDates(e.data.dateDebut, e.data.dateFin)}</strong>
+          <small>À partir de {heureFr(e.data.heure)}{e.data.heureFin && ` jusqu’à ${heureFr(e.data.heureFin)}`}</small>
+        </div>
+        <div>
+          <span class="label">Lieu</span>
+          <strong>{e.data.lieu}</strong>
+          {e.data.lieuDetail && <small>{e.data.lieuDetail}</small>}
+        </div>
+        {e.data.programme.length > 0 && (
+          <div>
+            <span class="label">Au programme</span>
+            <strong>{e.data.programme.join(' · ')}</strong>
+          </div>
+        )}
+      </div>
+
+      {e.data.aVerifier && (
+        <p class="verifier"><span class="a-fournir">[Informations reprises des publications du club — à vérifier et compléter.]</span></p>
+      )}
+
+      <div class="texte corps reveal"><Content /></div>
+
+      {aVenir && (
+        <div class="boutons fin">
+          <a class="btn" href={inscription}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+          <a class="btn btn-contour" href={u('/contact/')}>Une question ?</a>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <AppelRejoindre />
+</Base>
+
+<style>
+  .tete {
+    position: relative; overflow: hidden;
+    padding-block: clamp(2rem, 6vw, 4.5rem);
+  }
+  .tete > .conteneur { position: relative; z-index: 1; }
+  .mise { display: grid; gap: 2.5rem; align-items: center; }
+  @media (min-width: 980px) { .mise { grid-template-columns: minmax(0, 1fr) 420px; gap: 4rem; } }
+  .retour { margin-bottom: 1.25rem; color: var(--ciel) !important; }
+  .titre-1 { overflow-wrap: anywhere; hyphens: auto; }
+  .dates { font-family: var(--f-titre); text-transform: uppercase; font-size: clamp(1.6rem, 6vw, 2.6rem); line-height: 1.05; margin: 1.25rem 0 .3rem; }
+  .heure { font-family: var(--f-label); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; font-size: 1.1rem; margin: 0; }
+  .jours { color: var(--ciel); }
+  .rebours-zone { margin-top: 2rem; display: grid; gap: 1.5rem; }
+  .affiche { max-width: 420px; width: 100%; margin-inline: auto; }
+  .affiche :global(img) { width: 100%; border-radius: 10px; box-shadow: 0 24px 50px -24px rgb(4 34 58 / .8); }
+  .corps { margin-top: 2.5rem; }
+  .verifier { margin-top: 1.5rem; }
+  .fin { margin-top: 2rem; }
+</style>

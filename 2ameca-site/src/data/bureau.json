@@ -1,0 +1,8 @@
+[
+  { "nom": "[Nom Prénom]", "role": "Président(e)", "photo": "" },
+  { "nom": "[Nom Prénom]", "role": "Vice-président(e)", "photo": "" },
+  { "nom": "[Nom Prénom]", "role": "Secrétaire général(e)", "photo": "" },
+  { "nom": "[Nom Prénom]", "role": "Trésorier(ère)", "photo": "" },
+  { "nom": "[Nom Prénom]", "role": "Responsable projets", "photo": "" },
+  { "nom": "[Nom Prénom]", "role": "Responsable communication", "photo": "" }
+]

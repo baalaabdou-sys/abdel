@@ -1,0 +1,66 @@
+---
+import Base from '../../layouts/Base.astro';
+import EnTetePage from '../../components/EnTetePage.astro';
+import CarteProjet from '../../components/CarteProjet.astro';
+import AppelRejoindre from '../../components/AppelRejoindre.astro';
+import { getProjets } from '../../lib/collections';
+
+const projets = await getProjets();
+const types = [...new Set(projets.map((p) => p.data.type))];
+---
+<Base titre="Activités" description="Projets, ateliers et formations du Club 2AMECA à la FSAC : conception, fabrication, automobile, aéronautique.">
+  <EnTetePage
+    surtitre="Activités"
+    titre="Projets & ateliers"
+    chapo="Ce que les membres du club construisent, apprennent et partagent au fil de l’année."
+  />
+
+  <section class="section" aria-labelledby="liste">
+    <div class="conteneur">
+      <h2 id="liste" class="sr-only">Toutes les activités</h2>
+      {types.length > 1 && (
+        <div class="filtres" role="group" aria-label="Filtrer par type">
+          <button type="button" class="filtre" aria-pressed="true" data-type="">Tout</button>
+          {types.map((t) => <button type="button" class="filtre" aria-pressed="false" data-type={t}>{t}</button>)}
+        </div>
+      )}
+      {projets.length > 0 ? (
+        <ul class="grille grille-3 liste" role="list">
+          {projets.map((p) => <li data-type={p.data.type}><CarteProjet projet={p} niveauTitre="h3" /></li>)}
+        </ul>
+      ) : (
+        <p>Les premiers projets arrivent bientôt.</p>
+      )}
+      <p class="sr-only" aria-live="polite" id="filtre-etat"></p>
+    </div>
+  </section>
+
+  <AppelRejoindre titre="Un projet en tête ?" texte="Rejoignez le club pour proposer vos idées, monter une équipe et passer à la pratique." />
+</Base>
+
+<style>
+  .filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; }
+  .filtre {
+    min-height: 44px; padding: .45em 1.1em; border-radius: 999px; cursor: pointer;
+    font-family: var(--f-label); font-size: .85rem; letter-spacing: .12em; text-transform: uppercase;
+    background: var(--blanc); color: var(--bleu); border: 1.5px solid var(--bleu-12);
+  }
+  .filtre:hover { border-color: var(--bleu); }
+  .filtre[aria-pressed='true'] { background: var(--bleu); color: var(--blanc); border-color: var(--bleu); }
+  .liste { list-style: none; padding: 0; }
+  .liste > li { display: grid; }
+  .liste > li[hidden] { display: none; }
+</style>
+
+<script>
+  const boutons = document.querySelectorAll<HTMLButtonElement>('.filtre');
+  const items = document.querySelectorAll<HTMLElement>('.liste > li');
+  const etat = document.getElementById('filtre-etat');
+  boutons.forEach((b) => b.addEventListener('click', () => {
+    const t = b.dataset.type;
+    boutons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    let n = 0;
+    items.forEach((li) => { const ok = !t || li.dataset.type === t; li.hidden = !ok; if (ok) n++; });
+    if (etat) etat.textContent = `${n} activité${n > 1 ? 's' : ''} affichée${n > 1 ? 's' : ''}.`;
+  }));
+</script>

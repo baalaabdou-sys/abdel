@@ -1,0 +1,247 @@
+---
+import Base from '../layouts/Base.astro';
+import Lignes from '../components/Lignes.astro';
+import CompteARebours from '../components/CompteARebours.astro';
+import CarteProjet from '../components/CarteProjet.astro';
+import CarteEvenement from '../components/CarteEvenement.astro';
+import AppelRejoindre from '../components/AppelRejoindre.astro';
+import { getEvenementsParPeriode, getProjets } from '../lib/collections';
+import { plageDates, plageJours, heureFr, ymd } from '../lib/dates';
+import { u } from '../lib/url';
+import { SITE } from '../config';
+
+const { aVenir } = await getEvenementsParPeriode();
+const vedette = aVenir[0];
+const autres = aVenir.slice(1, 4);
+const projets = await getProjets();
+const enAvant = [...projets.filter((p) => p.data.enAvant), ...projets.filter((p) => !p.data.enAvant)].slice(0, 3);
+
+const nbJours = vedette
+  ? Math.round((Date.parse(ymd(vedette.data.dateFin ?? vedette.data.dateDebut)) - Date.parse(ymd(vedette.data.dateDebut))) / 864e5) + 1
+  : 0;
+const inscription = vedette?.data.inscription ?? u('/rejoindre/');
+
+const piliers = [
+  { n: '01', titre: 'Projets', texte: 'Concevoir, modéliser et fabriquer en équipe : de l’idée sur papier à la pièce qui fonctionne.' },
+  { n: '02', titre: 'Ateliers', texte: 'Des séances pratiques pour apprendre les outils et les méthodes de la mécanique appliquée.' },
+  { n: '03', titre: 'Rencontres', texte: 'Des événements qui relient l’amphi au monde professionnel, comme « De l’Amphi à l’Entreprise ».' },
+];
+---
+<Base description={SITE.description}>
+  <!-- ── Hero ─────────────────────────────────────────── -->
+  <section class="hero sombre" aria-labelledby="hero-titre">
+    <Lignes variante="hero" />
+    <div class="conteneur">
+      <p class="identite">
+        <span class="label club">Club 2AMECA</span>
+        <span class="label sous">{SITE.sousTitre}</span>
+      </p>
+
+      {vedette ? (
+        <>
+          <div class="bloc-titre">
+            <span class="script bienvenue" aria-hidden="true">Bienvenue</span>
+            <h1 id="hero-titre" class="titre-hero">
+              <span class="sr-only">Bienvenue — </span>{vedette.data.titre}
+            </h1>
+            {nbJours > 1 && (
+              <span class="pastille" aria-hidden="true"><b>{nbJours}</b><span>jours</span></span>
+            )}
+          </div>
+
+          <p class="dates">{plageDates(vedette.data.dateDebut, vedette.data.dateFin)}</p>
+          <p class="heure">
+            <span class="jours">{plageJours(vedette.data.dateDebut, vedette.data.dateFin)}</span>{' · '}À partir de {heureFr(vedette.data.heure)}
+          </p>
+
+          {vedette.data.programme.length > 0 && (
+            <div class="programme">
+              <span class="label">Au programme</span>
+              <p>{vedette.data.programme.join(', ').replace(/, ([^,]*)$/, ' & $1')}</p>
+            </div>
+          )}
+
+          <div class="action">
+            <CompteARebours debut={vedette.debut} fin={vedette.fin} />
+            <div class="boutons">
+              <a class="btn btn-clair" href={inscription}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+              <a class="btn btn-contour" href={u(`/evenements/${vedette.id}/`)}>Voir le programme</a>
+            </div>
+          </div>
+
+          <div class="cartouche">
+            <div><strong class="rejoignez">Rejoignez-nous</strong></div>
+            <div>
+              <span class="label">Lieu</span>
+              <strong>{vedette.data.lieu}</strong>
+              {vedette.data.lieuDetail && <small>{vedette.data.lieuDetail}</small>}
+            </div>
+            {vedette.data.anneeUniversitaire && (
+              <div>
+                <span class="label">Année universitaire</span>
+                <strong>{vedette.data.anneeUniversitaire.replace('–', ' — ')}</strong>
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div class="bloc-titre">
+            <span class="script bienvenue" aria-hidden="true">Bienvenue</span>
+            <h1 id="hero-titre" class="titre-hero"><span class="sr-only">Bienvenue au </span>Club 2AMECA</h1>
+          </div>
+          <p class="dates">{SITE.slogan}</p>
+          <p class="chapo">L’atelier d’applications mécanique de la Faculté des Sciences Aïn Chock.</p>
+          <div class="boutons action">
+            <a class="btn btn-clair" href={u('/rejoindre/')}>Rejoindre le club <span class="fleche" aria-hidden="true">→</span></a>
+            <a class="btn btn-contour" href={u('/activites/')}>Nos activités</a>
+          </div>
+        </>
+      )}
+    </div>
+  </section>
+
+  <!-- ── Le club en bref ──────────────────────────────── -->
+  <section class="section intro" aria-labelledby="intro-titre">
+    <Lignes variante="haut-droite" />
+    <div class="conteneur grille-intro">
+      <div class="reveal">
+        <span class="surtitre">Le club</span>
+        <h2 id="intro-titre" class="titre-2">De l’amphi<br />à l’atelier</h2>
+        <hr class="trait" />
+        <p class="chapo">
+          2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock.
+          Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile
+          et de l’aéronautique, avec un même état d’esprit : <strong>l’esprit citoyen au centre</strong>.
+        </p>
+        <a class="lien-fleche" href={u('/le-club/')}>Découvrir le club <span aria-hidden="true">→</span></a>
+      </div>
+      <ol class="piliers" role="list">
+        {piliers.map((p) => (
+          <li class="reveal">
+            <span class="num" aria-hidden="true">{p.n}</span>
+            <div>
+              <h3 class="titre-3">{p.titre}</h3>
+              <p>{p.texte}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- ── Projets ──────────────────────────────────────── -->
+  {enAvant.length > 0 && (
+    <section class="section teinte" aria-labelledby="projets-titre">
+      <div class="conteneur">
+        <div class="entete-section reveal">
+          <div>
+            <span class="surtitre">Activités</span>
+            <h2 id="projets-titre" class="titre-2">Projets à la une</h2>
+          </div>
+          <a class="btn btn-contour" href={u('/activites/')}>Toutes les activités</a>
+        </div>
+        <div class="grille grille-3">
+          {enAvant.map((p) => <CarteProjet projet={p} />)}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── Événements à venir ───────────────────────────── -->
+  <section class="section" aria-labelledby="evt-titre">
+    <Lignes variante="bas-gauche" />
+    <div class="conteneur">
+      <div class="entete-section reveal">
+        <div>
+          <span class="surtitre">Agenda</span>
+          <h2 id="evt-titre" class="titre-2">Événements à venir</h2>
+        </div>
+        <a class="btn btn-contour" href={u('/evenements/')}>Tout l’agenda</a>
+      </div>
+      {aVenir.length > 0 ? (
+        <div class="grille grille-2">
+          {[vedette, ...autres].map((e) => <CarteEvenement evenement={e} />)}
+        </div>
+      ) : (
+        <p class="vide">Aucun événement annoncé pour le moment. Suivez-nous sur nos réseaux pour ne rien manquer.</p>
+      )}
+    </div>
+  </section>
+
+  <AppelRejoindre />
+</Base>
+
+<style>
+  /* Hero — inspiré de l'affiche */
+  .hero {
+    position: relative; overflow: hidden;
+    background-color: var(--bleu);
+    /* Léger vignettage, comme l'éclairage de l'affiche */
+    background-image: radial-gradient(120% 90% at 50% 30%, transparent 55%, rgb(4 34 58 / 0.55) 100%);
+    padding-block: clamp(2.25rem, 7vw, 4.5rem) clamp(2.5rem, 7vw, 4.5rem);
+  }
+  .identite { text-align: center; margin: 0; display: grid; gap: .35rem; }
+  .club { font-weight: 600; font-size: .95rem; letter-spacing: .08em; }
+  .sous { color: var(--ciel); font-size: .68rem; letter-spacing: .3em; }
+
+  .bloc-titre { position: relative; text-align: center; width: fit-content; max-width: 100%; margin: 3.2rem auto 0; }
+  @media (min-width: 720px) { .bloc-titre { margin-top: 4.5rem; } }
+  .bloc-titre .titre-hero { font-size: clamp(3rem, 13.6vw, 9.5rem); max-width: 6em; margin-inline: auto; line-height: .94; }
+  .titre-hero { position: relative; z-index: 1; text-shadow: 0 6px 30px rgb(4 34 58 / .35); overflow-wrap: break-word; }
+  .bienvenue {
+    position: absolute; z-index: 2; left: -.08em; top: -.55em;
+    font-size: clamp(3.4rem, 15vw, 8.5rem); transform: rotate(-4deg);
+    pointer-events: none;
+  }
+  .pastille { position: absolute; z-index: 3; right: 0; top: -3.6rem; width: 4.2rem; height: 4.2rem; }
+  .pastille b { font-size: 1.6rem; }
+  .pastille span { font-size: .72rem; }
+  @media (min-width: 720px) {
+    .pastille { width: 5.6rem; height: 5.6rem; right: -3.4rem; top: 9%; }
+    .pastille b { font-size: 2.2rem; } .pastille span { font-size: .9rem; }
+  }
+
+  .dates {
+    font-family: var(--f-titre); text-transform: uppercase; text-align: center;
+    font-size: clamp(1.75rem, 7.4vw, 3.4rem); line-height: 1.05; margin: clamp(1.25rem, 4vw, 2rem) 0 .3rem;
+  }
+  .heure {
+    text-align: center; font-family: var(--f-label); font-weight: 500; text-transform: uppercase;
+    font-size: clamp(1.05rem, 3.6vw, 1.5rem); letter-spacing: .04em; margin: 0;
+  }
+  .jours { color: var(--ciel); }
+  .programme { text-align: center; margin-top: clamp(1.5rem, 4vw, 2.25rem); }
+  .programme .label { color: var(--ciel); letter-spacing: .36em; font-size: .7rem; }
+  .programme p { font-family: var(--f-label); font-weight: 500; text-transform: uppercase; font-size: clamp(1rem, 3.4vw, 1.35rem); margin: .4rem 0 0; }
+  .hero .chapo { text-align: center; margin: 1rem auto 0; }
+
+  .action {
+    display: grid; gap: 1.5rem; justify-items: center; text-align: center;
+    margin: clamp(2rem, 5vw, 3rem) auto 0;
+  }
+  .action :global(.rebours-titre) { text-align: center; }
+  .action :global(.cases) { margin-inline: auto; }
+  .action .boutons { justify-content: center; }
+  @media (min-width: 900px) {
+    .action { grid-template-columns: auto auto; justify-content: center; align-items: end; gap: 3rem; text-align: left; }
+    .action :global(.rebours-titre) { text-align: left; }
+    .action :global(.cases) { width: 24rem; }
+  }
+
+  .hero .cartouche { margin: clamp(2rem, 5vw, 3rem) auto 0; max-width: 54rem; text-align: left; }
+  .rejoignez { font-family: var(--f-titre) !important; text-transform: uppercase; font-size: 1.35rem !important; letter-spacing: .02em; }
+
+  /* Intro */
+  .grille-intro { display: grid; gap: 2.5rem 4rem; }
+  @media (min-width: 900px) { .grille-intro { grid-template-columns: 1fr 1fr; align-items: center; } }
+  .grille-intro .chapo { color: var(--encre); }
+  .piliers { list-style: none; padding: 0; display: grid; gap: 0; counter-reset: none; }
+  .piliers li { display: grid; grid-template-columns: 3.5rem 1fr; gap: 1rem; padding: 1.4rem 0; border-top: 1px solid var(--bleu-12); }
+  .piliers li:last-child { border-bottom: 1px solid var(--bleu-12); }
+  .num { font-family: var(--f-titre); font-size: 2.2rem; line-height: 1; color: var(--bleu); }
+  .piliers .titre-3 { color: var(--marine); margin-bottom: .35rem; }
+  .piliers p { margin: 0; color: var(--encre-70); }
+
+  .vide { font-size: 1.1rem; color: var(--encre-70); }
+</style>

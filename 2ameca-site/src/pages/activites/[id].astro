@@ -1,0 +1,89 @@
+---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import EnTetePage from '../../components/EnTetePage.astro';
+import Emplacement from '../../components/Emplacement.astro';
+import AppelRejoindre from '../../components/AppelRejoindre.astro';
+import { getProjets } from '../../lib/collections';
+import { dateLongue } from '../../lib/dates';
+import { u } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const projets = await getProjets();
+  return projets.map((p) => ({ params: { id: p.id }, props: { projet: p } }));
+}
+
+const { projet: p } = Astro.props;
+const { Content } = await render(p);
+const ogImage = p.data.couverture?.src;
+---
+<Base titre={p.data.titre} description={p.data.resume} image={ogImage} imageAlt={p.data.couvertureAlt} type="article">
+  <EnTetePage surtitre={`${p.data.type} · ${p.data.statut}`} titre={p.data.titre} chapo={p.data.resume} />
+
+  <article class="section">
+    <div class="conteneur mise">
+      <div class="principal">
+        <div class="couverture reveal">
+          {p.data.couverture ? (
+            <Image src={p.data.couverture} alt={p.data.couvertureAlt ?? ''} widths={[480, 800, 1200]} sizes="(min-width: 980px) 720px, 100vw" loading="eager" />
+          ) : (
+            <Emplacement texte="[Photo du projet]" ratio="16 / 9" />
+          )}
+        </div>
+        <div class="texte reveal"><Content /></div>
+
+        <h2 class="titre-3 titre-photos">Photos</h2>
+        {p.data.photos.length > 0 ? (
+          <ul class="photos" role="list">
+            {p.data.photos.map((ph) => (
+              <li><Image src={ph.src} alt={ph.alt} widths={[400, 800]} sizes="(min-width: 720px) 360px, 50vw" /></li>
+            ))}
+          </ul>
+        ) : (
+          <ul class="photos" role="list">
+            <li><Emplacement texte="[Photo]" ratio="1" /></li>
+            <li><Emplacement texte="[Photo]" ratio="1" /></li>
+          </ul>
+        )}
+      </div>
+
+      <aside class="fiche reveal" aria-label="Fiche du projet">
+        <dl>
+          <div><dt class="label">Type</dt><dd>{p.data.type}</dd></div>
+          <div><dt class="label">Date</dt><dd>{dateLongue(p.data.date)}</dd></div>
+          <div><dt class="label">Statut</dt><dd>{p.data.statut}</dd></div>
+          <div>
+            <dt class="label">Membres impliqués</dt>
+            <dd>
+              {p.data.membres.length ? (
+                <ul role="list">{p.data.membres.map((m) => <li>{m.startsWith('[') ? <span class="a-fournir">{m}</span> : m}</li>)}</ul>
+              ) : <span class="a-fournir">[À fournir]</span>}
+            </dd>
+          </div>
+        </dl>
+        <a class="lien-fleche" href={u('/activites/')}><span aria-hidden="true">←</span> Toutes les activités</a>
+      </aside>
+    </div>
+  </article>
+
+  <AppelRejoindre titre="Envie de participer ?" />
+</Base>
+
+<style>
+  .mise { display: grid; gap: 2.5rem; }
+  @media (min-width: 980px) { .mise { grid-template-columns: minmax(0, 1fr) 300px; gap: 4rem; align-items: start; } }
+  .couverture { border-radius: var(--rayon); overflow: hidden; margin-bottom: 2rem; }
+  .couverture :global(img) { width: 100%; }
+  .titre-photos { color: var(--marine); margin: 2.5rem 0 1rem; }
+  .photos { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; }
+  .photos :global(img) { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+  .fiche { border: 1.5px solid var(--bleu); border-radius: var(--rayon); padding: 1.25rem 1.4rem; }
+  @media (min-width: 980px) { .fiche { position: sticky; top: calc(var(--header-h) + 1.5rem); } }
+  dl { margin: 0 0 1rem; display: grid; }
+  dl > div { padding: .8rem 0; border-bottom: 1px solid var(--bleu-12); }
+  dl > div:first-child { padding-top: 0; }
+  dt { color: var(--bleu); font-size: .7rem; margin-bottom: .2rem; }
+  dd { margin: 0; font-family: var(--f-label); font-weight: 500; color: var(--marine); font-size: 1.05rem; }
+  dd ul { list-style: none; padding: 0; display: grid; gap: .2rem; }
+</style>

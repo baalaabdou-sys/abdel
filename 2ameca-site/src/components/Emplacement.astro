@@ -1,0 +1,28 @@
+---
+/** Cadre affiché quand une photo n'a pas encore été fournie. */
+interface Props { texte?: string; ratio?: string; sombre?: boolean }
+const { texte = '[Photo à fournir]', ratio = '4 / 3', sombre = false } = Astro.props;
+---
+<div class:list={['emplacement', { sombre }]} style={`aspect-ratio: ${ratio}`} role="img" aria-label={`Emplacement : ${texte.replace(/[\[\]]/g, '')}`}>
+  <span>{texte}</span>
+</div>
+
+<style>
+  .emplacement {
+    position: relative; display: grid; place-items: center; width: 100%;
+    background-color: var(--bleu-06);
+    background-image: repeating-linear-gradient(135deg, transparent 0 18px, var(--bleu-12) 18px 19px);
+    border: 1px solid var(--bleu-12);
+    color: var(--bleu);
+  }
+  .emplacement span {
+    font-family: var(--f-label); font-size: .82rem; letter-spacing: .12em; text-transform: uppercase;
+    background: var(--blanc); padding: .35em .8em; border-radius: 4px; text-align: center; margin: 1rem;
+  }
+  .sombre {
+    background-color: var(--marine);
+    background-image: repeating-linear-gradient(135deg, transparent 0 18px, var(--ciel-18) 18px 19px);
+    border-color: var(--ciel-18); color: var(--ciel);
+  }
+  .sombre span { background: var(--marine); border: 1px solid var(--ciel-35); }
+</style>

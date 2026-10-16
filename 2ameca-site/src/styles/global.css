@@ -1,0 +1,273 @@
+/* ──────────────────────────────────────────────────────────────
+   Club 2AMECA — feuille de styles globale
+   Palette et typographie tirées de l'affiche (docs/flyer.png).
+   ────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Couleurs — uniquement celles de la charte */
+  --bleu: #0A4A7A;
+  --marine: #04223A;
+  --ciel: #9FD0F5;
+  --blanc: #FFFFFF;
+  --encre: #2D2D2D;
+
+  /* Variantes par transparence (mêmes teintes) */
+  --ciel-35: rgb(159 208 245 / 0.35);
+  --ciel-18: rgb(159 208 245 / 0.18);
+  --blanc-70: rgb(255 255 255 / 0.78);
+  --blanc-25: rgb(255 255 255 / 0.25);
+  --bleu-12: rgb(10 74 122 / 0.12);
+  --bleu-06: rgb(10 74 122 / 0.06);
+  --encre-70: rgb(45 45 45 / 0.82);
+
+  /* Polices */
+  --f-titre: 'Anton', 'Impact', 'Arial Narrow', sans-serif;
+  --f-label: 'Oswald', 'Arial Narrow', sans-serif;
+  --f-texte: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-script: 'Mrs Saint Delafield', cursive;
+
+  /* Échelle */
+  --t-hero: clamp(3.4rem, 15vw, 9.5rem);
+  --t-1: clamp(2.5rem, 9vw, 5rem);
+  --t-2: clamp(2rem, 6vw, 3.25rem);
+  --t-3: clamp(1.35rem, 3.6vw, 1.75rem);
+
+  --gouttiere: 16px;
+  --largeur: 1180px;
+  --rayon: 14px;
+  --ombre: 0 1px 0 var(--bleu-12), 0 10px 30px -18px rgb(4 34 58 / 0.45);
+  --header-h: 64px;
+}
+
+@media (min-width: 720px) {
+  :root { --gouttiere: 32px; --header-h: 76px; }
+}
+
+/* ── Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: calc(var(--header-h) + 12px); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+body {
+  margin: 0;
+  background: var(--blanc);
+  color: var(--encre);
+  font-family: var(--f-texte);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+img, svg { display: block; max-width: 100%; }
+img { height: auto; }
+
+a { color: var(--bleu); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible { outline: 3px solid var(--ciel); outline-offset: 3px; border-radius: 4px; }
+main > .section:not(.sombre):not(.tres-sombre) :focus-visible { outline-color: var(--bleu); }
+
+h1, h2, h3, h4 { margin: 0; font-weight: 400; line-height: 1.02; }
+p { margin: 0 0 1em; }
+ul, ol { margin: 0; }
+
+.sr-only {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.lien-evitement {
+  position: absolute; left: 12px; top: -60px; z-index: 100;
+  background: var(--blanc); color: var(--marine); padding: 10px 16px;
+  font-family: var(--f-label); text-transform: uppercase; letter-spacing: .06em;
+  border-radius: 8px; transition: top .15s;
+}
+.lien-evitement:focus { top: 12px; }
+
+/* ── Typographie ──────────────────────────────────────────── */
+.titre-hero, .titre-1, .titre-2 {
+  font-family: var(--f-titre);
+  text-transform: uppercase;
+  letter-spacing: .005em;
+}
+.titre-hero { font-size: var(--t-hero); line-height: .9; }
+.titre-1 { font-size: var(--t-1); line-height: .95; }
+.titre-2 { font-size: var(--t-2); line-height: 1; color: var(--bleu); }
+:is(.sombre, .tres-sombre) .titre-2 { color: var(--blanc); }
+
+.titre-3 {
+  font-family: var(--f-label);
+  font-weight: 600;
+  font-size: var(--t-3);
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: .01em;
+}
+
+/* Petites capitales espacées, comme « ATELIER D'APPLICATIONS MÉCANIQUE » */
+.surtitre {
+  display: block;
+  font-family: var(--f-label);
+  font-weight: 500;
+  font-size: .8rem;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--bleu);
+  margin-bottom: .9rem;
+}
+:is(.sombre, .tres-sombre) .surtitre { color: var(--ciel); }
+
+.label {
+  font-family: var(--f-label);
+  font-weight: 500;
+  font-size: .78rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.script {
+  font-family: var(--f-script);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ciel);
+  line-height: 1;
+}
+
+.chapo { font-size: clamp(1.1rem, 2.4vw, 1.3rem); line-height: 1.55; max-width: 38em; }
+:is(.sombre, .tres-sombre) .chapo { color: var(--blanc-70); }
+
+.texte { max-width: 40em; }
+.texte h2 { font-family: var(--f-label); font-weight: 600; text-transform: uppercase; font-size: 1.35rem; color: var(--bleu); margin: 2rem 0 .75rem; }
+.texte h3 { font-family: var(--f-label); font-weight: 500; text-transform: uppercase; font-size: 1.1rem; margin: 1.5rem 0 .5rem; }
+.texte ul { padding-left: 1.2em; margin-bottom: 1em; }
+.texte li { margin-bottom: .35em; }
+.texte li::marker { color: var(--bleu); }
+.texte strong { color: var(--marine); font-weight: 600; }
+
+/* ── Mise en page ─────────────────────────────────────────── */
+.conteneur {
+  width: 100%;
+  max-width: calc(var(--largeur) + 2 * var(--gouttiere));
+  margin-inline: auto;
+  padding-inline: var(--gouttiere);
+}
+
+.section { position: relative; padding-block: clamp(3.5rem, 9vw, 6.5rem); overflow: hidden; }
+.section.serree { padding-block: clamp(2.5rem, 6vw, 4rem); }
+.sombre { background: var(--bleu); color: var(--blanc); }
+.tres-sombre { background: var(--marine); color: var(--blanc); }
+.teinte { background: var(--bleu-06); }
+
+.entete-section {
+  display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between;
+  gap: 1rem 2rem; margin-bottom: clamp(2rem, 5vw, 3rem);
+}
+.entete-section > div { max-width: 40rem; }
+
+.grille { display: grid; gap: clamp(1rem, 3vw, 1.75rem); }
+@media (min-width: 640px) { .grille-2, .grille-3 { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 980px) { .grille-3 { grid-template-columns: repeat(3, 1fr); } }
+
+/* Trait fin, rappel du « — » de l'affiche */
+.trait { display: block; width: 56px; height: 2px; background: var(--ciel); margin: 1.25rem 0; border: 0; }
+.section:not(.sombre):not(.tres-sombre) .trait { background: var(--bleu); }
+
+/* ── Boutons ──────────────────────────────────────────────── */
+.btn {
+  --fond: var(--bleu); --txt: var(--blanc); --bord: var(--bleu);
+  display: inline-flex; align-items: center; justify-content: center; gap: .6em;
+  min-height: 48px; padding: .7em 1.4em;
+  font-family: var(--f-label); font-weight: 500; font-size: .95rem;
+  letter-spacing: .12em; text-transform: uppercase; text-decoration: none;
+  color: var(--txt); background: var(--fond); border: 1.5px solid var(--bord);
+  border-radius: 999px; cursor: pointer;
+  transition: background-color .2s, color .2s, border-color .2s, transform .2s;
+}
+.btn:hover { --fond: var(--marine); --bord: var(--marine); }
+.btn:active { transform: translateY(1px); }
+.btn-clair { --fond: var(--blanc); --txt: var(--bleu); --bord: var(--blanc); }
+.btn-clair:hover { --fond: var(--ciel); --txt: var(--marine); --bord: var(--ciel); }
+.btn-contour { --fond: transparent; --txt: var(--bleu); --bord: var(--bleu); }
+.btn-contour:hover { --fond: var(--bleu); --txt: var(--blanc); --bord: var(--bleu); }
+.sombre .btn-contour, .tres-sombre .btn-contour { --txt: var(--blanc); --bord: var(--blanc-70); }
+.sombre .btn-contour:hover, .tres-sombre .btn-contour:hover { --fond: var(--blanc); --txt: var(--bleu); --bord: var(--blanc); }
+.btn .fleche { transition: transform .2s; }
+.btn:hover .fleche { transform: translateX(3px); }
+.boutons { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+.lien-fleche {
+  font-family: var(--f-label); font-weight: 500; text-transform: uppercase;
+  letter-spacing: .12em; font-size: .88rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: .5em; padding-block: .5em;
+}
+.lien-fleche:hover { text-decoration: underline; }
+.sombre .lien-fleche, .tres-sombre .lien-fleche { color: var(--blanc); }
+
+/* ── Cartouche d'informations (barre du bas de l'affiche) ── */
+.cartouche {
+  display: grid;
+  border: 1.5px solid var(--blanc-70);
+  border-radius: var(--rayon);
+}
+.cartouche > div { padding: 1rem 1.25rem; }
+.cartouche > div + div { border-top: 1px solid var(--blanc-25); }
+.cartouche .label { display: block; color: var(--ciel); margin-bottom: .25rem; font-size: .72rem; letter-spacing: .2em; }
+.cartouche strong { display: block; font-family: var(--f-label); font-weight: 500; font-size: 1.1rem; line-height: 1.25; }
+.cartouche small { display: block; font-size: .92rem; color: var(--blanc-70); }
+@media (min-width: 720px) {
+  .cartouche { grid-auto-flow: column; grid-auto-columns: 1fr; align-items: center; }
+  .cartouche > div { padding: 1.1rem 1.5rem; }
+  .cartouche > div + div { border-top: 0; border-left: 1px solid var(--blanc-25); }
+}
+.cartouche.clair { border-color: var(--bleu); }
+.cartouche.clair > div + div { border-color: var(--bleu-12); }
+.cartouche.clair .label { color: var(--bleu); }
+.cartouche.clair strong { color: var(--marine); }
+.cartouche.clair small { color: var(--encre-70); }
+
+/* ── Pastille ronde « 3 JOURS » ───────────────────────────── */
+.pastille {
+  display: inline-grid; place-items: center; text-align: center;
+  width: 5.2rem; height: 5.2rem; border-radius: 50%;
+  background: var(--blanc); color: var(--bleu);
+  font-family: var(--f-titre); text-transform: uppercase; line-height: .9;
+  box-shadow: 0 8px 24px -10px rgb(4 34 58 / .6);
+}
+.pastille b { display: block; font-weight: 400; font-size: 2rem; }
+.pastille span { font-size: .85rem; letter-spacing: .04em; }
+
+/* ── Étiquettes ───────────────────────────────────────────── */
+.etiquette {
+  display: inline-block;
+  font-family: var(--f-label); font-weight: 500; font-size: .72rem;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: .3em .8em; border-radius: 999px;
+  border: 1px solid currentColor; color: var(--bleu);
+}
+:is(.sombre, .tres-sombre) .etiquette { color: var(--ciel); }
+
+/* ── Emplacements de contenu manquant ─────────────────────── */
+.a-fournir {
+  font-family: var(--f-label); font-weight: 400; letter-spacing: .02em;
+  color: var(--bleu); background: var(--bleu-06);
+  padding: .05em .4em; border-radius: 4px;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+}
+.sombre .a-fournir, .tres-sombre .a-fournir { color: var(--ciel); background: var(--ciel-18); }
+
+/* ── Lignes de construction (décor) ───────────────────────── */
+.lignes {
+  position: absolute; pointer-events: none; color: var(--ciel-35);
+  z-index: 0;
+}
+.section:not(.sombre):not(.tres-sombre) .lignes { color: var(--bleu-12); }
+.section > .conteneur, .hero > .conteneur { position: relative; z-index: 1; }
+
+/* ── Apparition au défilement ─────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .js .reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s ease, transform .7s ease; }
+  .js .reveal.visible { opacity: 1; transform: none; }
+}
+main:focus { outline: none; }

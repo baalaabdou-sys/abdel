@@ -1,0 +1,154 @@
+---
+import Fsac from './Fsac.astro';
+import { u, estActif } from '../lib/url';
+
+const liens = [
+  { href: '/', label: 'Accueil' },
+  { href: '/le-club/', label: 'Le club' },
+  { href: '/activites/', label: 'Activités' },
+  { href: '/evenements/', label: 'Événements' },
+  { href: '/contact/', label: 'Contact' },
+];
+const chemin = Astro.url.pathname;
+---
+<header class="entete">
+  <div class="conteneur barre">
+    <a class="marques" href={u('/')} aria-label="Club 2AMECA — accueil">
+      <Fsac taille="petite" />
+      <span class="separateur" aria-hidden="true"></span>
+      <img class="logo-club" src={u('/logos/2ameca-white-560.png')} width="560" height="120" alt="" />
+    </a>
+
+    <nav class="nav" aria-label="Navigation principale">
+      <button class="bouton-menu" type="button" aria-expanded="false" aria-controls="menu-principal">
+        <span class="bouton-menu-texte">Menu</span>
+        <span class="burger" aria-hidden="true"><span></span><span></span></span>
+      </button>
+
+      <div class="panneau" id="menu-principal">
+        <ul class="liens" role="list">
+          {liens.map(({ href, label }) => (
+            <li>
+              <a href={u(href)} aria-current={estActif(chemin, href) ? 'page' : undefined}>{label}</a>
+            </li>
+          ))}
+        </ul>
+        <a class="btn btn-clair rejoindre" href={u('/rejoindre/')} aria-current={estActif(chemin, '/rejoindre/') ? 'page' : undefined}>
+          Rejoindre
+        </a>
+        <p class="panneau-pied label" aria-hidden="true">Esprit citoyen au centre</p>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .entete {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--marine); color: var(--blanc);
+    border-bottom: 1px solid var(--ciel-18);
+  }
+  .barre { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: var(--header-h); }
+
+  .marques { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
+  .separateur { width: 1px; height: 30px; background: var(--blanc-25); }
+  .logo-club { width: 112px; height: auto; }
+  @media (min-width: 720px) { .logo-club { width: 148px; } .separateur { height: 38px; } .marques { gap: 16px; } }
+
+  .bouton-menu {
+    display: inline-flex; align-items: center; gap: .7rem;
+    min-height: 44px; padding: 0 .9rem; margin-right: -.4rem;
+    background: transparent; color: var(--blanc); border: 1px solid var(--blanc-25); border-radius: 999px;
+    font-family: var(--f-label); font-size: .85rem; letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
+    position: relative; z-index: 2;
+  }
+  .burger { display: grid; gap: 5px; width: 18px; }
+  .burger span { display: block; height: 1.5px; background: currentColor; transition: transform .25s; }
+  [aria-expanded='true'] .burger span:first-child { transform: translateY(3.25px) rotate(45deg); }
+  [aria-expanded='true'] .burger span:last-child { transform: translateY(-3.25px) rotate(-45deg); }
+
+  /* Mobile : panneau plein écran */
+  .panneau {
+    position: fixed; inset: var(--header-h) 0 0 0;
+    background: var(--marine);
+    padding: 2rem var(--gouttiere) 2.5rem;
+    display: flex; flex-direction: column; gap: 2rem;
+    overflow-y: auto;
+    visibility: hidden; opacity: 0; transform: translateY(-8px);
+    transition: opacity .2s, transform .2s, visibility 0s .2s;
+  }
+  .nav.ouvert .panneau { visibility: visible; opacity: 1; transform: none; transition: opacity .2s, transform .2s; }
+  .liens { list-style: none; padding: 0; display: grid; }
+  .liens a {
+    display: block; padding: .55rem 0;
+    font-family: var(--f-titre); font-size: clamp(2.2rem, 11vw, 3rem); line-height: 1.05;
+    text-transform: uppercase; color: var(--blanc); text-decoration: none;
+    border-bottom: 1px solid var(--ciel-18);
+  }
+  .liens a[aria-current='page'] { color: var(--ciel); }
+  .rejoindre { align-self: flex-start; }
+  .panneau-pied { margin-top: auto; color: var(--ciel); }
+
+  /* Sans JavaScript : liens toujours visibles sous la barre */
+  @media (max-width: 1039px) {
+    :global(html:not(.js)) .bouton-menu { display: none; }
+    :global(html:not(.js)) .barre { flex-wrap: wrap; height: auto; padding-block: 12px; }
+    :global(html:not(.js)) .panneau {
+      position: static; visibility: visible; opacity: 1; transform: none; padding: 0; gap: 1rem;
+    }
+    :global(html:not(.js)) .liens { display: flex; flex-wrap: wrap; gap: 0 1rem; }
+    :global(html:not(.js)) .liens a { font-family: var(--f-label); font-size: 1rem; border: 0; }
+    :global(html:not(.js)) .panneau-pied { display: none; }
+  }
+
+  @media (min-width: 1040px) {
+    .bouton-menu { display: none; }
+    .panneau {
+      position: static; inset: auto; padding: 0; background: none; overflow: visible;
+      flex-direction: row; align-items: center; gap: 2rem;
+      visibility: visible; opacity: 1; transform: none; transition: none;
+    }
+    .liens { display: flex; gap: 1.75rem; }
+    .liens a {
+      font-family: var(--f-label); font-size: .9rem; letter-spacing: .14em; font-weight: 500;
+      padding: .5rem 0; border: 0; position: relative;
+    }
+    .liens a::after {
+      content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+      background: var(--ciel); transform: scaleX(0); transform-origin: left; transition: transform .2s;
+    }
+    .liens a:hover::after, .liens a[aria-current='page']::after { transform: scaleX(1); }
+    .liens a[aria-current='page'] { color: var(--blanc); }
+    .rejoindre { min-height: 42px; padding: .5em 1.3em; font-size: .85rem; }
+    .panneau-pied { display: none; }
+  }
+</style>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('.nav');
+  const bouton = nav?.querySelector<HTMLButtonElement>('.bouton-menu');
+  const panneau = document.getElementById('menu-principal');
+  if (nav && bouton && panneau) {
+    const mobile = window.matchMedia('(max-width: 1039px)');
+    const syncInert = () => {
+      const ferme = !nav.classList.contains('ouvert');
+      panneau.toggleAttribute('inert', mobile.matches && ferme);
+    };
+    const basculer = (ouvrir: boolean) => {
+      nav.classList.toggle('ouvert', ouvrir);
+      bouton.setAttribute('aria-expanded', String(ouvrir));
+      bouton.querySelector('.bouton-menu-texte')!.textContent = ouvrir ? 'Fermer' : 'Menu';
+      document.body.style.overflow = ouvrir ? 'hidden' : '';
+      syncInert();
+    };
+    bouton.addEventListener('click', () => basculer(!nav.classList.contains('ouvert')));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && nav.classList.contains('ouvert')) { basculer(false); bouton.focus(); }
+    });
+    panneau.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) basculer(false);
+    });
+    mobile.addEventListener('change', () => { if (!mobile.matches) basculer(false); syncInert(); });
+    syncInert();
+  }
+</script>

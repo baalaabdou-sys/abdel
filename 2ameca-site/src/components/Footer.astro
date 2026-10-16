@@ -1,0 +1,85 @@
+---
+import Fsac from './Fsac.astro';
+import Lignes from './Lignes.astro';
+import { u } from '../lib/url';
+import { SITE, CONTACT } from '../config';
+
+const annee = new Date().getFullYear();
+const reseaux = [
+  CONTACT.instagram && { label: 'Instagram', href: `https://instagram.com/${CONTACT.instagram}`, texte: `@${CONTACT.instagram}` },
+  CONTACT.linkedin && { label: 'LinkedIn', href: CONTACT.linkedin, texte: 'LinkedIn' },
+  CONTACT.whatsapp && { label: 'WhatsApp', href: `https://wa.me/${CONTACT.whatsapp}`, texte: 'WhatsApp' },
+  CONTACT.email && { label: 'E-mail', href: `mailto:${CONTACT.email}`, texte: CONTACT.email },
+].filter(Boolean) as { label: string; href: string; texte: string }[];
+---
+<footer class="pied tres-sombre">
+  <Lignes variante="bas-droite" />
+  <div class="conteneur grille-pied">
+    <div class="bloc-marque">
+      <div class="logos">
+        <img src={u('/logos/2ameca-white-560.png')} width="560" height="120" alt="Club 2AMECA" loading="lazy" decoding="async" />
+        <Fsac taille="moyenne" lien />
+      </div>
+      <p class="sous-titre label">{SITE.sousTitre}</p>
+      <p class="slogan">{SITE.slogan}</p>
+    </div>
+
+    <nav aria-label="Plan du site" class="colonne">
+      <h2 class="label titre-col">Le site</h2>
+      <ul role="list">
+        <li><a href={u('/le-club/')}>Le club</a></li>
+        <li><a href={u('/activites/')}>Activités</a></li>
+        <li><a href={u('/evenements/')}>Événements</a></li>
+        <li><a href={u('/rejoindre/')}>Rejoindre</a></li>
+        <li><a href={u('/contact/')}>Contact & FAQ</a></li>
+      </ul>
+    </nav>
+
+    <div class="colonne">
+      <h2 class="label titre-col">Nous suivre</h2>
+      {reseaux.length ? (
+        <ul role="list">
+          {reseaux.map((r) => (
+            <li><a href={r.href} rel="noopener" target={r.href.startsWith('mailto') ? undefined : '_blank'}>
+              <span class="reseau">{r.label}</span> {r.texte !== r.label && <span class="detail">{r.texte}</span>}
+            </a></li>
+          ))}
+        </ul>
+      ) : (
+        <p><span class="a-fournir">[Réseaux sociaux à fournir]</span></p>
+      )}
+      <p class="lieu">{CONTACT.lieu}<br />Université Hassan II de Casablanca</p>
+    </div>
+  </div>
+  <div class="conteneur bas">
+    <p>© {annee} Club 2AMECA — {SITE.sousTitre}</p>
+    <p>Club étudiant de la Faculté des Sciences Aïn Chock</p>
+  </div>
+</footer>
+
+<style>
+  .pied { position: relative; overflow: hidden; padding-top: clamp(3rem, 8vw, 5rem); }
+  .pied > .conteneur { position: relative; z-index: 1; }
+  .grille-pied { display: grid; gap: 2.5rem; }
+  @media (min-width: 820px) { .grille-pied { grid-template-columns: 1.6fr 1fr 1fr; } }
+
+  .logos { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+  .logos > img { width: 190px; }
+  .sous-titre { color: var(--ciel); margin: 1.25rem 0 .35rem; letter-spacing: .24em; font-size: .72rem; }
+  .slogan { font-family: var(--f-label); font-weight: 300; font-size: 1.35rem; letter-spacing: .02em; margin: 0; }
+
+  .titre-col { color: var(--ciel); margin-bottom: 1rem; }
+  .colonne ul { list-style: none; padding: 0; display: grid; gap: .2rem; }
+  .colonne a { color: var(--blanc); text-decoration: none; display: inline-block; padding: .3rem 0; }
+  .colonne a:hover { text-decoration: underline; }
+  .detail { color: var(--blanc-70); font-size: .92em; }
+  .reseau { font-family: var(--f-label); text-transform: uppercase; letter-spacing: .1em; font-size: .9rem; }
+  .lieu { margin-top: 1.25rem; color: var(--blanc-70); font-size: .95rem; }
+
+  .bas {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: .25rem 2rem;
+    margin-top: 3rem; padding-block: 1.5rem; border-top: 1px solid var(--ciel-18);
+    font-size: .85rem; color: var(--blanc-70);
+  }
+  .bas p { margin: 0; }
+</style>

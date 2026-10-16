@@ -1,0 +1,25 @@
+---
+/** Bandeau d'en-tête des pages intérieures, dans l'esprit de l'affiche. */
+import Lignes from './Lignes.astro';
+interface Props { surtitre: string; titre: string; chapo?: string }
+const { surtitre, titre, chapo } = Astro.props;
+---
+<section class="en-tete-page sombre">
+  <Lignes variante="haut-droite" />
+  <Lignes variante="bas-gauche" class="discret" />
+  <div class="conteneur">
+    <span class="surtitre">{surtitre}</span>
+    <h1 class="titre-1">{titre}</h1>
+    <slot name="script" />
+    {chapo && <p class="chapo">{chapo}</p>}
+    <slot />
+  </div>
+</section>
+
+<style>
+  .en-tete-page { position: relative; overflow: hidden; padding-block: clamp(3rem, 10vw, 6rem) clamp(2.75rem, 8vw, 4.5rem); }
+  .en-tete-page > .conteneur { position: relative; z-index: 1; }
+  .titre-1 { max-width: 14ch; overflow-wrap: anywhere; hyphens: auto; }
+  .chapo { margin-top: 1.4rem; }
+  :global(.discret) { opacity: .6; }
+</style>

@@ -1,0 +1,44 @@
+---
+/**
+ * Lignes de construction — fins traits diagonaux repris du logo
+ * (les guides tracés autour du « M » et le contour du « A »).
+ * Purement décoratif.
+ */
+interface Props {
+  variante?: 'hero' | 'haut-droite' | 'bas-gauche' | 'bas-droite' | 'haut-gauche';
+  class?: string;
+}
+const { variante = 'haut-droite', class: cls = '' } = Astro.props;
+---
+{variante === 'hero' ? (
+  <svg class={`lignes lignes-hero ${cls}`} viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+    <g stroke="currentColor" stroke-width="1" fill="none" vector-effect="non-scaling-stroke">
+      <line x1="-40" y1="250" x2="420" y2="-40" />
+      <line x1="-40" y1="320" x2="500" y2="-20" />
+      <line x1="0" y1="140" x2="330" y2="140" />
+      <line x1="1060" y1="940" x2="1480" y2="560" />
+      <line x1="1150" y1="940" x2="1480" y2="650" />
+      <line x1="1180" y1="760" x2="1440" y2="760" />
+      <line x1="1230" y1="620" x2="1230" y2="900" />
+      <polyline points="1290,140 1360,300 1440,300" />
+    </g>
+  </svg>
+) : (
+  <svg class={`lignes lignes-coin lignes-${variante} ${cls}`} viewBox="0 0 400 300" aria-hidden="true" focusable="false">
+    <g stroke="currentColor" stroke-width="1" fill="none" vector-effect="non-scaling-stroke">
+      <line x1="0" y1="300" x2="400" y2="10" />
+      <line x1="80" y1="300" x2="400" y2="70" />
+      <line x1="210" y1="0" x2="210" y2="300" />
+      <line x1="120" y1="150" x2="400" y2="150" />
+    </g>
+  </svg>
+)}
+
+<style>
+  .lignes-hero { inset: 0; width: 100%; height: 100%; }
+  .lignes-coin { width: min(46vw, 420px); height: auto; }
+  .lignes-haut-droite { top: 0; right: 0; }
+  .lignes-haut-gauche { top: 0; left: 0; transform: scaleX(-1); }
+  .lignes-bas-gauche { bottom: 0; left: 0; transform: scale(-1, -1); }
+  .lignes-bas-droite { bottom: 0; right: 0; transform: scaleY(-1); }
+</style>

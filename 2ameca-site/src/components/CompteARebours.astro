@@ -1,0 +1,81 @@
+---
+/**
+ * Compte à rebours en direct jusqu'au début de l'événement.
+ * Les instants sont calculés en heure de Casablanca (voir lib/dates.ts).
+ */
+interface Props { debut: Date; fin: Date }
+const { debut, fin } = Astro.props;
+const unites = [
+  { k: 'j', label: 'Jours' },
+  { k: 'h', label: 'Heures' },
+  { k: 'm', label: 'Minutes' },
+  { k: 's', label: 'Secondes' },
+];
+---
+<div class="rebours" data-debut={debut.toISOString()} data-fin={fin.toISOString()}>
+  <p class="rebours-titre label" id="rebours-titre">Début dans</p>
+  <div class="cases" role="timer" aria-labelledby="rebours-titre" aria-live="off">
+    {unites.map(({ k, label }) => (
+      <div class="case">
+        <span class="valeur" data-u={k}>--</span>
+        <span class="unite">{label}</span>
+      </div>
+    ))}
+  </div>
+  <p class="rebours-etat" hidden></p>
+  <p class="sr-only rebours-lecteur" aria-live="polite"></p>
+</div>
+
+<style>
+  .rebours-titre { color: var(--ciel); margin-bottom: .6rem; letter-spacing: .24em; font-size: .72rem; }
+  .cases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; max-width: 26rem; }
+  .case {
+    border: 1px solid var(--blanc-25); border-radius: 10px;
+    padding: .6rem .25rem .5rem; text-align: center;
+  }
+  .valeur {
+    display: block; font-family: var(--f-titre); font-size: clamp(1.9rem, 8vw, 2.6rem); line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .unite { display: block; font-family: var(--f-label); font-size: .66rem; letter-spacing: .14em; text-transform: uppercase; color: var(--blanc-70); margin-top: .3rem; }
+  .rebours-etat { font-family: var(--f-label); font-size: 1.15rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ciel); margin: 0; }
+  .rebours.termine .cases, .rebours.termine .rebours-titre { display: none; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.rebours').forEach((el) => {
+    const debut = new Date(el.dataset.debut!).getTime();
+    const fin = new Date(el.dataset.fin!).getTime();
+    const champs = Object.fromEntries(
+      [...el.querySelectorAll<HTMLElement>('[data-u]')].map((n) => [n.dataset.u, n]),
+    );
+    const etat = el.querySelector<HTMLElement>('.rebours-etat')!;
+    const lecteur = el.querySelector<HTMLElement>('.rebours-lecteur')!;
+    const pad = (n: number) => String(n).padStart(2, '0');
+    let dernierJour = -1;
+    let timer = 0;
+
+    const tick = () => {
+      const now = Date.now();
+      if (now >= debut) {
+        el.classList.add('termine');
+        etat.hidden = false;
+        etat.textContent = now < fin ? 'C’est en ce moment — venez nous voir !' : 'Cet événement est terminé.';
+        window.clearInterval(timer);
+        return;
+      }
+      const d = Math.floor((debut - now) / 1000);
+      const j = Math.floor(d / 86400);
+      champs.j.textContent = String(j);
+      champs.h.textContent = pad(Math.floor((d % 86400) / 3600));
+      champs.m.textContent = pad(Math.floor((d % 3600) / 60));
+      champs.s.textContent = pad(d % 60);
+      if (j !== dernierJour) {
+        dernierJour = j;
+        lecteur.textContent = `Début dans ${j} jour${j > 1 ? 's' : ''}.`;
+      }
+    };
+    tick();
+    timer = window.setInterval(tick, 1000);
+  });
+</script>

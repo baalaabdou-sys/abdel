@@ -1,0 +1,60 @@
+---
+import Base from '../../layouts/Base.astro';
+import EnTetePage from '../../components/EnTetePage.astro';
+import CarteEvenement from '../../components/CarteEvenement.astro';
+import AppelRejoindre from '../../components/AppelRejoindre.astro';
+import { getEvenementsParPeriode } from '../../lib/collections';
+
+const { aVenir, passes } = await getEvenementsParPeriode();
+---
+<Base titre="Événements" description="L’agenda du Club 2AMECA : événements à venir et passés à la Faculté des Sciences Aïn Chock.">
+  <EnTetePage surtitre="Agenda" titre="Événements" chapo="Portes ouvertes, rencontres, ateliers ouverts : retrouvez ici tous les rendez-vous du club." />
+
+  <section class="section" aria-labelledby="a-venir">
+    <div class="conteneur">
+      <h2 id="a-venir" class="titre-2 reveal">À venir</h2>
+      <hr class="trait" />
+      <ul class="grille grille-2 liste" role="list" data-liste="a-venir">
+        {aVenir.map((e) => <li><CarteEvenement evenement={e} /></li>)}
+      </ul>
+      <p class="vide" data-vide="a-venir" hidden={aVenir.length > 0}>
+        Aucun événement annoncé pour le moment. Revenez bientôt ou suivez-nous sur nos réseaux.
+      </p>
+    </div>
+  </section>
+
+  <section class="section teinte" aria-labelledby="passes">
+    <div class="conteneur">
+      <h2 id="passes" class="titre-2 reveal">Événements passés</h2>
+      <hr class="trait" />
+      <ul class="grille grille-2 liste" role="list" data-liste="passes">
+        {passes.map((e) => <li><CarteEvenement evenement={e} /></li>)}
+      </ul>
+      <p class="vide" data-vide="passes" hidden={passes.length > 0}>Les événements passés apparaîtront ici.</p>
+    </div>
+  </section>
+
+  <AppelRejoindre />
+</Base>
+
+<style>
+  .liste { list-style: none; padding: 0; }
+  .liste > li { display: grid; }
+  .vide { color: var(--encre-70); font-size: 1.1rem; }
+</style>
+
+<script>
+  // Le site est statique : si un événement s'est terminé depuis la dernière
+  // publication, on le déplace côté navigateur dans « Événements passés ».
+  const venir = document.querySelector('[data-liste="a-venir"]');
+  const passes = document.querySelector('[data-liste="passes"]');
+  if (venir && passes) {
+    const now = Date.now();
+    [...venir.children].forEach((li) => {
+      const fin = li.querySelector<HTMLElement>('[data-fin]')?.dataset.fin;
+      if (fin && Date.parse(fin) < now) passes.prepend(li);
+    });
+    document.querySelector<HTMLElement>('[data-vide="a-venir"]')!.hidden = venir.children.length > 0;
+    document.querySelector<HTMLElement>('[data-vide="passes"]')!.hidden = passes.children.length > 0;
+  }
+</script>

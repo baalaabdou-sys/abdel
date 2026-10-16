@@ -1,0 +1,182 @@
+---
+import Base from '../layouts/Base.astro';
+import EnTetePage from '../components/EnTetePage.astro';
+import Emplacement from '../components/Emplacement.astro';
+import Fsac from '../components/Fsac.astro';
+import Lignes from '../components/Lignes.astro';
+import AppelRejoindre from '../components/AppelRejoindre.astro';
+import bureau from '../data/bureau.json';
+import { FSAC } from '../config';
+import { u } from '../lib/url';
+
+const historique = [
+  { quand: '[Année de création]', quoi: 'Création du club 2AMECA à la Faculté des Sciences Aïn Chock.', detail: '[Texte à fournir : fondateurs, contexte de création.]' },
+  { quand: 'Décembre 2025', quoi: '1re édition de « De l’Amphi à l’Entreprise ».', detail: 'Une rencontre entre étudiants et professionnels à l’amphithéâtre de la FSAC.' },
+  { quand: 'Octobre 2026', quoi: 'Journées portes ouvertes d’intégration.', detail: 'Trois jours pour accueillir les nouveaux étudiants de l’année 2026–2027.' },
+];
+
+const valeurs = [
+  { titre: 'Esprit citoyen', texte: 'Mettre nos compétences au service de la faculté et de la société : c’est le sens de notre devise.' },
+  { titre: 'Apprendre en faisant', texte: 'La théorie de l’amphi prend tout son sens quand on la met en pratique, à l’atelier.' },
+  { titre: 'Ouverture', texte: 'Le club est ouvert à toutes les filières et à tous les niveaux, débutants compris.' },
+  { titre: 'Esprit d’équipe', texte: 'Chaque projet est collectif : on partage les idées, les outils et les réussites.' },
+];
+---
+<Base titre="Le club" description="Histoire, mission et valeurs du Club 2AMECA, l’Atelier d’Applications Mécanique de la FSAC, et présentation de son bureau.">
+  <EnTetePage
+    surtitre="Le club"
+    titre="Atelier d’applications mécanique"
+    chapo="Un club étudiant de la Faculté des Sciences Aïn Chock, Université Hassan II de Casablanca, consacré à la mécanique appliquée, à l’automobile et à l’aéronautique."
+  >
+    <p slot="script" class="script devise" aria-hidden="true">Esprit citoyen au centre</p>
+  </EnTetePage>
+
+  <!-- Histoire -->
+  <section class="section" aria-labelledby="histoire">
+    <Lignes variante="haut-droite" />
+    <div class="conteneur deux-col">
+      <div class="reveal">
+        <span class="surtitre">Histoire</span>
+        <h2 id="histoire" class="titre-2">D’où vient 2AMECA</h2>
+        <hr class="trait" />
+        <p><span class="a-fournir">[Texte à fournir : l’histoire du club en quelques paragraphes — qui l’a fondé, pourquoi, et ce qu’il a accompli depuis.]</span></p>
+      </div>
+      <ol class="frise" role="list">
+        {historique.map((h) => (
+          <li class="reveal">
+            <span class="label quand">{h.quand.startsWith('[') ? <span class="a-fournir">{h.quand}</span> : h.quand}</span>
+            <p class="quoi">{h.quoi}</p>
+            <p class="detail">{h.detail.startsWith('[') ? <span class="a-fournir">{h.detail}</span> : h.detail}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Mission -->
+  <section class="section tres-sombre" aria-labelledby="mission">
+    <Lignes variante="bas-gauche" />
+    <div class="conteneur mission reveal">
+      <span class="surtitre">Mission</span>
+      <h2 id="mission" class="titre-1">Relier la théorie, la pratique et le monde professionnel</h2>
+      <div class="mission-texte">
+        <p class="chapo">
+          2AMECA donne aux étudiants de la FSAC un lieu pour mettre en pratique ce qu’ils apprennent :
+          concevoir et fabriquer en équipe, se former aux outils de la mécanique, et rencontrer
+          des professionnels du secteur.
+        </p>
+        <p class="chapo"><span class="a-fournir">[Texte à fournir : mission officielle du club, si elle diffère.]</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Valeurs -->
+  <section class="section" aria-labelledby="valeurs">
+    <div class="conteneur">
+      <div class="entete-section reveal">
+        <div>
+          <span class="surtitre">Valeurs</span>
+          <h2 id="valeurs" class="titre-2">Ce qui nous guide</h2>
+        </div>
+      </div>
+      <ul class="valeurs grille" role="list">
+        {valeurs.map((v, i) => (
+          <li class="reveal">
+            <span class="num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+            <h3 class="titre-3">{v.titre}</h3>
+            <p>{v.texte}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- Bureau -->
+  <section class="section teinte" aria-labelledby="bureau">
+    <div class="conteneur">
+      <div class="entete-section reveal">
+        <div>
+          <span class="surtitre">Le bureau {`2026–2027`}</span>
+          <h2 id="bureau" class="titre-2">L’équipe</h2>
+        </div>
+        <p class="note">Les membres du bureau organisent les activités du club et accueillent les nouveaux.</p>
+      </div>
+      <ul class="equipe" role="list">
+        {bureau.map((m) => (
+          <li class="membre reveal">
+            {m.photo ? (
+              <img src={u(m.photo)} alt={`Portrait de ${m.nom}`} width="480" height="600" loading="lazy" decoding="async" />
+            ) : (
+              <Emplacement texte="[Photo]" ratio="4 / 5" />
+            )}
+            <div class="membre-texte">
+              <p class="nom">{m.nom.startsWith('[') ? <span class="a-fournir">{m.nom}</span> : m.nom}</p>
+              <p class="role label">{m.role}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- FSAC -->
+  <section class="section serree" aria-labelledby="fsac">
+    <div class="conteneur fsac reveal">
+      <Fsac taille="grande" lien />
+      <div>
+        <span class="surtitre">Notre faculté</span>
+        <h2 id="fsac" class="titre-3">{FSAC.nom}</h2>
+        <p>2AMECA est un club étudiant de la {FSAC.nom}, établissement de l’{FSAC.universite}.</p>
+        <a class="lien-fleche" href={FSAC.url} rel="noopener" target="_blank">
+          Site de la FSAC <span aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <AppelRejoindre />
+</Base>
+
+<style>
+  .devise { font-size: clamp(2.6rem, 10vw, 4.5rem); margin: .4rem 0 0; transform: rotate(-3deg); transform-origin: left; }
+
+  .deux-col { display: grid; gap: 2.5rem 4rem; }
+  @media (min-width: 900px) { .deux-col { grid-template-columns: 1fr 1fr; } }
+
+  .frise { list-style: none; padding: 0 0 0 1.5rem; border-left: 1.5px solid var(--bleu); display: grid; gap: 2rem; }
+  .frise li { position: relative; }
+  .frise li::before {
+    content: ''; position: absolute; left: calc(-1.5rem - 6px); top: .35rem;
+    width: 11px; height: 11px; border-radius: 50%; background: var(--blanc); border: 2px solid var(--bleu);
+  }
+  .quand { color: var(--bleu); }
+  .quoi { font-family: var(--f-label); font-weight: 500; font-size: 1.2rem; color: var(--marine); text-transform: uppercase; line-height: 1.25; margin: .3rem 0 .3rem; }
+  .detail { margin: 0; color: var(--encre-70); }
+
+  .mission .titre-1 { max-width: 18ch; }
+  .mission-texte { margin-top: 2rem; display: grid; gap: 0 3rem; }
+  @media (min-width: 900px) { .mission-texte { grid-template-columns: 1fr 1fr; } }
+
+  .valeurs { list-style: none; padding: 0; }
+  @media (min-width: 640px) { .valeurs { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1040px) { .valeurs { grid-template-columns: repeat(4, 1fr); } }
+  .valeurs li { border-top: 2px solid var(--bleu); padding-top: 1.1rem; }
+  .valeurs .num { font-family: var(--f-titre); color: var(--bleu); font-size: 1.1rem; }
+  .valeurs .titre-3 { color: var(--marine); margin: .5rem 0 .5rem; }
+  .valeurs p { color: var(--encre-70); margin: 0; }
+
+  .note { max-width: 26rem; color: var(--encre-70); margin: 0; }
+  .equipe { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 720px) { .equipe { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } }
+  @media (min-width: 1100px) { .equipe { grid-template-columns: repeat(6, 1fr); } }
+  .membre { background: var(--blanc); border-radius: var(--rayon); overflow: hidden; border: 1px solid var(--bleu-12); }
+  .membre img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .membre :global(.emplacement) { border: 0; border-bottom: 1px solid var(--bleu-12); }
+  .membre-texte { padding: .8rem .9rem 1rem; }
+  .nom { font-family: var(--f-label); font-weight: 500; font-size: 1.02rem; color: var(--marine); margin: 0 0 .2rem; line-height: 1.25; }
+  .role { color: var(--bleu); margin: 0; font-size: .7rem; letter-spacing: .1em; }
+
+  .fsac { display: grid; gap: 1.5rem 3rem; align-items: center; }
+  @media (min-width: 720px) { .fsac { grid-template-columns: auto 1fr; } }
+  .fsac .titre-3 { color: var(--marine); margin-bottom: .6rem; }
+</style>

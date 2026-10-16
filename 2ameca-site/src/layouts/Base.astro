@@ -1,0 +1,74 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import { SITE } from '../config';
+import { u } from '../lib/url';
+
+interface Props {
+  titre?: string;
+  description?: string;
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+}
+
+const { titre, description = SITE.description, image, imageAlt, type = 'website' } = Astro.props;
+const titreComplet = titre ? `${titre} — Club 2AMECA` : `${SITE.nomComplet} | FSAC`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(image ?? u('/og.jpg'), Astro.site);
+---
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titreComplet}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#04223A" />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:locale" content="fr_MA" />
+    <meta property="og:site_name" content="Club 2AMECA" />
+    <meta property="og:title" content={titreComplet} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={imageAlt ?? 'Club 2AMECA — Atelier d’Applications Mécanique, FSAC'} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" type="image/png" href={u('/favicon.png')} />
+    <link rel="apple-touch-icon" href={u('/apple-touch-icon.png')} />
+    <link rel="sitemap" href={u('/sitemap-index.xml')} />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Mrs+Saint+Delafield&family=Oswald:wght@300;400;500;600&display=swap"
+    />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body>
+    <a class="lien-evitement" href="#contenu">Aller au contenu</a>
+    <Header />
+    <main id="contenu" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      // Apparition douce au défilement (désactivée si « réduire les animations »).
+      const els = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const io = new IntersectionObserver((entries) => {
+          for (const e of entries) if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+        els.forEach((el) => io.observe(el));
+      } else {
+        els.forEach((el) => el.classList.add('visible'));
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,162 @@
+---
+import Base from '../layouts/Base.astro';
+import EnTetePage from '../components/EnTetePage.astro';
+import Lignes from '../components/Lignes.astro';
+import { CONTACT, FSAC } from '../config';
+import { u } from '../lib/url';
+import { getEvenementsParPeriode } from '../lib/collections';
+import { plageDates, heureFr } from '../lib/dates';
+
+const { aVenir } = await getEvenementsParPeriode();
+const prochain = aVenir[0];
+
+const faq = [
+  {
+    q: 'Faut-il avoir de l’expérience en mécanique pour rejoindre le club ?',
+    r: 'Non. Le club est ouvert aux débutants : les ateliers et les projets en équipe sont justement là pour apprendre. La motivation compte plus que le niveau.',
+  },
+  {
+    q: 'Je ne suis pas en filière physique ou mécanique, puis-je m’inscrire ?',
+    r: 'Oui. Tous les étudiants de la FSAC sont les bienvenus, quelle que soit leur filière. Les projets ont aussi besoin de profils en informatique, en communication ou en organisation.',
+  },
+  {
+    q: 'Comment s’inscrire ?',
+    r: 'Remplissez le formulaire de la page « Rejoindre », ou venez nous voir lors des Journées portes ouvertes d’intégration (28, 29 et 30 octobre 2026, amphithéâtre de la FSAC). Un membre du bureau vous recontactera.',
+  },
+  {
+    q: 'L’adhésion est-elle payante ?',
+    r: '[Réponse à fournir : gratuité ou montant de la cotisation annuelle.]',
+  },
+  {
+    q: 'Combien de temps faut-il consacrer au club ?',
+    r: '[Réponse à fournir : fréquence des réunions et des ateliers.] Chacun participe selon ses disponibilités, en fonction de son emploi du temps.',
+  },
+];
+
+const insta = CONTACT.instagram;
+// Espace insécable avant « ? » (typographie française)
+for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
+---
+<Base titre="Contact" description="Contacter le Club 2AMECA : e-mail, Instagram, local à la Faculté des Sciences Aïn Chock, et réponses aux questions fréquentes.">
+  <EnTetePage surtitre="Contact" titre="Nous écrire" chapo="Une question sur le club, un projet, un partenariat ? Écrivez-nous ou passez nous voir à la faculté." />
+
+  <section class="section" aria-labelledby="coordonnees">
+    <div class="conteneur">
+      <h2 id="coordonnees" class="sr-only">Coordonnées</h2>
+      <ul class="coord grille" role="list">
+        <li class="reveal">
+          <span class="label">E-mail</span>
+          {CONTACT.email ? (
+            <a class="valeur" href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
+          ) : <p class="valeur"><span class="a-fournir">[Adresse e-mail à fournir]</span></p>}
+          <p class="aide">Réponse sous quelques jours.</p>
+        </li>
+        <li class="reveal">
+          <span class="label">Instagram</span>
+          {insta ? (
+            <a class="valeur" href={`https://instagram.com/${insta}`} rel="noopener" target="_blank">@{insta}<span class="sr-only"> (nouvel onglet)</span></a>
+          ) : <p class="valeur"><span class="a-fournir">[Compte Instagram à fournir]</span></p>}
+          <p class="aide">Actualités, photos et annonces d’événements.</p>
+        </li>
+        {CONTACT.whatsapp && (
+          <li class="reveal">
+            <span class="label">WhatsApp</span>
+            <a class="valeur" href={`https://wa.me/${CONTACT.whatsapp}`} rel="noopener" target="_blank">Écrire sur WhatsApp<span class="sr-only"> (nouvel onglet)</span></a>
+            <p class="aide">Pour une question rapide.</p>
+          </li>
+        )}
+        {CONTACT.linkedin && (
+          <li class="reveal">
+            <span class="label">LinkedIn</span>
+            <a class="valeur" href={CONTACT.linkedin} rel="noopener" target="_blank">Page LinkedIn<span class="sr-only"> (nouvel onglet)</span></a>
+            <p class="aide">Événements professionnels et partenariats.</p>
+          </li>
+        )}
+      </ul>
+    </div>
+  </section>
+
+  <section class="section tres-sombre" aria-labelledby="lieu">
+    <Lignes variante="haut-droite" />
+    <div class="conteneur lieu reveal">
+      <div>
+        <span class="surtitre">Où nous trouver</span>
+        <h2 id="lieu" class="titre-2">À la FSAC</h2>
+        <hr class="trait" />
+        <address>
+          <strong>{FSAC.nom}</strong><br />
+          {CONTACT.lieuDetail.startsWith('[') ? <span class="a-fournir">{CONTACT.lieuDetail}</span> : CONTACT.lieuDetail}<br />
+          {CONTACT.adresse}
+        </address>
+        <div class="boutons">
+          <a class="btn btn-clair" href={CONTACT.carte} rel="noopener" target="_blank">Ouvrir dans Maps <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
+        </div>
+      </div>
+      {prochain && (
+        <div class="cartouche">
+          <div>
+            <span class="label">Prochain rendez-vous</span>
+            <strong><a class="lien-evt" href={u(`/evenements/${prochain.id}/`)}>{prochain.data.titre}</a></strong>
+            <small>{prochain.data.lieu}{prochain.data.lieuDetail && `, ${prochain.data.lieuDetail}`} — {plageDates(prochain.data.dateDebut, prochain.data.dateFin)}, dès {heureFr(prochain.data.heure)}</small>
+          </div>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="faq">
+    <div class="conteneur faq-mise">
+      <div class="reveal">
+        <span class="surtitre">FAQ</span>
+        <h2 id="faq" class="titre-2">Questions fréquentes</h2>
+        <hr class="trait" />
+        <p>Vous ne trouvez pas votre réponse ? <a href={u('/rejoindre/')}>Inscrivez-vous</a> et posez votre question dans le message du formulaire.</p>
+      </div>
+      <div class="faq">
+        {faq.map((f, i) => (
+          <details class="reveal" open={i === 0}>
+            <summary><span>{f.q}</span><span class="signe" aria-hidden="true"></span></summary>
+            <p>{f.r.startsWith('[') ? (
+              <>
+                <span class="a-fournir">{f.r.slice(0, f.r.indexOf(']') + 1)}</span>{f.r.slice(f.r.indexOf(']') + 1)}
+              </>
+            ) : f.r}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .coord { list-style: none; padding: 0; }
+  @media (min-width: 640px) { .coord { grid-template-columns: repeat(2, 1fr); } }
+  .coord li { border-top: 2px solid var(--bleu); padding-top: 1.1rem; min-width: 0; }
+  .coord .label { color: var(--bleu); }
+  .valeur { display: block; font-family: var(--f-label); font-weight: 500; font-size: clamp(1.25rem, 4vw, 1.6rem); color: var(--marine); margin: .35rem 0 .25rem; overflow-wrap: anywhere; text-decoration: none; }
+  a.valeur:hover { text-decoration: underline; }
+  .aide { color: var(--encre-70); margin: 0; }
+
+  .lieu { display: grid; gap: 2.5rem 4rem; align-items: center; }
+  @media (min-width: 900px) { .lieu { grid-template-columns: 1fr 1fr; } }
+  address { font-style: normal; font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem; color: var(--blanc-70); }
+  address strong { color: var(--blanc); font-weight: 600; }
+  .lien-evt { color: var(--blanc); }
+
+  .faq-mise { display: grid; gap: 2rem 4rem; }
+  @media (min-width: 900px) { .faq-mise { grid-template-columns: 1fr 1.6fr; align-items: start; } }
+  .faq { border-top: 1px solid var(--bleu-12); }
+  details { border-bottom: 1px solid var(--bleu-12); }
+  summary {
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    padding: 1.1rem 0; cursor: pointer; list-style: none;
+    font-family: var(--f-label); font-weight: 500; font-size: 1.12rem; color: var(--marine); line-height: 1.3;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { color: var(--bleu); }
+  .signe { position: relative; width: 16px; height: 16px; flex-shrink: 0; }
+  .signe::before, .signe::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--bleu); transition: transform .2s; }
+  .signe::after { transform: rotate(90deg); }
+  details[open] .signe::after { transform: rotate(0); }
+  details p { margin: 0 0 1.2rem; color: var(--encre-70); max-width: 40em; }
+</style>

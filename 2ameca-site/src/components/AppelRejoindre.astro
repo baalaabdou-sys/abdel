@@ -1,0 +1,31 @@
+---
+import Lignes from './Lignes.astro';
+import { u } from '../lib/url';
+interface Props { titre?: string; texte?: string }
+const {
+  titre = 'Rejoignez l’atelier',
+  texte = 'Aucune expérience en mécanique n’est demandée. Il suffit d’être étudiant(e) à la FSAC et d’avoir envie d’apprendre, de construire et de s’engager.',
+} = Astro.props;
+---
+<section class="appel section sombre">
+  <Lignes variante="bas-droite" />
+  <div class="conteneur interieur reveal">
+    <div>
+      <span class="surtitre">Année universitaire 2026–2027</span>
+      <h2 class="titre-1">{titre}</h2>
+    </div>
+    <div class="droite">
+      <p class="chapo">{texte}</p>
+      <div class="boutons">
+        <a class="btn btn-clair" href={u('/rejoindre/')}>S’inscrire au club <span class="fleche" aria-hidden="true">→</span></a>
+        <a class="btn btn-contour" href={u('/contact/')}>Poser une question</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .interieur { display: grid; gap: 1.5rem 3rem; align-items: end; }
+  @media (min-width: 900px) { .interieur { grid-template-columns: 1.1fr 1fr; } }
+  .chapo { margin-bottom: 1.5rem; }
+</style>

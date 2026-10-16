@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import Lignes from '../components/Lignes.astro';
+import { u } from '../lib/url';
+---
+<Base titre="Page introuvable" description="Cette page n’existe pas ou a été déplacée.">
+  <section class="section sombre perdu">
+    <Lignes variante="hero" />
+    <div class="conteneur">
+      <span class="surtitre">Erreur 404</span>
+      <h1 class="titre-hero">Pièce manquante</h1>
+      <p class="chapo">Cette page n’existe pas ou a été déplacée.</p>
+      <div class="boutons">
+        <a class="btn btn-clair" href={u('/')}>Retour à l’accueil</a>
+        <a class="btn btn-contour" href={u('/evenements/')}>Voir l’agenda</a>
+      </div>
+    </div>
+  </section>
+</Base>
+<style>
+  .perdu { min-height: 70vh; display: grid; align-items: center; }
+  .titre-hero { margin-bottom: 1.25rem; max-width: 10ch; }
+  .chapo { margin-bottom: 2rem; }
+</style>

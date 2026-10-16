@@ -1,0 +1,55 @@
+---
+import type { Evenement } from '../lib/collections';
+import { plageDates, heureFr, ymd } from '../lib/dates';
+import { u } from '../lib/url';
+
+interface Props { evenement: Evenement; niveauTitre?: 'h2' | 'h3' }
+const { evenement: e, niveauTitre = 'h3' } = Astro.props;
+const T = niveauTitre;
+const d = new Date(`${ymd(e.data.dateDebut)}T12:00:00Z`);
+const jour = d.getUTCDate();
+const mois = new Intl.DateTimeFormat('fr-FR', { month: 'short', timeZone: 'UTC' }).format(d).replace('.', '');
+const annee = d.getUTCFullYear();
+---
+<article class="carte-evt reveal" data-fin={e.fin.toISOString()}>
+  <div class="date" aria-hidden="true">
+    <span class="jour">{jour}</span>
+    <span class="mois">{mois}</span>
+    <span class="annee">{annee}</span>
+  </div>
+  <div class="corps">
+    <T class="titre-3"><a href={u(`/evenements/${e.id}/`)}>{e.data.titre}</a></T>
+    <p class="meta">
+      <span>{plageDates(e.data.dateDebut, e.data.dateFin)}{e.data.heure && ` · ${heureFr(e.data.heure)}`}</span>
+      <span>{e.data.lieu}</span>
+    </p>
+    <p class="resume">{e.data.resume}</p>
+    <span class="plus label" aria-hidden="true">Voir le détail →</span>
+  </div>
+</article>
+
+<style>
+  .carte-evt {
+    position: relative; display: grid; grid-template-columns: 4.6rem 1fr; gap: 1rem;
+    background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon);
+    padding: 1.1rem; box-shadow: var(--ombre);
+    transition: border-color .2s, transform .2s;
+  }
+  .carte-evt:hover { border-color: var(--bleu); transform: translateY(-2px); }
+  @media (min-width: 640px) { .carte-evt { grid-template-columns: 5.5rem 1fr; gap: 1.4rem; padding: 1.4rem; } }
+  .date {
+    align-self: start; text-align: center; border-radius: 10px; padding: .6rem .2rem .55rem;
+    background: var(--bleu); color: var(--blanc); line-height: 1;
+  }
+  .jour { display: block; font-family: var(--f-titre); font-size: 2.3rem; }
+  .mois { display: block; font-family: var(--f-label); text-transform: uppercase; letter-spacing: .14em; font-size: .78rem; margin-top: .3rem; color: var(--ciel); }
+  .annee { display: block; font-family: var(--f-label); font-size: .72rem; margin-top: .2rem; color: var(--blanc-70); }
+  .titre-3 { color: var(--marine); font-size: 1.25rem; }
+  .titre-3 a { color: inherit; text-decoration: none; }
+  .titre-3 a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .titre-3 a:focus-visible { outline: none; }
+  .carte-evt:has(a:focus-visible) { outline: 3px solid var(--bleu); outline-offset: 3px; }
+  .meta { display: flex; flex-wrap: wrap; gap: .1rem 1rem; margin: .45rem 0 .6rem; font-family: var(--f-label); font-size: .88rem; color: var(--bleu); letter-spacing: .02em; }
+  .resume { margin: 0 0 .7rem; color: var(--encre-70); font-size: 1rem; }
+  .plus { color: var(--bleu); }
+</style>

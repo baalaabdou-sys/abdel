@@ -1,0 +1,28 @@
+---
+/** Logo FSAC, toujours posé sur une carte blanche arrondie. */
+import { u } from '../lib/url';
+interface Props { taille?: 'petite' | 'moyenne' | 'grande'; lien?: boolean }
+const { taille = 'moyenne', lien = false } = Astro.props;
+import { FSAC } from '../config';
+const img = `<img src="${u('/logos/fsac-355.jpg')}" width="355" height="136" alt="${FSAC.nom} — ${FSAC.universite}" loading="lazy" decoding="async" />`;
+---
+{lien ? (
+  <a class={`carte-fsac ${taille}`} href={FSAC.url} rel="noopener" target="_blank" set:html={img + '<span class="sr-only"> (site de la faculté, nouvel onglet)</span>'} />
+) : (
+  <span class={`carte-fsac ${taille}`} set:html={img} />
+)}
+
+<style>
+  .carte-fsac {
+    display: inline-block; background: var(--blanc); border-radius: 10px;
+    padding: 6px 8px; line-height: 0; flex-shrink: 0;
+    box-shadow: 0 0 0 1px var(--bleu-12);
+  }
+  .carte-fsac :global(img) { width: 100%; height: auto; }
+  .petite { width: 84px; padding: 4px 6px; border-radius: 7px; }
+  .moyenne { width: 132px; }
+  .grande { width: 210px; padding: 10px 12px; border-radius: 14px; }
+  @media (min-width: 720px) { .petite { width: 104px; } }
+  a.carte-fsac { transition: transform .2s; }
+  a.carte-fsac:hover { transform: translateY(-2px); }
+</style>
