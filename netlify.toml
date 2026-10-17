@@ -1,0 +1,12 @@
+# Netlify : publie le site du Club 2AMECA (dossier 2ameca-site, Astro).
+# Ce fichier a priorité sur les réglages de l'interface Netlify.
+[build]
+  base = "2ameca-site"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Le site n'utilise pas Next.js : on désactive le plugin Next.js
+  # que Netlify a ajouté automatiquement en détectant le site du café.
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
