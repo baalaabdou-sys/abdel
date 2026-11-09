@@ -91,6 +91,7 @@ const chemin = Astro.url.pathname;
   .rejoindre { align-self: flex-start; }
   .lien-connexion { color: var(--blanc); font-family: var(--f-label); text-transform: uppercase; letter-spacing: .14em; font-size: .9rem; text-decoration: none; align-self: flex-start; padding: .5rem 0; }
   .lien-connexion:hover { text-decoration: underline; }
+  button.lien-connexion { background: none; border: 0; cursor: pointer; min-height: 44px; }
   .panneau-pied { margin-top: auto; color: var(--ciel); }
 
   /* Sans JavaScript : liens toujours visibles sous la barre */
@@ -164,8 +165,19 @@ const chemin = Astro.url.pathname;
     if (cle && localStorage.getItem(cle)) {
       const b = document.getElementById('bouton-compte') as HTMLAnchorElement | null;
       const l = document.getElementById('lien-connexion');
-      if (b) { b.href = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/espace/`; b.textContent = 'Mon espace'; b.removeAttribute('aria-current'); }
-      l?.remove();
+      const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+      if (b) { b.href = `${base}/espace/`; b.textContent = 'Mon espace'; b.removeAttribute('aria-current'); }
+      // « Connexion » devient « Déconnexion »
+      if (l) {
+        const bouton = document.createElement('button');
+        bouton.type = 'button'; bouton.className = l.className; bouton.id = 'bouton-deconnexion'; bouton.textContent = 'Déconnexion';
+        bouton.addEventListener('click', async () => {
+          bouton.disabled = true; bouton.textContent = 'Déconnexion…';
+          try { const { sb } = await import('../lib/supabase'); await sb.auth.signOut(); }
+          finally { try { localStorage.removeItem(cle); } catch { /* ignore */ } location.href = `${base}/`; }
+        });
+        l.replaceWith(bouton);
+      }
     }
   } catch { /* stockage indisponible : on garde « Rejoindre » */ }
 </script>
