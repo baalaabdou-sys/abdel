@@ -6,6 +6,7 @@ const liens = [
   { href: '/', label: 'Accueil' },
   { href: '/le-club/', label: 'Le club' },
   { href: '/activites/', label: 'Activités' },
+  { href: '/formations/', label: 'Formations' },
   { href: '/evenements/', label: 'Événements' },
   { href: '/contact/', label: 'Contact' },
 ];
@@ -33,9 +34,10 @@ const chemin = Astro.url.pathname;
             </li>
           ))}
         </ul>
-        <a class="btn btn-clair rejoindre" href={u('/rejoindre/')} aria-current={estActif(chemin, '/rejoindre/') ? 'page' : undefined}>
+        <a class="btn btn-clair rejoindre" id="bouton-compte" href={u('/rejoindre/')} aria-current={estActif(chemin, '/rejoindre/') ? 'page' : undefined}>
           Rejoindre
         </a>
+        <a class="lien-connexion" id="lien-connexion" href={u('/connexion/')}>Connexion</a>
         <p class="panneau-pied label" aria-hidden="true">Esprit citoyen au centre</p>
       </div>
     </nav>
@@ -87,6 +89,8 @@ const chemin = Astro.url.pathname;
   }
   .liens a[aria-current='page'] { color: var(--ciel); }
   .rejoindre { align-self: flex-start; }
+  .lien-connexion { color: var(--blanc); font-family: var(--f-label); text-transform: uppercase; letter-spacing: .14em; font-size: .9rem; text-decoration: none; align-self: flex-start; padding: .5rem 0; }
+  .lien-connexion:hover { text-decoration: underline; }
   .panneau-pied { margin-top: auto; color: var(--ciel); }
 
   /* Sans JavaScript : liens toujours visibles sous la barre */
@@ -120,6 +124,8 @@ const chemin = Astro.url.pathname;
     .liens a:hover::after, .liens a[aria-current='page']::after { transform: scaleX(1); }
     .liens a[aria-current='page'] { color: var(--blanc); }
     .rejoindre { min-height: 42px; padding: .5em 1.3em; font-size: .85rem; }
+    .lien-connexion { font-size: .85rem; align-self: center; }
+    .liens { gap: 1.4rem; }
     .panneau-pied { display: none; }
   }
 </style>
@@ -151,4 +157,15 @@ const chemin = Astro.url.pathname;
     mobile.addEventListener('change', () => { if (!mobile.matches) basculer(false); syncInert(); });
     syncInert();
   }
+
+  // Membre connecté : le bouton mène à son espace (session gardée par Supabase dans le navigateur).
+  try {
+    const cle = Object.keys(localStorage).find((k) => /^sb-.*-auth-token$/.test(k));
+    if (cle && localStorage.getItem(cle)) {
+      const b = document.getElementById('bouton-compte') as HTMLAnchorElement | null;
+      const l = document.getElementById('lien-connexion');
+      if (b) { b.href = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/espace/`; b.textContent = 'Mon espace'; b.removeAttribute('aria-current'); }
+      l?.remove();
+    }
+  } catch { /* stockage indisponible : on garde « Rejoindre » */ }
 </script>

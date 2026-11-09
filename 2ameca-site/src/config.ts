@@ -16,12 +16,22 @@ export const SITE = {
 };
 
 /**
- * Formulaire d'inscription — Google Forms.
- * Tous les boutons « S'inscrire » du site ouvrent ce lien.
- * Pour en changer : coller ici le lien « Envoyer → lien » du formulaire.
+ * Base de données et comptes membres — Supabase (https://supabase.com).
+ * Ces deux valeurs sont publiques par conception : elles peuvent figurer dans le site.
+ * Ne jamais mettre ici une clé « secret » (sb_secret_…) ou « service_role ».
  */
-export const INSCRIPTION_URL =
-  'https://docs.google.com/forms/d/e/1FAIpQLSeOE51y_t9fpp6j0MiJB6xGt-ZFVQR4KPaVknp-bSmnsXn9JQ/viewform';
+export const SUPABASE_URL = 'https://qdijhdiuvyqmkcseqpqx.supabase.co';
+export const SUPABASE_KEY = 'sb_publishable_-DChGDrUk3rksho1wPT0Qw_KgrytEAx';
+
+/** Page de création de compte : tous les boutons « S'inscrire » du site y mènent. */
+export const INSCRIPTION_PATH = '/connexion/?mode=inscription';
+
+/** Filières et années proposées à la création de compte. */
+export const FILIERES = [
+  'Physique', 'Mécanique', 'Mathématiques', 'Informatique', 'Chimie', 'Biologie', 'Géologie',
+  'Master / Licence professionnelle', 'Autre',
+];
+export const ANNEES = ['1re année', '2e année', '3e année', 'Master 1', 'Master 2', 'Doctorat'];
 
 export const CONTACT = {
   /** ex. 'club2ameca@gmail.com' */

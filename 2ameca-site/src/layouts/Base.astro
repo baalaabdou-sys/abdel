@@ -11,9 +11,11 @@ interface Props {
   image?: string;
   imageAlt?: string;
   type?: 'website' | 'article';
+  /** Pages privées (espace membre, bureau) : non indexées par les moteurs de recherche. */
+  prive?: boolean;
 }
 
-const { titre, description = SITE.description, image, imageAlt, type = 'website' } = Astro.props;
+const { titre, description = SITE.description, image, imageAlt, type = 'website', prive = false } = Astro.props;
 const titreComplet = titre ? `${titre} — Club 2AMECA` : `${SITE.nomComplet} | FSAC`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image ?? u('/og.jpg'), Astro.site);
@@ -27,6 +29,7 @@ const ogImage = new URL(image ?? u('/og.jpg'), Astro.site);
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <meta name="theme-color" content="#04223A" />
+    {prive && <meta name="robots" content="noindex, nofollow" />}
 
     <meta property="og:type" content={type} />
     <meta property="og:locale" content="fr_MA" />

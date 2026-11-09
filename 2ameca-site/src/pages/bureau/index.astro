@@ -1,0 +1,168 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/app.css';
+---
+<Base prive titre="Tableau de bord" description="Tableau de bord du bureau du Club 2AMECA.">
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement…</p>
+
+      <div id="bureau" hidden>
+        <div class="app-tete">
+          <div>
+            <span class="surtitre" id="role">Bureau</span>
+            <h1 class="titre-2">Tableau de bord</h1>
+          </div>
+          <div class="actions">
+            <a class="btn btn-petit" id="nouvelle" href="#">Nouvelle activité</a>
+            <a class="btn btn-contour btn-petit" id="mon-espace" href="#">Mon espace</a>
+          </div>
+        </div>
+
+        <div class="chiffres" id="chiffres"></div>
+
+        <div class="onglets" role="tablist" aria-label="Tableau de bord">
+          <button type="button" role="tab" aria-selected="true" data-onglet="activites">Activités</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="membres">Membres</button>
+        </div>
+
+        <div data-panneau="activites" role="tabpanel">
+          <div class="carte"><ul class="liste-app" id="activites"></ul></div>
+        </div>
+
+        <div data-panneau="membres" role="tabpanel" hidden>
+          <div class="actions" style="margin-bottom:1rem">
+            <label class="sr-only" for="recherche">Rechercher un membre</label>
+            <input class="recherche" id="recherche" type="search" placeholder="Rechercher par nom, e-mail, filière…" style="flex:1 1 16rem" />
+            <button class="btn btn-contour btn-petit" type="button" id="export-membres">Exporter (Excel)</button>
+          </div>
+          <div class="tableau-wrap">
+            <table class="tableau">
+              <thead><tr><th>Nom</th><th>Filière</th><th>Année</th><th>Contact</th><th>Présences</th><th>Rôle</th></tr></thead>
+              <tbody id="membres"></tbody>
+            </table>
+          </div>
+          <p class="aide" id="info-roles" style="margin-top:.75rem"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { exporterExcel } from '../../lib/excel';
+  import { sb, monProfil, estBureau, messageErreur, TYPES, ROLES, type Formation, type Profil, type Role } from '../../lib/supabase';
+  import { h, vider, toast, dateCourte, aujourdhui, nomComplet } from '../../lib/dom';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  let moi: Profil;
+  let membres: (Profil & { presences: number })[] = [];
+
+  async function demarrer() {
+    const p = await monProfil();
+    if (!p) { location.href = `${base}/connexion/?suite=/bureau/`; return; }
+    if (!estBureau(p)) { vider($('chargement'), 'Cette page est réservée aux membres du bureau. ', h('a', { href: `${base}/espace/` }, 'Retour à mon espace')); return; }
+    moi = p;
+    $('role').textContent = `Bureau · ${ROLES[p.role]}`;
+    ($('nouvelle') as HTMLAnchorElement).href = `${base}/bureau/activite/`;
+    ($('mon-espace') as HTMLAnchorElement).href = `${base}/espace/`;
+    $('info-roles').textContent = p.role === 'admin'
+      ? 'Rôles : « Responsable » gère les activités, les présences et les supports ; « Administrateur » gère aussi les membres et leurs rôles.'
+      : 'Seuls les administrateurs peuvent changer les rôles.';
+    $('chargement').hidden = true; $('bureau').hidden = false;
+    await charger();
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-onglet]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== b.dataset.onglet));
+  }));
+
+  async function charger() {
+    const [fRes, pRes, iRes] = await Promise.all([
+      sb.from('formations').select('*').order('date', { ascending: false }),
+      sb.from('profiles').select('*').order('nom'),
+      sb.from('inscriptions').select('formation_id, membre_id, present'),
+    ]);
+    const err = fRes.error || pRes.error || iRes.error;
+    if (err) toast(messageErreur(err), 'erreur');
+    const formations = (fRes.data ?? []) as Formation[];
+    const inscriptions = iRes.data ?? [];
+    const presences = new Map<string, number>();
+    const parFormation = new Map<string, { inscrits: number; presents: number }>();
+    for (const i of inscriptions) {
+      if (i.present) presences.set(i.membre_id, (presences.get(i.membre_id) ?? 0) + 1);
+      const c = parFormation.get(i.formation_id) ?? { inscrits: 0, presents: 0 };
+      c.inscrits++; if (i.present) c.presents++;
+      parFormation.set(i.formation_id, c);
+    }
+    membres = ((pRes.data ?? []) as Profil[]).map((m) => ({ ...m, presences: presences.get(m.id) ?? 0 }));
+
+    vider($('chiffres'), [
+      ['Membres', membres.length], ['Activités', formations.length],
+      ['Inscriptions', inscriptions.length], ['Présences validées', inscriptions.filter((i) => i.present).length],
+    ].map(([l, n]) => h('div', { class: 'chiffre' }, h('b', {}, n), h('span', {}, l))));
+
+    afficherActivites(formations, parFormation);
+    afficherMembres();
+  }
+
+  function afficherActivites(formations: Formation[], compte: Map<string, { inscrits: number; presents: number }>) {
+    const ul = $('activites');
+    if (!formations.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune activité pour l’instant. Créez la première avec « Nouvelle activité ».'));
+    const today = aujourdhui();
+    vider(ul, formations.map((f) => {
+      const c = compte.get(f.id) ?? { inscrits: 0, presents: 0 };
+      const etat = !f.publiee ? h('span', { class: 'pastille-etat brouillon' }, 'Brouillon')
+        : f.date < today ? h('span', { class: 'pastille-etat' }, 'Passée') : h('span', { class: 'pastille-etat attente' }, 'Publiée');
+      return h('li', {},
+        h('div', { class: 'infos' },
+          h('strong', {}, f.titre),
+          h('span', {}, `${TYPES[f.type]} · ${dateCourte(f.date)} · ${c.inscrits} inscrit(s) · ${c.presents} présent(s)`)),
+        h('div', { class: 'actions' }, etat, h('a', { class: 'btn btn-contour btn-petit', href: `${base}/bureau/activite/?id=${f.id}` }, 'Gérer')),
+      );
+    }));
+  }
+
+  function afficherMembres() {
+    const q = ($('recherche') as HTMLInputElement).value.trim().toLowerCase();
+    const liste = membres.filter((m) => !q || [m.prenom, m.nom, m.email, m.filiere, m.annee, m.telephone].join(' ').toLowerCase().includes(q));
+    const tbody = $('membres');
+    if (!liste.length) return vider(tbody, h('tr', {}, h('td', { colspan: 6, class: 'aide' }, q ? 'Aucun membre ne correspond à la recherche.' : 'Aucun membre inscrit pour l’instant.')));
+    vider(tbody, liste.map((m) => {
+      let role: HTMLElement;
+      if (moi.role === 'admin' && m.id !== moi.id) {
+        const sel = h('select', { 'aria-label': `Rôle de ${nomComplet(m)}` }, (Object.keys(ROLES) as Role[]).map((r) => h('option', { value: r, selected: r === m.role }, ROLES[r]))) as HTMLSelectElement;
+        sel.addEventListener('change', async () => {
+          const { error } = await sb.rpc('changer_role', { p_membre: m.id, p_role: sel.value });
+          if (error) { toast(messageErreur(error), 'erreur'); sel.value = m.role; return; }
+          m.role = sel.value as Role; toast(`${nomComplet(m)} : ${ROLES[m.role]}`);
+        });
+        role = sel;
+      } else role = h('span', { class: `pastille-etat ${m.role === 'membre' ? '' : 'attente'}` }, ROLES[m.role]);
+      return h('tr', {},
+        h('td', {}, h('strong', {}, nomComplet(m))),
+        h('td', {}, m.filiere ?? '—'), h('td', {}, m.annee ?? '—'),
+        h('td', {}, h('a', { href: `mailto:${m.email}` }, m.email), m.telephone ? h('div', { class: 'aide' }, m.telephone) : null),
+        h('td', { class: 'nombre' }, m.presences),
+        h('td', {}, role),
+      );
+    }));
+  }
+  $('recherche').addEventListener('input', afficherMembres);
+
+  $('export-membres').addEventListener('click', () => exporterExcel(membres, [
+    { titre: 'Prénom', valeur: (m) => m.prenom, largeur: 18 },
+    { titre: 'Nom', valeur: (m) => m.nom, largeur: 18 },
+    { titre: 'E-mail', valeur: (m) => m.email, largeur: 30 },
+    { titre: 'Téléphone', valeur: (m) => m.telephone ?? '', largeur: 16 },
+    { titre: 'Filière', valeur: (m) => m.filiere ?? '', largeur: 22 },
+    { titre: 'Année', valeur: (m) => m.annee ?? '', largeur: 12 },
+    { titre: 'Rôle', valeur: (m) => ROLES[m.role], largeur: 14 },
+    { titre: 'Présences', valeur: (m) => m.presences, largeur: 11 },
+    { titre: 'Compte créé le', valeur: (m) => m.created_at.slice(0, 10), largeur: 14 },
+  ], `Membres-2AMECA-${aujourdhui()}.xlsx`, 'Membres').catch((e) => toast(messageErreur(e), 'erreur')));
+
+  demarrer().catch((e) => { $('chargement').textContent = messageErreur(e); });
+</script>

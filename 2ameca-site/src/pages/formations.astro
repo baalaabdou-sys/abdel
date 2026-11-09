@@ -1,0 +1,47 @@
+---
+import Base from '../layouts/Base.astro';
+import EnTetePage from '../components/EnTetePage.astro';
+import '../styles/app.css';
+import { u } from '../lib/url';
+import { INSCRIPTION_PATH } from '../config';
+---
+<Base titre="Formations" description="Les prochaines formations, ateliers et événements du Club 2AMECA à la FSAC. Inscription en ligne pour les membres.">
+  <EnTetePage surtitre="Agenda des membres" titre="Formations & ateliers" chapo="Les prochaines activités du club. Créez votre compte membre pour vous inscrire, récupérer les supports et vos attestations." >
+    <div class="boutons" style="margin-top:1.5rem">
+      <a class="btn btn-clair" href={u(INSCRIPTION_PATH)}>Créer mon compte</a>
+      <a class="btn btn-contour" href={u('/connexion/')}>Me connecter</a>
+    </div>
+  </EnTetePage>
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement des activités…</p>
+      <ul class="grille grille-2 liste" id="liste" role="list" style="list-style:none;padding:0"></ul>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { sb, messageErreur, TYPES, type Formation } from '../lib/supabase';
+  import { h, vider, dateLongue, horaire, aujourdhui } from '../lib/dom';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const ul = document.getElementById('liste')!;
+  const chargement = document.getElementById('chargement')!;
+
+  (async () => {
+    const { data, error } = await sb.from('formations').select('*').eq('publiee', true).gte('date', aujourdhui()).order('date');
+    if (error) { chargement.textContent = messageErreur(error); return; }
+    chargement.hidden = true;
+    const liste = (data ?? []) as Formation[];
+    if (!liste.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune activité annoncée pour le moment. Suivez-nous sur Instagram pour ne rien manquer.'));
+    const { data: session } = await sb.auth.getSession();
+    const lien = session.session ? `${base}/espace/` : `${base}/connexion/?suite=/espace/`;
+    vider(ul, liste.map((f) => h('li', { class: 'carte' },
+      h('span', { class: 'etiquette' }, TYPES[f.type]),
+      h('h2', { style: 'margin-top:.75rem' }, f.titre),
+      h('p', { class: 'aide' }, `${dateLongue(f.date)}${f.heure_debut ? ` · ${horaire(f.heure_debut, f.heure_fin)}` : ''}${f.lieu ? ` · ${f.lieu}` : ''}`),
+      f.description && h('p', { style: 'margin-top:.6rem' }, f.description),
+      h('a', { class: 'btn btn-petit', href: lien, style: 'margin-top:.5rem' }, 'M’inscrire'),
+    )));
+  })();
+</script>

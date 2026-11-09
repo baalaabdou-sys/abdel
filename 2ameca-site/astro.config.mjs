@@ -13,7 +13,7 @@ export default defineConfig({
   site,
   base,
   trailingSlash: 'ignore',
-  integrations: [sitemap()],
+  integrations: [sitemap({ filter: (page) => !/\/(espace|bureau|connexion)\//.test(page) })],
   build: { format: 'directory' },
   devToolbar: { enabled: false },
 });

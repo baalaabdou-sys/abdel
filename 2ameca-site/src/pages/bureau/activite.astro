@@ -1,0 +1,306 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/app.css';
+---
+<Base prive titre="Gérer une activité" description="Gestion d’une activité du Club 2AMECA : inscriptions, présences, supports.">
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement…</p>
+
+      <div id="page" hidden>
+        <div class="app-tete">
+          <div>
+            <a class="lien-fleche" id="retour" href="#"><span aria-hidden="true">←</span> Tableau de bord</a>
+            <h1 class="titre-2" id="titre-page">Nouvelle activité</h1>
+          </div>
+        </div>
+
+        <div class="colonnes">
+          <!-- Fiche de l'activité -->
+          <form class="carte form" id="fiche" novalidate>
+            <h2>Informations</h2>
+            <div class="champ"><label for="f-titre">Titre</label><input id="f-titre" name="titre" required maxlength="200" /></div>
+            <div class="ligne-2">
+              <div class="champ"><label for="f-type">Type</label>
+                <select id="f-type" name="type"><option value="formation">Formation</option><option value="atelier">Atelier</option><option value="evenement">Événement</option></select></div>
+              <div class="champ"><label for="f-date">Date</label><input id="f-date" name="date" type="date" required /></div>
+            </div>
+            <div class="ligne-2">
+              <div class="champ"><label for="f-debut">Heure de début</label><input id="f-debut" name="heure_debut" type="time" /></div>
+              <div class="champ"><label for="f-fin">Heure de fin</label><input id="f-fin" name="heure_fin" type="time" /></div>
+            </div>
+            <div class="ligne-2">
+              <div class="champ"><label for="f-lieu">Lieu</label><input id="f-lieu" name="lieu" placeholder="FSAC — Amphithéâtre" /></div>
+              <div class="champ"><label for="f-places">Places (facultatif)</label><input id="f-places" name="places" type="number" min="1" inputmode="numeric" /></div>
+            </div>
+            <div class="champ"><label for="f-desc">Description</label><textarea id="f-desc" name="description"></textarea></div>
+            <label class="case" for="f-publiee"><input type="checkbox" id="f-publiee" name="publiee" />
+              <span><strong>Publiée</strong> : visible par les membres, qui peuvent s’y inscrire. Décochez pour la garder en brouillon.</span></label>
+            <div class="actions">
+              <button class="btn" type="submit">Enregistrer</button>
+              <button class="btn btn-contour" type="button" id="supprimer" hidden>Supprimer</button>
+            </div>
+          </form>
+
+          <div id="gestion" hidden>
+            <!-- Présences -->
+            <div class="carte">
+              <h2>Inscrits et présences</h2>
+              <p class="aide" id="compteurs"></p>
+              <div class="actions" style="margin:.75rem 0 1rem">
+                <button class="btn btn-petit" type="button" id="btn-scanner">Scanner les QR codes</button>
+                <button class="btn btn-contour btn-petit" type="button" id="btn-export">Exporter (Excel)</button>
+              </div>
+              <div id="zone-scanner" hidden>
+                <div class="scanner"><video id="video" playsinline muted></video><div class="cadre" aria-hidden="true"></div></div>
+                <p class="dernier-scan" id="dernier-scan" aria-live="polite">Visez le QR code du membre.</p>
+                <button class="btn btn-contour btn-petit" type="button" id="btn-stop">Arrêter le scanner</button>
+              </div>
+              <div class="actions" style="margin-bottom:1rem">
+                <label class="sr-only" for="ajout">Ajouter un participant</label>
+                <input class="recherche" id="ajout" list="liste-membres" placeholder="Ajouter un participant présent (nom ou e-mail)…" style="flex:1 1 14rem" />
+                <datalist id="liste-membres"></datalist>
+                <button class="btn btn-contour btn-petit" type="button" id="btn-ajout">Ajouter</button>
+              </div>
+              <ul class="liste-app" id="inscrits"></ul>
+            </div>
+
+            <!-- Supports -->
+            <div class="carte">
+              <h2>Supports</h2>
+              <p class="aide">PDF, présentations, exercices… Ils deviennent accessibles automatiquement aux membres dont la présence est validée. 50 Mo maximum par fichier.</p>
+              <div class="actions" style="margin:.75rem 0 1rem">
+                <label class="btn btn-petit" for="fichiers" style="cursor:pointer">Ajouter des fichiers</label>
+                <input id="fichiers" type="file" multiple class="sr-only" />
+              </div>
+              <ul class="liste-app" id="supports"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import jsQR from 'jsqr';
+  import { sb, monProfil, estBureau, messageErreur, type Formation, type Profil } from '../../lib/supabase';
+  import { h, vider, toast, dateCourte, taille, pendant, nomComplet } from '../../lib/dom';
+  import { exporterExcel } from '../../lib/excel';
+  import { nomFichier } from '../../lib/attestation';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  let id = new URLSearchParams(location.search).get('id');
+  let formation: Formation | null = null;
+  let membres: Profil[] = [];
+  type Ligne = { membre_id: string; present: boolean; inscrit_at: string; profiles: Profil };
+  let inscrits: Ligne[] = [];
+
+  async function demarrer() {
+    const p = await monProfil();
+    if (!p) { location.href = `${base}/connexion/?suite=/bureau/activite/${location.search}`; return; }
+    if (!estBureau(p)) { vider($('chargement'), 'Cette page est réservée aux membres du bureau.'); return; }
+    ($('retour') as HTMLAnchorElement).href = `${base}/bureau/`;
+    if (id) {
+      const { data, error } = await sb.from('formations').select('*').eq('id', id).maybeSingle();
+      if (error || !data) { $('chargement').textContent = error ? messageErreur(error) : 'Activité introuvable.'; return; }
+      formation = data as Formation;
+      remplirFiche();
+      await Promise.all([chargerInscrits(), chargerSupports(), chargerMembres()]);
+    }
+    $('chargement').hidden = true; $('page').hidden = false;
+  }
+
+  // ── Fiche
+  const fiche = $('fiche') as HTMLFormElement;
+  const champ = (n: string) => fiche.elements.namedItem(n) as HTMLInputElement;
+  function remplirFiche() {
+    if (!formation) return;
+    $('titre-page').textContent = formation.titre;
+    for (const k of ['titre', 'type', 'date', 'lieu', 'description'] as const) champ(k).value = formation[k] ?? '';
+    champ('heure_debut').value = formation.heure_debut?.slice(0, 5) ?? '';
+    champ('heure_fin').value = formation.heure_fin?.slice(0, 5) ?? '';
+    champ('places').value = formation.places ? String(formation.places) : '';
+    champ('publiee').checked = formation.publiee;
+    $('supprimer').hidden = false; $('gestion').hidden = false;
+  }
+
+  fiche.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!champ('titre').value.trim()) { champ('titre').focus(); return toast('Le titre est obligatoire.', 'erreur'); }
+    if (!champ('date').value) { champ('date').focus(); return toast('La date est obligatoire.', 'erreur'); }
+    const donnees = {
+      titre: champ('titre').value.trim(), type: champ('type').value, date: champ('date').value,
+      heure_debut: champ('heure_debut').value || null, heure_fin: champ('heure_fin').value || null,
+      lieu: champ('lieu').value.trim(), places: champ('places').value ? Number(champ('places').value) : null,
+      description: champ('description').value.trim(), publiee: champ('publiee').checked,
+    };
+    await pendant(fiche.querySelector('button[type=submit]'), 'Enregistrement…', async () => {
+      const req = id ? sb.from('formations').update(donnees).eq('id', id).select().single()
+        : sb.from('formations').insert({ ...donnees, created_by: (await sb.auth.getUser()).data.user?.id }).select().single();
+      const { data, error } = await req;
+      if (error) return toast(messageErreur(error), 'erreur');
+      const nouvelle = !id;
+      formation = data as Formation; id = formation.id;
+      if (nouvelle) { history.replaceState(null, '', `?id=${id}`); await Promise.all([chargerInscrits(), chargerSupports(), chargerMembres()]); }
+      remplirFiche();
+      toast(nouvelle ? 'Activité créée.' : 'Modifications enregistrées.');
+    });
+  });
+
+  // Suppression en deux temps (pas de boîte de dialogue système).
+  let confirmation = false;
+  $('supprimer').addEventListener('click', async () => {
+    const btn = $('supprimer') as HTMLButtonElement;
+    if (!confirmation) { confirmation = true; btn.textContent = 'Confirmer la suppression'; setTimeout(() => { confirmation = false; btn.textContent = 'Supprimer'; }, 5000); return; }
+    const { error } = await sb.from('formations').delete().eq('id', id!);
+    if (error) return toast(messageErreur(error), 'erreur');
+    location.href = `${base}/bureau/`;
+  });
+
+  // ── Inscrits et présences
+  async function chargerInscrits() {
+    const { data, error } = await sb.from('inscriptions').select('membre_id, present, inscrit_at, profiles!inscriptions_membre_id_fkey(*)').eq('formation_id', id!);
+    if (error) return toast(messageErreur(error), 'erreur');
+    inscrits = ((data ?? []) as unknown as Ligne[]).sort((a, b) => nomComplet(a.profiles).localeCompare(nomComplet(b.profiles), 'fr'));
+    afficherInscrits();
+  }
+  function afficherInscrits() {
+    const presents = inscrits.filter((i) => i.present).length;
+    $('compteurs').textContent = `${inscrits.length} inscrit(s) · ${presents} présent(s)${formation?.places ? ` · ${formation.places} places` : ''}`;
+    const ul = $('inscrits');
+    if (!inscrits.length) return vider(ul, h('li', { class: 'vide' }, 'Personne n’est encore inscrit.'));
+    vider(ul, inscrits.map((i) => {
+      const box = h('input', { type: 'checkbox', checked: i.present, 'aria-label': `Présence de ${nomComplet(i.profiles)}` }) as HTMLInputElement;
+      box.addEventListener('change', async () => {
+        box.disabled = true;
+        const { error } = await sb.rpc('marquer_presence', { p_formation: id, p_membre: i.membre_id, p_present: box.checked });
+        box.disabled = false;
+        if (error) { box.checked = !box.checked; return toast(messageErreur(error), 'erreur'); }
+        i.present = box.checked; afficherInscrits();
+      });
+      return h('li', {},
+        h('div', { class: 'infos' }, h('strong', {}, nomComplet(i.profiles)), h('span', {}, [i.profiles.filiere, i.profiles.annee, i.profiles.telephone].filter(Boolean).join(' · '))),
+        h('label', { class: 'presence' }, box, 'Présent'));
+    }));
+  }
+
+  async function chargerMembres() {
+    const { data } = await sb.from('profiles').select('*').order('nom');
+    membres = (data ?? []) as Profil[];
+    vider($('liste-membres'), membres.map((m) => h('option', { value: `${nomComplet(m)} — ${m.email}` })));
+  }
+  $('btn-ajout').addEventListener('click', async () => {
+    const champ = $('ajout') as HTMLInputElement;
+    const q = champ.value.trim().toLowerCase();
+    const trouve = membres.filter((m) => `${nomComplet(m)} — ${m.email}`.toLowerCase() === q || m.email.toLowerCase() === q);
+    if (trouve.length !== 1) return toast('Choisissez un membre dans la liste proposée.', 'erreur');
+    await marquer(trouve[0].id);
+    champ.value = '';
+  });
+
+  async function marquer(membre: string) {
+    const { data, error } = await sb.rpc('marquer_presence', { p_formation: id, p_membre: membre, p_present: true });
+    if (error) { toast(messageErreur(error), 'erreur'); return null; }
+    await chargerInscrits();
+    toast(`Présence validée : ${data}`);
+    return data as string;
+  }
+
+  $('btn-export').addEventListener('click', () => {
+    if (!formation) return;
+    exporterExcel(inscrits, [
+      { titre: 'Prénom', valeur: (i) => i.profiles.prenom, largeur: 18 },
+      { titre: 'Nom', valeur: (i) => i.profiles.nom, largeur: 18 },
+      { titre: 'E-mail', valeur: (i) => i.profiles.email, largeur: 30 },
+      { titre: 'Téléphone', valeur: (i) => i.profiles.telephone ?? '', largeur: 16 },
+      { titre: 'Filière', valeur: (i) => i.profiles.filiere ?? '', largeur: 22 },
+      { titre: 'Année', valeur: (i) => i.profiles.annee ?? '', largeur: 12 },
+      { titre: 'Présent', valeur: (i) => (i.present ? 'Oui' : 'Non'), largeur: 10 },
+      { titre: 'Inscrit le', valeur: (i) => i.inscrit_at.slice(0, 10), largeur: 12 },
+    ], `Presences-${nomFichier(formation.titre)}-${formation.date}.xlsx`, `${formation.titre} — ${dateCourte(formation.date)}`)
+      .catch((e) => toast(messageErreur(e), 'erreur'));
+  });
+
+  // ── Scanner de QR codes (caméra du téléphone)
+  let flux: MediaStream | null = null;
+  let boucle = 0;
+  let dernier = '', dernierT = 0;
+  $('btn-scanner').addEventListener('click', async () => {
+    try {
+      flux = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch {
+      return toast('Impossible d’ouvrir la caméra. Autorisez l’accès à la caméra pour ce site dans les réglages du navigateur.', 'erreur');
+    }
+    const video = $('video') as HTMLVideoElement;
+    video.srcObject = flux; await video.play();
+    $('zone-scanner').hidden = false; $('btn-scanner').hidden = true;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    const lire = async () => {
+      if (!flux) return;
+      if (video.readyState >= 2) {
+        const w = 480, hgt = Math.round((video.videoHeight / video.videoWidth) * 480) || 480;
+        canvas.width = w; canvas.height = hgt;
+        ctx.drawImage(video, 0, 0, w, hgt);
+        const code = jsQR(ctx.getImageData(0, 0, w, hgt).data, w, hgt, { inversionAttempts: 'dontInvert' });
+        const m = code?.data.match(/^2AMECA:([0-9a-f-]{36})$/i);
+        const now = Date.now();
+        if (code && !m && now - dernierT > 2500) { $('dernier-scan').textContent = 'Ce QR code n’est pas un code membre 2AMECA.'; dernierT = now; }
+        if (m && (m[1] !== dernier || now - dernierT > 4000)) {
+          dernier = m[1]; dernierT = now;
+          navigator.vibrate?.(80);
+          const nom = await marquer(m[1]);
+          $('dernier-scan').textContent = nom ? `Présent : ${nom}` : 'Échec : membre introuvable.';
+        }
+      }
+      boucle = window.setTimeout(lire, 250);
+    };
+    lire();
+  });
+  function arreterScanner() {
+    clearTimeout(boucle);
+    flux?.getTracks().forEach((t) => t.stop()); flux = null;
+    $('zone-scanner').hidden = true; $('btn-scanner').hidden = false;
+  }
+  $('btn-stop').addEventListener('click', arreterScanner);
+  addEventListener('pagehide', arreterScanner);
+
+  // ── Supports
+  async function chargerSupports() {
+    const { data, error } = await sb.from('supports').select('*').eq('formation_id', id!).order('created_at');
+    if (error) return toast(messageErreur(error), 'erreur');
+    const ul = $('supports');
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucun support pour l’instant.'));
+    vider(ul, data.map((s) => {
+      const suppr = h('button', { type: 'button', class: 'btn-lien' }, 'Supprimer') as HTMLButtonElement;
+      suppr.addEventListener('click', () => pendant(suppr, '…', async () => {
+        const r1 = await sb.storage.from('supports').remove([s.chemin]);
+        const r2 = await sb.from('supports').delete().eq('id', s.id);
+        if (r1.error || r2.error) return toast(messageErreur(r1.error || r2.error), 'erreur');
+        toast('Support supprimé.'); chargerSupports();
+      }));
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, s.nom), h('span', {}, taille(s.taille))), suppr);
+    }));
+  }
+  $('fichiers').addEventListener('change', async (e) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const fichiers = [...(input.files ?? [])];
+    for (const f of fichiers) {
+      if (f.size > 50 * 1024 * 1024) { toast(`${f.name} : fichier trop lourd (50 Mo maximum).`, 'erreur'); continue; }
+      toast(`Envoi de ${f.name}…`);
+      const ext = f.name.includes('.') ? f.name.slice(f.name.lastIndexOf('.')).toLowerCase() : '';
+      const chemin = `${id}/${Date.now()}-${nomFichier(f.name.replace(/\.[^.]+$/, '')) || 'fichier'}${ext}`;
+      const up = await sb.storage.from('supports').upload(chemin, f, { contentType: f.type || 'application/octet-stream' });
+      if (up.error) { toast(messageErreur(up.error), 'erreur'); continue; }
+      const { error } = await sb.from('supports').insert({ formation_id: id, nom: f.name, chemin, taille: f.size });
+      if (error) { await sb.storage.from('supports').remove([chemin]); toast(messageErreur(error), 'erreur'); continue; }
+    }
+    input.value = '';
+    await chargerSupports();
+    toast('Supports à jour.');
+  });
+
+  demarrer().catch((e) => { $('chargement').textContent = messageErreur(e); });
+</script>

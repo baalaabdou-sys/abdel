@@ -8,7 +8,7 @@ import AppelRejoindre from '../components/AppelRejoindre.astro';
 import { getEvenementsParPeriode, getProjets } from '../lib/collections';
 import { plageDates, plageJours, heureFr, ymd } from '../lib/dates';
 import { u } from '../lib/url';
-import { SITE, INSCRIPTION_URL } from '../config';
+import { SITE, INSCRIPTION_PATH } from '../config';
 
 const { aVenir } = await getEvenementsParPeriode();
 const vedette = aVenir[0];
@@ -19,7 +19,8 @@ const enAvant = [...projets.filter((p) => p.data.enAvant), ...projets.filter((p)
 const nbJours = vedette
   ? Math.round((Date.parse(ymd(vedette.data.dateFin ?? vedette.data.dateDebut)) - Date.parse(ymd(vedette.data.dateDebut))) / 864e5) + 1
   : 0;
-const inscription = vedette?.data.inscription ?? INSCRIPTION_URL;
+const inscription = vedette?.data.inscription ?? u(INSCRIPTION_PATH);
+const externe = /^https?:/.test(inscription);
 
 const piliers = [
   { n: '01', titre: 'Projets', texte: 'Concevoir, modéliser et fabriquer en équipe : de l’idée sur papier à la pièce qui fonctionne.' },
@@ -64,7 +65,7 @@ const piliers = [
           <div class="action">
             <CompteARebours debut={vedette.debut} fin={vedette.fin} />
             <div class="boutons">
-              <a class="btn btn-clair" href={inscription} target="_blank" rel="noopener">S’inscrire <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
+              <a class="btn btn-clair" href={inscription} target={externe ? '_blank' : undefined} rel={externe ? 'noopener' : undefined}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
               <a class="btn btn-contour" href={u(`/evenements/${vedette.id}/`)}>Voir le programme</a>
             </div>
           </div>

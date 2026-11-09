@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import EnTetePage from '../components/EnTetePage.astro';
+import '../styles/app.css';
+---
+<Base titre="Vérifier une attestation" description="Vérifiez l’authenticité d’une attestation délivrée par le Club 2AMECA.">
+  <EnTetePage surtitre="Attestations" titre="Vérifier une attestation" chapo="Chaque attestation du Club 2AMECA porte un code. Saisissez-le pour vérifier qu’elle est authentique." />
+  <section class="app">
+    <div class="conteneur auth">
+      <form class="form carte" id="form" novalidate>
+        <div class="champ"><label for="code">Code de l’attestation</label>
+          <input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex. 3FA9C21B7E" maxlength="20" required /></div>
+        <button class="btn" type="submit">Vérifier</button>
+      </form>
+      <div id="resultat" aria-live="polite" style="margin-top:1rem"></div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { sb, messageErreur, TYPES } from '../lib/supabase';
+  import { h, vider, dateLongue, pendant } from '../lib/dom';
+
+  const form = document.getElementById('form') as HTMLFormElement;
+  const champ = document.getElementById('code') as HTMLInputElement;
+  const res = document.getElementById('resultat')!;
+
+  async function verifier() {
+    const code = champ.value.trim().toUpperCase();
+    if (!code) { champ.focus(); return; }
+    const { data, error } = await sb.rpc('verifier_attestation', { p_code: code });
+    if (error) return vider(res, h('p', { class: 'erreur-form' }, messageErreur(error)));
+    const a = (data as { prenom: string; nom: string; titre: string; type: keyof typeof TYPES; date: string }[])?.[0];
+    if (!a) return vider(res, h('p', { class: 'erreur-form' }, `Aucune attestation ne correspond au code ${code}. Vérifiez la saisie.`));
+    vider(res, h('div', { class: 'succes-form' },
+      h('strong', {}, 'Attestation authentique. '),
+      `Délivrée par le Club 2AMECA à ${a.prenom} ${a.nom} pour sa participation ${a.type === 'formation' ? 'à la formation' : a.type === 'atelier' ? 'à l’atelier' : 'à l’événement'} « ${a.titre} », le ${dateLongue(a.date)}.`));
+  }
+  form.addEventListener('submit', (e) => { e.preventDefault(); pendant(form.querySelector('button'), 'Vérification…', verifier); });
+  const depuisLien = new URLSearchParams(location.search).get('code');
+  if (depuisLien) { champ.value = depuisLien; verifier(); }
+</script>

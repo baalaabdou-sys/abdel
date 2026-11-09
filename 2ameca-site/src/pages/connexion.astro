@@ -1,0 +1,193 @@
+---
+import Base from '../layouts/Base.astro';
+import '../styles/app.css';
+import { FILIERES, ANNEES } from '../config';
+---
+<Base prive titre="Connexion" description="Connectez-vous à votre espace membre du Club 2AMECA, ou créez votre compte.">
+  <section class="app">
+    <div class="conteneur auth">
+      <span class="surtitre">Espace membre</span>
+      <h1 class="titre-2" id="titre-auth">Connexion</h1>
+      <hr class="trait" />
+
+      <div class="onglets" role="tablist" aria-label="Connexion ou inscription">
+        <button type="button" role="tab" id="tab-connexion" aria-controls="panneau-connexion" aria-selected="true">Se connecter</button>
+        <button type="button" role="tab" id="tab-inscription" aria-controls="panneau-inscription" aria-selected="false">Créer un compte</button>
+      </div>
+
+      <div id="message" hidden></div>
+
+      <!-- Connexion -->
+      <form class="form" id="panneau-connexion" role="tabpanel" aria-labelledby="tab-connexion" novalidate>
+        <div class="champ">
+          <label for="c-email">E-mail</label>
+          <input id="c-email" name="email" type="email" autocomplete="email" inputmode="email" required />
+        </div>
+        <div class="champ">
+          <label for="c-mdp">Mot de passe</label>
+          <input id="c-mdp" name="mdp" type="password" autocomplete="current-password" required />
+        </div>
+        <button class="btn" type="submit">Se connecter</button>
+        <button class="btn-lien" type="button" id="lien-oubli">Mot de passe oublié ?</button>
+      </form>
+
+      <!-- Inscription -->
+      <form class="form" id="panneau-inscription" role="tabpanel" aria-labelledby="tab-inscription" hidden novalidate>
+        <p class="aide">Aucune expérience en mécanique n’est demandée : le club est ouvert à tous les étudiants de la FSAC.</p>
+        <div class="ligne-2">
+          <div class="champ"><label for="i-prenom">Prénom</label><input id="i-prenom" name="prenom" autocomplete="given-name" required /></div>
+          <div class="champ"><label for="i-nom">Nom</label><input id="i-nom" name="nom" autocomplete="family-name" required /></div>
+        </div>
+        <div class="ligne-2">
+          <div class="champ">
+            <label for="i-filiere">Filière</label>
+            <select id="i-filiere" name="filiere" required>
+              <option value="">Choisir…</option>
+              {FILIERES.map((f) => <option>{f}</option>)}
+            </select>
+          </div>
+          <div class="champ">
+            <label for="i-annee">Année d’études</label>
+            <select id="i-annee" name="annee" required>
+              <option value="">Choisir…</option>
+              {ANNEES.map((a) => <option>{a}</option>)}
+            </select>
+          </div>
+        </div>
+        <div class="champ"><label for="i-tel">Téléphone / WhatsApp</label><input id="i-tel" name="telephone" type="tel" autocomplete="tel" inputmode="tel" placeholder="06 00 00 00 00" required /></div>
+        <div class="champ"><label for="i-email">E-mail</label><input id="i-email" name="email" type="email" autocomplete="email" inputmode="email" required /></div>
+        <div class="champ">
+          <label for="i-mdp">Mot de passe</label>
+          <input id="i-mdp" name="mdp" type="password" autocomplete="new-password" minlength="8" required aria-describedby="i-mdp-aide" />
+          <span class="aide" id="i-mdp-aide">8 caractères minimum.</span>
+        </div>
+        <label class="case" for="i-consentement">
+          <input type="checkbox" id="i-consentement" name="consentement" required />
+          <span>J’accepte que le Club 2AMECA conserve ces informations pour gérer les adhésions, les inscriptions aux activités et les attestations. Elles ne sont pas partagées en dehors du bureau du club.</span>
+        </label>
+        <button class="btn" type="submit">Créer mon compte</button>
+      </form>
+
+      <!-- Mot de passe oublié -->
+      <form class="form" id="panneau-oubli" hidden novalidate>
+        <p class="aide">Indiquez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe. Si l’e-mail n’arrive pas, contactez un membre du bureau.</p>
+        <div class="champ"><label for="o-email">E-mail</label><input id="o-email" type="email" autocomplete="email" inputmode="email" required /></div>
+        <button class="btn" type="submit">Envoyer le lien</button>
+        <button class="btn-lien" type="button" id="retour-connexion">Retour à la connexion</button>
+      </form>
+
+      <!-- Nouveau mot de passe (après le lien reçu par e-mail) -->
+      <form class="form" id="panneau-nouveau" hidden novalidate>
+        <div class="champ"><label for="n-mdp">Nouveau mot de passe</label><input id="n-mdp" type="password" autocomplete="new-password" minlength="8" required /></div>
+        <button class="btn" type="submit">Enregistrer</button>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { sb, messageErreur } from '../lib/supabase';
+  import { pendant } from '../lib/dom';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const panneaux = ['connexion', 'inscription', 'oubli', 'nouveau'] as const;
+  type Mode = (typeof panneaux)[number];
+  const titres: Record<Mode, string> = { connexion: 'Connexion', inscription: 'Créer un compte', oubli: 'Mot de passe oublié', nouveau: 'Nouveau mot de passe' };
+  const msg = document.getElementById('message')!;
+  const onglets = document.querySelector<HTMLElement>('.onglets')!;
+
+  function afficher(mode: Mode) {
+    for (const p of panneaux) document.getElementById(`panneau-${p}`)!.hidden = p !== mode;
+    onglets.hidden = mode === 'oubli' || mode === 'nouveau';
+    for (const p of ['connexion', 'inscription']) document.getElementById(`tab-${p}`)!.setAttribute('aria-selected', String(p === mode));
+    document.getElementById('titre-auth')!.textContent = titres[mode];
+    msg.hidden = true;
+  }
+  function message(texte: string, ok = false) {
+    msg.hidden = false; msg.className = ok ? 'succes-form' : 'erreur-form'; msg.textContent = texte;
+    msg.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+  const suite = () => {
+    const apres = new URLSearchParams(location.search).get('suite');
+    location.href = apres && apres.startsWith('/') && !apres.startsWith('//') ? base + apres : `${base}/espace/`;
+  };
+
+  document.getElementById('tab-connexion')!.addEventListener('click', () => afficher('connexion'));
+  document.getElementById('tab-inscription')!.addEventListener('click', () => afficher('inscription'));
+  document.getElementById('lien-oubli')!.addEventListener('click', () => afficher('oubli'));
+  document.getElementById('retour-connexion')!.addEventListener('click', () => afficher('connexion'));
+
+  const mode = new URLSearchParams(location.search).get('mode');
+  afficher(mode === 'inscription' ? 'inscription' : 'connexion');
+
+  // Déjà connecté : direction l'espace membre (sauf retour d'un lien « mot de passe oublié »).
+  sb.auth.onAuthStateChange((evt) => { if (evt === 'PASSWORD_RECOVERY') afficher('nouveau'); });
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session && !location.hash.includes('type=recovery')) suite();
+  });
+
+  function valide(form: HTMLFormElement) {
+    for (const el of form.querySelectorAll<HTMLInputElement | HTMLSelectElement>('input, select')) {
+      if (!el.checkValidity()) {
+        el.focus();
+        const nom = form.querySelector(`label[for="${el.id}"]`)?.textContent?.trim() ?? 'Ce champ';
+        message(el.type === 'checkbox' ? 'Merci d’accepter la conservation de vos informations pour créer votre compte.'
+          : el.type === 'email' && el.value ? 'Adresse e-mail invalide.'
+          : el.type === 'password' && el.value ? 'Le mot de passe doit contenir au moins 8 caractères.'
+          : `${nom} : champ obligatoire.`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  document.getElementById('panneau-connexion')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!valide(f)) return;
+    await pendant(f.querySelector('button[type=submit]'), 'Connexion…', async () => {
+      const { error } = await sb.auth.signInWithPassword({ email: (f.email as HTMLInputElement).value.trim(), password: (f.mdp as HTMLInputElement).value });
+      if (error) message(messageErreur(error)); else suite();
+    });
+  });
+
+  document.getElementById('panneau-inscription')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!valide(f)) return;
+    const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value.trim();
+    await pendant(f.querySelector('button[type=submit]'), 'Création…', async () => {
+      const { data, error } = await sb.auth.signUp({
+        email: v('email'), password: (f.elements.namedItem('mdp') as HTMLInputElement).value,
+        options: {
+          emailRedirectTo: `${location.origin}${base}/espace/`,
+          data: { prenom: v('prenom'), nom: v('nom'), telephone: v('telephone'), filiere: v('filiere'), annee: v('annee'), consentement: 'true' },
+        },
+      });
+      if (error) return message(messageErreur(error));
+      if (data.session) suite();
+      else message('Compte créé. Ouvrez l’e-mail de confirmation que vous venez de recevoir pour activer votre compte, puis connectez-vous.', true);
+    });
+  });
+
+  document.getElementById('panneau-oubli')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!valide(f)) return;
+    await pendant(f.querySelector('button[type=submit]'), 'Envoi…', async () => {
+      const { error } = await sb.auth.resetPasswordForEmail((document.getElementById('o-email') as HTMLInputElement).value.trim(), { redirectTo: `${location.origin}${base}/connexion/` });
+      if (error) message(messageErreur(error));
+      else message('Si un compte existe avec cette adresse, un lien vient d’être envoyé. Pensez à vérifier les courriers indésirables.', true);
+    });
+  });
+
+  document.getElementById('panneau-nouveau')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!valide(f)) return;
+    await pendant(f.querySelector('button[type=submit]'), 'Enregistrement…', async () => {
+      const { error } = await sb.auth.updateUser({ password: (document.getElementById('n-mdp') as HTMLInputElement).value });
+      if (error) message(messageErreur(error)); else suite();
+    });
+  });
+</script>

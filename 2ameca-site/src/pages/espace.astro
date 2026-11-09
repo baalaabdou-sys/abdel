@@ -1,0 +1,225 @@
+---
+import Base from '../layouts/Base.astro';
+import '../styles/app.css';
+import { FILIERES, ANNEES } from '../config';
+---
+<Base prive titre="Mon espace" description="Espace membre du Club 2AMECA : inscriptions, présences, supports et attestations.">
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement de votre espace…</p>
+
+      <div id="espace" hidden>
+        <div class="app-tete">
+          <div>
+            <span class="surtitre">Espace membre</span>
+            <h1 class="titre-2" id="bonjour">Bonjour</h1>
+          </div>
+          <div class="actions">
+            <a class="btn btn-petit" id="lien-bureau" href="#" hidden>Tableau de bord du bureau</a>
+            <button class="btn btn-contour btn-petit" type="button" id="deconnexion">Se déconnecter</button>
+          </div>
+        </div>
+
+        <div class="onglets" role="tablist" aria-label="Mon espace">
+          <button type="button" role="tab" aria-selected="true" data-onglet="activites">Activités</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="parcours">Mon parcours</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="qr">Mon QR code</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="profil">Mon profil</button>
+        </div>
+
+        <div data-panneau="activites" role="tabpanel">
+          <div class="carte"><h2>Activités à venir</h2><ul class="liste-app" id="a-venir"></ul></div>
+        </div>
+
+        <div data-panneau="parcours" role="tabpanel" hidden>
+          <div class="colonnes large-gauche">
+            <div class="carte"><h2>Mes participations</h2><ul class="liste-app" id="historique"></ul></div>
+            <div>
+              <div class="carte"><h2>Mes attestations</h2><ul class="liste-app" id="attestations"></ul></div>
+              <div class="carte"><h2>Mes supports de formation</h2><ul class="liste-app" id="supports"></ul></div>
+            </div>
+          </div>
+        </div>
+
+        <div data-panneau="qr" role="tabpanel" hidden>
+          <div class="carte mon-qr">
+            <h2>Mon QR code de présence</h2>
+            <img id="qr" alt="Votre QR code personnel de présence" width="220" height="220" />
+            <p class="aide">Présentez ce code à l’entrée de chaque activité : un responsable le scanne pour valider votre présence. Vos supports et votre attestation sont ensuite disponibles automatiquement.</p>
+          </div>
+        </div>
+
+        <div data-panneau="profil" role="tabpanel" hidden>
+          <form class="carte form" id="form-profil" novalidate>
+            <h2>Mes informations</h2>
+            <div class="ligne-2">
+              <div class="champ"><label for="p-prenom">Prénom</label><input id="p-prenom" name="prenom" autocomplete="given-name" required /></div>
+              <div class="champ"><label for="p-nom">Nom</label><input id="p-nom" name="nom" autocomplete="family-name" required /></div>
+            </div>
+            <div class="ligne-2">
+              <div class="champ"><label for="p-filiere">Filière</label>
+                <select id="p-filiere" name="filiere"><option value="">—</option>{FILIERES.map((f) => <option>{f}</option>)}</select></div>
+              <div class="champ"><label for="p-annee">Année d’études</label>
+                <select id="p-annee" name="annee"><option value="">—</option>{ANNEES.map((a) => <option>{a}</option>)}</select></div>
+            </div>
+            <div class="champ"><label for="p-tel">Téléphone / WhatsApp</label><input id="p-tel" name="telephone" type="tel" autocomplete="tel" /></div>
+            <div class="champ"><span class="lbl">E-mail</span><span id="p-email"></span></div>
+            <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import QRCode from 'qrcode';
+  import { sb, monProfil, estBureau, messageErreur, TYPES, ROLES, type Formation, type Profil } from '../lib/supabase';
+  import { h, vider, toast, dateLongue, dateCourte, horaire, aujourdhui, taille, pendant } from '../lib/dom';
+  import { genererAttestation, telecharger, nomFichier } from '../lib/attestation';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  let profil: Profil;
+
+  type Inscription = { formation_id: string; present: boolean; inscrit_at: string; formations: Formation };
+
+  async function demarrer() {
+    const p = await monProfil();
+    if (!p) { location.href = `${base}/connexion/?suite=/espace/`; return; }
+    profil = p;
+    $('bonjour').textContent = `Bonjour ${p.prenom || ''}`.trim();
+    if (estBureau(p)) {
+      const lien = $('lien-bureau') as HTMLAnchorElement;
+      lien.hidden = false; lien.href = `${base}/bureau/`; lien.textContent = `Tableau de bord (${ROLES[p.role]})`;
+    }
+    remplirProfil();
+    (document.getElementById('qr') as HTMLImageElement).src =
+      await QRCode.toDataURL(`2AMECA:${p.id}`, { margin: 1, width: 440, errorCorrectionLevel: 'M', color: { dark: '#04223A', light: '#FFFFFF' } });
+    $('chargement').hidden = true; $('espace').hidden = false;
+    await charger();
+  }
+
+  // ── Onglets
+  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-onglet]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== b.dataset.onglet));
+  }));
+
+  async function charger() {
+    const [fRes, iRes, aRes, sRes] = await Promise.all([
+      sb.from('formations').select('*').eq('publiee', true).gte('date', aujourdhui()).order('date').order('heure_debut'),
+      sb.from('inscriptions').select('formation_id, present, inscrit_at, formations(*)').eq('membre_id', profil.id),
+      sb.from('attestations').select('code, delivree_at, formation_id').eq('membre_id', profil.id),
+      sb.from('supports').select('*').order('created_at'),
+    ]);
+    const erreur = fRes.error || iRes.error || aRes.error || sRes.error;
+    if (erreur) toast(messageErreur(erreur), 'erreur');
+
+    const inscriptions = (iRes.data ?? []) as unknown as Inscription[];
+    const parFormation = new Map(inscriptions.map((i) => [i.formation_id, i]));
+    afficherAVenir((fRes.data ?? []) as Formation[], parFormation);
+    afficherHistorique(inscriptions);
+    afficherAttestations(aRes.data ?? [], parFormation);
+    const presentes = new Set(inscriptions.filter((i) => i.present).map((i) => i.formation_id));
+    afficherSupports((sRes.data ?? []).filter((s) => presentes.has(s.formation_id)), parFormation);
+  }
+
+  async function afficherAVenir(formations: Formation[], mes: Map<string, Inscription>) {
+    const ul = $('a-venir');
+    if (!formations.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune activité annoncée pour le moment. Revenez bientôt.'));
+    const nombres = await Promise.all(formations.map((f) => sb.rpc('nb_inscrits', { p_formation: f.id }).then((r) => (r.data as number) ?? 0)));
+    vider(ul, formations.map((f, n) => {
+      const inscrit = mes.get(f.id);
+      const complet = f.places != null && nombres[n] >= f.places && !inscrit;
+      const btn = h('button', { type: 'button', class: inscrit ? 'btn btn-contour btn-petit' : 'btn btn-petit', disabled: complet }) as HTMLButtonElement;
+      btn.textContent = inscrit ? 'Me désinscrire' : complet ? 'Complet' : 'M’inscrire';
+      btn.addEventListener('click', () => pendant(btn, '…', async () => {
+        const { error } = inscrit
+          ? await sb.from('inscriptions').delete().eq('formation_id', f.id).eq('membre_id', profil.id)
+          : await sb.from('inscriptions').insert({ formation_id: f.id, membre_id: profil.id });
+        if (error) return toast(messageErreur(error), 'erreur');
+        toast(inscrit ? 'Désinscription enregistrée.' : `Inscription confirmée : ${f.titre}`);
+        await charger();
+      }));
+      return h('li', {},
+        h('div', { class: 'infos' },
+          h('strong', {}, f.titre),
+          h('span', {}, `${TYPES[f.type]} · ${dateLongue(f.date)}${f.heure_debut ? ` · ${horaire(f.heure_debut, f.heure_fin)}` : ''}${f.lieu ? ` · ${f.lieu}` : ''}`),
+          f.description && h('p', { class: 'aide' }, f.description),
+          f.places != null && h('span', { class: 'aide' }, ` · ${Math.max(0, f.places - nombres[n])} place(s) restante(s)`),
+        ),
+        h('div', { class: 'actions' }, inscrit && h('span', { class: 'pastille-etat attente' }, 'Inscrit'), btn),
+      );
+    }));
+  }
+
+  function afficherHistorique(liste: Inscription[]) {
+    const ul = $('historique');
+    if (!liste.length) return vider(ul, h('li', { class: 'vide' }, 'Vous n’avez encore participé à aucune activité.'));
+    const today = aujourdhui();
+    liste.sort((a, b) => b.formations.date.localeCompare(a.formations.date));
+    vider(ul, liste.map((i) => {
+      const passe = i.formations.date < today;
+      const etat = i.present ? h('span', { class: 'pastille-etat ok' }, 'Présent')
+        : passe ? h('span', { class: 'pastille-etat' }, 'Absent') : h('span', { class: 'pastille-etat attente' }, 'Inscrit');
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, i.formations.titre), h('span', {}, `${TYPES[i.formations.type]} · ${dateCourte(i.formations.date)}`)), etat);
+    }));
+  }
+
+  function afficherAttestations(liste: { code: string; delivree_at: string; formation_id: string }[], mes: Map<string, Inscription>) {
+    const ul = $('attestations');
+    if (!liste.length) return vider(ul, h('li', { class: 'vide' }, 'Vos attestations apparaîtront ici dès que votre présence à une activité sera validée.'));
+    vider(ul, liste.map((a) => {
+      const f = mes.get(a.formation_id)!.formations;
+      const btn = h('button', { type: 'button', class: 'btn btn-petit' }, 'Télécharger (PDF)') as HTMLButtonElement;
+      btn.addEventListener('click', () => pendant(btn, 'Préparation…', async () => {
+        try {
+          const pdf = await genererAttestation({ prenom: profil.prenom, nom: profil.nom, titre: f.titre, type: f.type, date: f.date, lieu: f.lieu, code: a.code, delivree_at: a.delivree_at });
+          telecharger(pdf, `Attestation-2AMECA-${nomFichier(f.titre)}.pdf`);
+        } catch (e) { toast(messageErreur(e), 'erreur'); }
+      }));
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · code ${a.code}`)), btn);
+    }));
+  }
+
+  function afficherSupports(liste: { id: string; nom: string; chemin: string; taille: number | null; formation_id: string }[], mes: Map<string, Inscription>) {
+    const ul = $('supports');
+    if (!liste.length) return vider(ul, h('li', { class: 'vide' }, 'Les supports (PDF, présentations, exercices) sont accessibles ici après validation de votre présence.'));
+    vider(ul, liste.map((s) => {
+      const btn = h('button', { type: 'button', class: 'btn btn-contour btn-petit' }, 'Télécharger') as HTMLButtonElement;
+      btn.addEventListener('click', () => pendant(btn, '…', async () => {
+        const { data, error } = await sb.storage.from('supports').createSignedUrl(s.chemin, 600, { download: s.nom });
+        if (error || !data) return toast(messageErreur(error), 'erreur');
+        location.href = data.signedUrl;
+      }));
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, s.nom), h('span', {}, `${mes.get(s.formation_id)?.formations.titre ?? ''}${s.taille ? ` · ${taille(s.taille)}` : ''}`)), btn);
+    }));
+  }
+
+  // ── Profil
+  function remplirProfil() {
+    const f = $('form-profil') as HTMLFormElement;
+    for (const k of ['prenom', 'nom', 'filiere', 'annee', 'telephone'] as const)
+      (f.elements.namedItem(k) as HTMLInputElement).value = profil[k] ?? '';
+    $('p-email').textContent = profil.email;
+  }
+  $('form-profil').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    const v = (k: string) => (f.elements.namedItem(k) as HTMLInputElement).value.trim();
+    if (!v('prenom') || !v('nom')) return toast('Le prénom et le nom sont obligatoires.', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Enregistrement…', async () => {
+      const maj = { prenom: v('prenom'), nom: v('nom'), filiere: v('filiere') || null, annee: v('annee') || null, telephone: v('telephone') || null };
+      const { error } = await sb.from('profiles').update(maj).eq('id', profil.id);
+      if (error) return toast(messageErreur(error), 'erreur');
+      profil = { ...profil, ...maj };
+      $('bonjour').textContent = `Bonjour ${profil.prenom}`;
+      toast('Informations enregistrées.');
+    });
+  });
+
+  $('deconnexion').addEventListener('click', async () => { await sb.auth.signOut(); location.href = `${base}/`; });
+
+  demarrer().catch((e) => { $('chargement').textContent = messageErreur(e); });
+</script>
