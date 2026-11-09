@@ -1,6 +1,8 @@
 # Site du Club 2AMECA — Atelier d'Applications Mécanique
 
 Site officiel du Club 2AMECA (Faculté des Sciences Aïn Chock, Université Hassan II de Casablanca).
+
+**Adresse du site : https://2amcclub.netlify.app**
 *Esprit citoyen au centre.*
 
 Site statique construit avec [Astro](https://astro.build) et du CSS simple (variables CSS, sans framework).

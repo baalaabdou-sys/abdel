@@ -6,7 +6,7 @@ import sitemap from '@astrojs/sitemap';
 // BASE_PATH : sous-dossier éventuel (ex. /nom-du-depot pour GitHub Pages).
 // Les deux sont lus depuis l'environnement ; voir README.md › Déploiement.
 // Sur Netlify, URL est fournie automatiquement.
-const site = process.env.SITE_URL || process.env.URL || 'https://club-2ameca.vercel.app';
+const site = process.env.SITE_URL || process.env.URL || 'https://2amcclub.netlify.app';
 const base = process.env.BASE_PATH || '/';
 
 export default defineConfig({
