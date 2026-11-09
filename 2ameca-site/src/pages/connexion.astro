@@ -160,7 +160,7 @@ import { FILIERES, ANNEES } from '../config';
       const { data, error } = await sb.auth.signUp({
         email: v('email'), password: (f.elements.namedItem('mdp') as HTMLInputElement).value,
         options: {
-          emailRedirectTo: `${location.origin}${base}/espace/`,
+          emailRedirectTo: `${location.origin}${base}${new URLSearchParams(location.search).get('suite') ?? '/espace/'}`,
           data: { prenom: v('prenom'), nom: v('nom'), telephone: v('telephone'), filiere: v('filiere'), annee: v('annee'), consentement: 'true' },
         },
       });

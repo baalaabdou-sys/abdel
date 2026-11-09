@@ -118,7 +118,7 @@ import { FILIERES, ANNEES } from '../config';
 
   async function demarrer() {
     const p = await monProfil();
-    if (!p) { location.href = `${base}/connexion/?suite=/espace/`; return; }
+    if (!p) { location.href = `${base}/connexion/?mode=connexion&suite=${encodeURIComponent('/espace/' + location.search)}`; return; }
     profil = p;
     $('bonjour').textContent = `Bonjour ${p.prenom || ''}`.trim();
     if (estBureau(p)) {
@@ -131,6 +131,7 @@ import { FILIERES, ANNEES } from '../config';
     $('chargement').hidden = true; $('espace').hidden = false;
     await charger();
     if (location.hash) ouvrir(location.hash.slice(1));
+    await inscriptionDepuisEmail();
   }
 
   // ── Onglets
@@ -161,6 +162,25 @@ import { FILIERES, ANNEES } from '../config';
     const presentes = new Set(inscriptions.filter((i) => i.present).map((i) => i.formation_id));
     afficherSupports((sRes.data ?? []).filter((s) => presentes.has(s.formation_id)), parFormation);
     await Promise.all([chargerRetours(inscriptions), chargerNotifications(), chargerRessources(), chargerIdees()]);
+  }
+
+  // ── Bouton « Je m'inscris » des e-mails : /espace/?inscrire=<id de l'activité>
+  async function inscriptionDepuisEmail() {
+    const idF = new URLSearchParams(location.search).get('inscrire');
+    if (!idF) return;
+    history.replaceState(null, '', location.pathname + location.hash);
+    const { data: f } = await sb.from('formations').select('*').eq('id', idF).maybeSingle();
+    if (!f) return toast('Cette activité n’existe plus.', 'erreur');
+    const { data: deja } = await sb.from('inscriptions').select('formation_id').eq('formation_id', idF).eq('membre_id', profil.id).maybeSingle();
+    if (deja) return toast(`Vous êtes déjà inscrit(e) : ${f.titre}`);
+    if (f.annulee) return toast(`Cette activité est annulée : ${f.titre}`, 'erreur');
+    if (f.date < aujourdhui()) return toast('Cette activité est déjà passée.', 'erreur');
+    const { data: nb } = await sb.rpc('nb_inscrits', { p_formation: idF });
+    if (f.places != null && (nb as number) >= f.places) return toast(`Désolé, l’activité « ${f.titre} » est complète.`, 'erreur');
+    const { error } = await sb.from('inscriptions').insert({ formation_id: idF, membre_id: profil.id });
+    if (error) return toast(messageErreur(error), 'erreur');
+    toast(`Inscription confirmée : ${f.titre}`);
+    await charger();
   }
 
   // ── Retours d'expérience (activités passées où la présence est validée)
