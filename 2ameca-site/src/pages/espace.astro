@@ -342,7 +342,19 @@ import { FILIERES, ANNEES } from '../config';
           telecharger(pdf, `Attestation-2AMECA-${nomFichier(f.titre)}.pdf`);
         } catch (e) { toast(messageErreur(e), 'erreur'); }
       }));
-      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · code ${a.code}`)), btn);
+      // « Ajouter à LinkedIn » : l'attestation apparaît dans « Licences et certifications », liée à la page de vérification.
+      const delivree = new Date(a.delivree_at);
+      const linkedin = 'https://www.linkedin.com/profile/add?' + new URLSearchParams({
+        startTask: 'CERTIFICATION_NAME',
+        name: `Attestation de participation — ${f.titre}`,
+        organizationName: 'Club 2AMECA — FSAC',
+        issueYear: String(delivree.getFullYear()),
+        issueMonth: String(delivree.getMonth() + 1),
+        certUrl: `${location.origin}${base}/verifier/?code=${a.code}`,
+        certId: a.code,
+      });
+      const lien = h('a', { class: 'btn btn-contour btn-petit', href: linkedin, target: '_blank', rel: 'noopener' }, 'Ajouter à LinkedIn');
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · code ${a.code}`)), h('div', { class: 'actions' }, btn, lien));
     }));
   }
 

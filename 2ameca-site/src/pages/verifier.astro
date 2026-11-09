@@ -7,15 +7,86 @@ import '../styles/app.css';
   <EnTetePage surtitre="Attestations" titre="Vérifier une attestation" chapo="Chaque attestation du Club 2AMECA porte un code. Saisissez-le pour vérifier qu’elle est authentique." />
   <section class="app">
     <div class="conteneur auth">
+      <div id="resultat" aria-live="polite"></div>
+
+      <!-- Carte affichée quand le code est authentique -->
+      <article class="certificat" id="certificat" hidden aria-labelledby="c-nom">
+        <header class="c-bandeau">
+          <img src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/logos/2ameca-white-560.png`} width="560" height="120" alt="Club 2AMECA" />
+          <span class="c-fsac">FSAC · Université Hassan II de Casablanca</span>
+        </header>
+        <div class="c-corps">
+          <svg class="c-sceau" viewBox="0 0 120 120" aria-hidden="true" focusable="false">
+            <circle cx="60" cy="60" r="56" />
+            <circle cx="60" cy="60" r="44" stroke-dasharray="2 4" />
+            <path d="M40 61 l13 13 l27 -29" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <line x1="4" y1="60" x2="14" y2="60" /><line x1="106" y1="60" x2="116" y2="60" />
+            <line x1="60" y1="4" x2="60" y2="14" /><line x1="60" y1="106" x2="60" y2="116" />
+          </svg>
+          <p class="c-etat">Attestation authentique</p>
+          <p class="c-intro">Le Club 2AMECA atteste que</p>
+          <h2 class="c-nom" id="c-nom"></h2>
+          <hr class="c-trait" />
+          <p class="c-intro" id="c-type"></p>
+          <p class="c-titre" id="c-titre"></p>
+          <p class="c-date" id="c-date"></p>
+        </div>
+        <dl class="c-cartouche">
+          <div><dt>Code</dt><dd id="c-code"></dd></div>
+          <div><dt>Délivrée le</dt><dd id="c-delivree"></dd></div>
+          <div><dt>Délivrée par</dt><dd>Club 2AMECA</dd></div>
+        </dl>
+      </article>
+
       <form class="form carte" id="form" novalidate>
-        <div class="champ"><label for="code">Code de l’attestation</label>
+        <div class="champ"><label for="code" id="label-code">Code de l’attestation</label>
           <input id="code" name="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Ex. 3FA9C21B7E" maxlength="20" required /></div>
         <button class="btn" type="submit">Vérifier</button>
       </form>
-      <div id="resultat" aria-live="polite" style="margin-top:1rem"></div>
     </div>
   </section>
 </Base>
+
+<style>
+  .certificat {
+    background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon);
+    overflow: hidden; margin-bottom: 1.25rem; position: relative;
+    box-shadow: 0 1px 0 var(--bleu-12); container-type: inline-size;
+  }
+  /* Fines lignes de construction dans les coins, comme sur le PDF */
+  .certificat::before, .certificat::after {
+    content: ''; position: absolute; width: 140px; height: 1px; background: var(--ciel); pointer-events: none;
+  }
+  .certificat::before { left: -36px; top: 190px; transform: rotate(-38deg); }
+  .certificat::after { right: -24px; top: 132px; transform: rotate(-38deg); }
+  .c-bandeau {
+    background: var(--marine); color: var(--blanc); padding: 1.1rem 1.25rem;
+    display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between;
+  }
+  .c-bandeau img { width: 128px; height: auto; }
+  .c-fsac { font-family: var(--f-label); font-size: .72rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ciel); }
+  .c-corps { padding: 1.75rem 1.25rem 1.25rem; text-align: center; }
+  .c-sceau { width: 76px; height: 76px; fill: none; stroke: var(--bleu); stroke-width: 1.5; display: block; margin: 0 auto .6rem; }
+  .c-etat {
+    display: inline-block; margin: 0 0 1.1rem; padding: .3rem .8rem; border: 1.5px solid var(--bleu); border-radius: 999px;
+    font-family: var(--f-label); font-weight: 500; font-size: .8rem; letter-spacing: .2em; text-transform: uppercase; color: var(--bleu);
+  }
+  .c-intro { margin: 0; color: var(--encre-70); }
+  .c-nom { font-family: var(--f-titre); font-weight: 400; font-size: clamp(2rem, 9vw, 2.8rem); line-height: 1.05; color: var(--marine); margin: .35rem 0 0; text-transform: none; overflow-wrap: anywhere; }
+  .c-trait { width: 9rem; border: 0; border-top: 1px solid var(--ciel); margin: .9rem auto; }
+  .c-titre { font-weight: 600; font-size: 1.2rem; color: var(--bleu); margin: .25rem 0; }
+  .c-date { margin: 0; }
+  .c-cartouche { display: grid; grid-template-columns: 1fr; margin: 0; border-top: 1px solid var(--bleu-12); }
+  .c-cartouche > div { padding: .7rem 1.25rem; border-top: 1px solid var(--bleu-12); }
+  .c-cartouche > div:first-child { border-top: 0; }
+  .c-cartouche dt { font-family: var(--f-label); font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: var(--encre-70); }
+  .c-cartouche dd { margin: .15rem 0 0; font-weight: 600; color: var(--marine); }
+  @container (min-width: 520px) {
+    .c-cartouche { grid-template-columns: repeat(3, 1fr); }
+    .c-cartouche > div { border-top: 0; border-left: 1px solid var(--bleu-12); }
+    .c-cartouche > div:first-child { border-left: 0; }
+  }
+</style>
 
 <script>
   import { sb, messageErreur, TYPES } from '../lib/supabase';
@@ -24,17 +95,33 @@ import '../styles/app.css';
   const form = document.getElementById('form') as HTMLFormElement;
   const champ = document.getElementById('code') as HTMLInputElement;
   const res = document.getElementById('resultat')!;
+  const carte = document.getElementById('certificat')!;
+  const $ = (id: string) => document.getElementById(id)!;
+  const libelle = { formation: 'a participé à la formation', atelier: 'a participé à l’atelier', evenement: 'a participé à l’événement' } as const;
+  const jour = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Casablanca' });
 
   async function verifier() {
     const code = champ.value.trim().toUpperCase();
     if (!code) { champ.focus(); return; }
     const { data, error } = await sb.rpc('verifier_attestation', { p_code: code });
+    carte.hidden = true;
     if (error) return vider(res, h('p', { class: 'erreur-form' }, messageErreur(error)));
-    const a = (data as { prenom: string; nom: string; titre: string; type: keyof typeof TYPES; date: string }[])?.[0];
-    if (!a) return vider(res, h('p', { class: 'erreur-form' }, `Aucune attestation ne correspond au code ${code}. Vérifiez la saisie.`));
-    vider(res, h('div', { class: 'succes-form' },
-      h('strong', {}, 'Attestation authentique. '),
-      `Délivrée par le Club 2AMECA à ${a.prenom} ${a.nom} pour sa participation ${a.type === 'formation' ? 'à la formation' : a.type === 'atelier' ? 'à l’atelier' : 'à l’événement'} « ${a.titre} », le ${dateLongue(a.date)}.`));
+    const a = (data as { prenom: string; nom: string; titre: string; type: keyof typeof TYPES; date: string; delivree_at: string }[])?.[0];
+    if (!a) {
+      $('label-code').textContent = 'Code de l’attestation';
+      return vider(res, h('p', { class: 'erreur-form annulee' }, h('strong', {}, 'Attestation introuvable. '), `Aucune attestation du Club 2AMECA ne correspond au code ${code}. Vérifiez la saisie, ou contactez le bureau du club.`));
+    }
+    vider(res);
+    $('c-nom').textContent = `${a.prenom} ${a.nom.toUpperCase()}`.trim();
+    $('c-type').textContent = libelle[a.type] ?? 'a participé à l’activité';
+    $('c-titre').textContent = `« ${a.titre} »`;
+    $('c-date').textContent = `le ${dateLongue(a.date)}.`;
+    $('c-code').textContent = code;
+    $('c-delivree').textContent = jour.format(new Date(a.delivree_at));
+    $('label-code').textContent = 'Vérifier un autre code';
+    carte.hidden = false;
+    champ.value = '';
+    carte.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
   form.addEventListener('submit', (e) => { e.preventDefault(); pendant(form.querySelector('button'), 'Vérification…', verifier); });
   const depuisLien = new URLSearchParams(location.search).get('code');
