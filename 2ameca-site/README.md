@@ -154,7 +154,7 @@ il parle directement à Supabase depuis le navigateur.
 | `/bureau/activite/` | bureau | créer / modifier une activité, présences (case à cocher ou scan des QR codes), export Excel, dépôt des supports |
 | `/formations/` | tout le monde | activités publiées à venir |
 | `/verifier/` | tout le monde | vérifier une attestation grâce à son code |
-| `/bureau/contenus/` | bureau | galerie photos, partenaires, bibliothèque de ressources, annonces aux membres |
+| `/bureau/contenus/` | bureau | textes du club (présentation, histoire, mission, dates clés, valeurs), membres du bureau, coordonnées, FAQ, galerie photos, partenaires, ressources, annonces |
 | `/galerie/` | tout le monde | photos des activités (avec filtre par activité) |
 | `/ressources/` | tout le monde | ressources publiques ; les membres connectés voient aussi les leurs |
 | `/activites/realisation/` | tout le monde | compte-rendu et photos d'une activité passée |
@@ -177,7 +177,7 @@ ni obtenir une attestation sans présence validée.
 
 **Installation (déjà faite pour le club)**
 
-1. Créer un projet Supabase, puis coller `supabase/schema.sql`, puis `supabase/schema-v2.sql`, dans *SQL Editor* → *Run*.
+1. Créer un projet Supabase, puis coller `supabase/schema.sql`, `supabase/schema-v2.sql` et `supabase/schema-v3.sql`, dans cet ordre, dans *SQL Editor* → *Run*.
 2. *Authentication → Sign In / Providers* : désactiver « Confirm email » tant qu'aucun service
    d'e-mail n'est configuré (l'envoi d'e-mails par défaut de Supabase est réservé à l'équipe du projet).
 3. *Authentication → URL Configuration* : Site URL = l'adresse du site.

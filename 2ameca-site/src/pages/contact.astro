@@ -4,6 +4,7 @@ import EnTetePage from '../components/EnTetePage.astro';
 import Lignes from '../components/Lignes.astro';
 import { CONTACT, FSAC } from '../config';
 import { u } from '../lib/url';
+import { FAQ_DEFAUT } from '../data/contenus';
 import '../styles/app.css';
 import { getEvenementsParPeriode } from '../lib/collections';
 import { plageDates, heureFr } from '../lib/dates';
@@ -11,28 +12,7 @@ import { plageDates, heureFr } from '../lib/dates';
 const { aVenir } = await getEvenementsParPeriode();
 const prochain = aVenir[0];
 
-const faq = [
-  {
-    q: 'Faut-il avoir de l’expérience en mécanique pour rejoindre le club ?',
-    r: 'Non. Le club est ouvert aux débutants : les ateliers et les projets en équipe sont justement là pour apprendre. La motivation compte plus que le niveau.',
-  },
-  {
-    q: 'Je ne suis pas en filière physique ou mécanique, puis-je m’inscrire ?',
-    r: 'Oui. Tous les étudiants de la FSAC sont les bienvenus, quelle que soit leur filière. Les projets ont aussi besoin de profils en informatique, en communication ou en organisation.',
-  },
-  {
-    q: 'Comment s’inscrire ?',
-    r: 'Remplissez le formulaire d’inscription en ligne (bouton « S’inscrire » sur le site), ou venez nous voir lors des Journées portes ouvertes d’intégration (28, 29 et 30 octobre 2026, amphithéâtre de la FSAC). Un membre du bureau vous recontactera.',
-  },
-  {
-    q: 'L’adhésion est-elle payante ?',
-    r: '[Réponse à fournir : gratuité ou montant de la cotisation annuelle.]',
-  },
-  {
-    q: 'Combien de temps faut-il consacrer au club ?',
-    r: '[Réponse à fournir : fréquence des réunions et des ateliers.] Chacun participe selon ses disponibilités, en fonction de son emploi du temps.',
-  },
-];
+const faq = FAQ_DEFAUT.map((f) => ({ ...f }));
 
 const insta = CONTACT.instagram;
 // Espace insécable avant « ? » (typographie française)
@@ -44,7 +24,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
   <section class="section" aria-labelledby="coordonnees">
     <div class="conteneur">
       <h2 id="coordonnees" class="sr-only">Coordonnées</h2>
-      <ul class="coord grille" role="list">
+      <ul class="coord grille" role="list" data-c="coordonnees">
         <li class="reveal">
           <span class="label">E-mail</span>
           {CONTACT.email ? (
@@ -86,7 +66,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
         <hr class="trait" />
         <address>
           <strong>{FSAC.nom}</strong><br />
-          {CONTACT.lieuDetail.startsWith('[') ? <span class="a-fournir">{CONTACT.lieuDetail}</span> : CONTACT.lieuDetail}<br />
+          <span data-c="local">{CONTACT.lieuDetail.startsWith('[') ? <span class="a-fournir">{CONTACT.lieuDetail}</span> : CONTACT.lieuDetail}</span><br />
           {CONTACT.adresse}
         </address>
         <div class="boutons">
@@ -139,7 +119,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
         <hr class="trait" />
         <p>Vous ne trouvez pas votre réponse ? Écrivez-nous sur Instagram ou passez nous voir à la faculté.</p>
       </div>
-      <div class="faq">
+      <div class="faq" data-c="faq">
         {faq.map((f, i) => (
           <details class="reveal" open={i === 0}>
             <summary><span>{f.q}</span><span class="signe" aria-hidden="true"></span></summary>
@@ -187,6 +167,33 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
   details[open] .signe::after { transform: rotate(0); }
   details p { margin: 0 0 1.2rem; color: var(--encre-70); max-width: 40em; }
 </style>
+
+<script>
+  import { chargerContenus, remplir, texte } from '../lib/contenu';
+  import { h as el } from '../lib/dom';
+  (async () => {
+    const { contact, faq } = await chargerContenus();
+    const zone = (c: string) => document.querySelector(`[data-c="${c}"]`)!;
+    if (contact) {
+      const lien = (href: string, t: string) => el('a', { class: 'valeur', href, ...(href.startsWith('http') ? { rel: 'noopener', target: '_blank' } : {}) }, t);
+      const vide = (t: string) => el('p', { class: 'valeur' }, el('span', { class: 'a-fournir' }, t));
+      const insta = contact.instagram?.replace(/^@/, '').trim();
+      const blocs = [
+        el('li', {}, el('span', { class: 'label' }, 'E-mail'), contact.email ? lien(`mailto:${contact.email}`, contact.email) : vide('[Adresse e-mail à fournir]'), el('p', { class: 'aide' }, 'Réponse sous quelques jours.')),
+        el('li', {}, el('span', { class: 'label' }, 'Instagram'), insta ? lien(`https://instagram.com/${insta}`, `@${insta}`) : vide('[Compte Instagram à fournir]'), el('p', { class: 'aide' }, 'Actualités, photos et annonces d’événements.')),
+        contact.whatsapp && el('li', {}, el('span', { class: 'label' }, 'WhatsApp'), lien(`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`, 'Écrire sur WhatsApp'), el('p', { class: 'aide' }, 'Pour une question rapide.')),
+        contact.linkedin && el('li', {}, el('span', { class: 'label' }, 'LinkedIn'), lien(contact.linkedin, 'Page LinkedIn'), el('p', { class: 'aide' }, 'Événements professionnels et partenariats.')),
+      ].filter(Boolean) as HTMLElement[];
+      remplir(zone('coordonnees'), blocs);
+      if (contact.local?.trim()) remplir(zone('local'), [texte(contact.local)]);
+    }
+    if (faq?.length) {
+      remplir(zone('faq'), faq.map((f, i) => el('details', { open: i === 0 },
+        el('summary', {}, el('span', {}, f.q.replace(/ \?/g, '\u00A0?')), el('span', { class: 'signe', 'aria-hidden': 'true' })),
+        el('p', {}, texte(f.r)))));
+    }
+  })();
+</script>
 
 <script>
   import { sb, messageErreur } from '../lib/supabase';

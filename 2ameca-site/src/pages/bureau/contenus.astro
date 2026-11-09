@@ -16,14 +16,71 @@ import '../../styles/app.css';
         </div>
 
         <div class="onglets" role="tablist" aria-label="Contenus">
-          <button type="button" role="tab" aria-selected="true" data-onglet="galerie">Galerie</button>
+          <button type="button" role="tab" aria-selected="true" data-onglet="club">Le club</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="bureau-equipe">Bureau</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="contact">Contact & FAQ</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="galerie">Galerie</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="partenaires">Partenaires</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="ressources">Ressources</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="annonces">Annonces</button>
         </div>
 
+        <!-- Le club -->
+        <div data-panneau="club" role="tabpanel">
+          <form class="carte form" id="form-club" novalidate>
+            <h2>Textes du club</h2>
+            <p class="aide">Laissez une ligne vide entre deux paragraphes. Un texte entre crochets [ … ] s’affiche comme « à compléter ».</p>
+            <div class="champ"><label for="cl-intro">Présentation (page d’accueil)</label><textarea id="cl-intro" name="intro"></textarea></div>
+            <div class="champ"><label for="cl-histoire">Histoire du club (page « Le club »)</label><textarea id="cl-histoire" name="histoire" style="min-height:10rem"></textarea></div>
+            <div class="champ"><label for="cl-mission">Mission</label><textarea id="cl-mission" name="mission"></textarea></div>
+            <fieldset class="champ"><legend class="lbl">Dates clés (frise de l’histoire)</legend><div class="lignes-ed" id="ed-etapes"></div>
+              <button type="button" class="btn-lien" id="ajout-etape">+ Ajouter une date</button></fieldset>
+            <fieldset class="champ"><legend class="lbl">Valeurs</legend><div class="lignes-ed" id="ed-valeurs"></div>
+              <button type="button" class="btn-lien" id="ajout-valeur">+ Ajouter une valeur</button></fieldset>
+            <div class="actions"><button class="btn" type="submit">Enregistrer les textes</button></div>
+          </form>
+        </div>
+
+        <!-- Bureau -->
+        <div data-panneau="bureau-equipe" role="tabpanel" hidden>
+          <form class="carte form" id="form-membre" novalidate>
+            <h2>Ajouter un membre du bureau</h2>
+            <div class="ligne-2">
+              <div class="champ"><label for="bm-nom">Prénom et nom</label><input id="bm-nom" name="nom" maxlength="120" required /></div>
+              <div class="champ"><label for="bm-role">Rôle</label><input id="bm-role" name="role" maxlength="120" list="roles-bureau" placeholder="Président(e), Trésorier(ère)…" required />
+                <datalist id="roles-bureau"><option value="Président(e)"></option><option value="Vice-président(e)"></option><option value="Secrétaire général(e)"></option><option value="Trésorier(ère)"></option><option value="Responsable projets"></option><option value="Responsable communication"></option><option value="Responsable formations"></option></datalist></div>
+            </div>
+            <div class="champ"><label for="bm-photo">Photo portrait (facultatif, format vertical de préférence)</label><input id="bm-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" /></div>
+            <div class="actions"><button class="btn" type="submit">Ajouter</button></div>
+          </form>
+          <div class="carte"><h2>Bureau affiché sur le site</h2><p class="aide" style="margin-bottom:.75rem">Tant que cette liste est vide, la page « Le club » affiche des emplacements à compléter.</p><ul class="liste-app" id="equipe"></ul></div>
+        </div>
+
+        <!-- Contact & FAQ -->
+        <div data-panneau="contact" role="tabpanel" hidden>
+          <form class="carte form" id="form-contact" novalidate>
+            <h2>Coordonnées du club</h2>
+            <div class="ligne-2">
+              <div class="champ"><label for="co-email">E-mail du club</label><input id="co-email" name="email" type="email" inputmode="email" /></div>
+              <div class="champ"><label for="co-wa">WhatsApp (format international, ex. 212600000000)</label><input id="co-wa" name="whatsapp" inputmode="tel" /></div>
+            </div>
+            <div class="ligne-2">
+              <div class="champ"><label for="co-insta">Instagram (sans @)</label><input id="co-insta" name="instagram" /></div>
+              <div class="champ"><label for="co-li">Page LinkedIn (adresse complète)</label><input id="co-li" name="linkedin" type="url" placeholder="https://www.linkedin.com/company/…" /></div>
+            </div>
+            <div class="champ"><label for="co-local">Local du club à la FSAC</label><input id="co-local" name="local" placeholder="Bâtiment, salle…" /></div>
+            <div class="actions"><button class="btn" type="submit">Enregistrer les coordonnées</button></div>
+          </form>
+          <form class="carte form" id="form-faq" novalidate>
+            <h2>Questions fréquentes (page Contact)</h2>
+            <div class="lignes-ed" id="ed-faq"></div>
+            <button type="button" class="btn-lien" id="ajout-faq">+ Ajouter une question</button>
+            <div class="actions"><button class="btn" type="submit">Enregistrer la FAQ</button></div>
+          </form>
+        </div>
+
         <!-- Galerie -->
-        <div data-panneau="galerie" role="tabpanel">
+        <div data-panneau="galerie" role="tabpanel" hidden>
           <form class="carte form" id="form-photos" novalidate>
             <h2>Ajouter des photos</h2>
             <div class="ligne-2">
@@ -96,6 +153,8 @@ import '../../styles/app.css';
   import { h, vider, toast, dateCourte, taille, pendant } from '../../lib/dom';
   import { urlMedia, reduireImage } from '../../lib/images';
   import { nomFichier } from '../../lib/attestation';
+  import { CLUB_DEFAUT, CONTACT_DEFAUT, FAQ_DEFAUT, type Club, type Contact, type QuestionFaq } from '../../data/contenus';
+  import { oublierCache } from '../../lib/contenu';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;
@@ -111,7 +170,7 @@ import '../../styles/app.css';
     formations = (data ?? []) as Formation[];
     $('ph-activite').append(...formations.map((f) => h('option', { value: f.id }, `${f.titre} (${dateCourte(f.date)})`)));
     $('chargement').hidden = true; $('page').hidden = false;
-    await Promise.all([chargerPhotos(), chargerPartenaires(), chargerRessources(), chargerAnnonces()]);
+    await Promise.all([chargerTextes(), chargerEquipe(), chargerPhotos(), chargerPartenaires(), chargerRessources(), chargerAnnonces()]);
   }
 
   function ouvrir(nom: string) {
@@ -124,12 +183,135 @@ import '../../styles/app.css';
 
   /** Envoie une image dans « medias » et renvoie son chemin. */
   async function envoyerImage(fichier: File, dossier: string) {
-    const { blob, ext, type } = await reduireImage(fichier, dossier === 'logos' ? 600 : 1600);
+    const { blob, ext, type } = await reduireImage(fichier, dossier === 'logos' ? 600 : dossier === 'bureau' ? 900 : 1600);
     const chemin = `${dossier}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${nomFichier(fichier.name.replace(/\.[^.]+$/, '')) || 'image'}${ext}`;
     const { error } = await sb.storage.from('medias').upload(chemin, blob, { contentType: type });
     if (error) throw error;
     return chemin;
   }
+
+  // ── Éditeur de lignes répétables (dates clés, valeurs, FAQ)
+  type Champ = { cle: string; label: string; long?: boolean };
+  function editeur(zone: HTMLElement, champs: Champ[], lignes: Record<string, string>[]) {
+    const ajouter = (v: Record<string, string> = {}) => {
+      const ligne = h('div', { class: 'ligne-ed' },
+        champs.map((c) => h('label', { class: 'mini-champ' }, h('span', {}, c.label),
+          c.long ? h('textarea', { 'data-cle': c.cle, rows: 2 }, v[c.cle] ?? '') : h('input', { 'data-cle': c.cle, value: v[c.cle] ?? '' }))),
+        h('div', { class: 'actions' },
+          h('button', { type: 'button', class: 'btn-lien', onclick: () => ligne.previousElementSibling?.before(ligne) }, 'Monter'),
+          h('button', { type: 'button', class: 'btn-lien', onclick: () => ligne.remove() }, 'Retirer')));
+      zone.append(ligne);
+    };
+    zone.replaceChildren();
+    lignes.forEach(ajouter);
+    return {
+      ajouter: () => { ajouter(); (zone.lastElementChild?.querySelector('input,textarea') as HTMLElement | null)?.focus(); },
+      valeurs: () => [...zone.querySelectorAll('.ligne-ed')].map((l) => Object.fromEntries(champs.map((c) => [c.cle, (l.querySelector(`[data-cle="${c.cle}"]`) as HTMLInputElement).value.trim()])))
+        .filter((o) => Object.values(o).some(Boolean)),
+    };
+  }
+
+  async function enregistrer(cle: 'club' | 'contact' | 'faq', valeur: unknown, btn: HTMLButtonElement | null) {
+    await pendant(btn, 'Enregistrement…', async () => {
+      const { error } = await sb.from('parametres').upsert({ cle, valeur, updated_at: new Date().toISOString() });
+      if (error) return toast(messageErreur(error), 'erreur');
+      oublierCache(); toast('Enregistré : visible sur le site.');
+    });
+  }
+
+  // ── Textes du club, coordonnées, FAQ
+  async function chargerTextes() {
+    const { data } = await sb.from('parametres').select('cle, valeur');
+    const v = Object.fromEntries((data ?? []).map((x) => [x.cle, x.valeur]));
+    const club: Club = { ...CLUB_DEFAUT, ...(v.club ?? {}) };
+    const contact: Contact = { ...CONTACT_DEFAUT, ...(v.contact ?? {}) };
+    const faq: QuestionFaq[] = v.faq ?? FAQ_DEFAUT;
+
+    const fc = $('form-club') as HTMLFormElement;
+    for (const k of ['intro', 'histoire', 'mission'] as const) (fc.elements.namedItem(k) as HTMLTextAreaElement).value = club[k];
+    const etapes = editeur($('ed-etapes'), [{ cle: 'quand', label: 'Quand' }, { cle: 'quoi', label: 'Quoi' }, { cle: 'detail', label: 'Détail', long: true }], club.etapes as unknown as Record<string, string>[]);
+    const valeurs = editeur($('ed-valeurs'), [{ cle: 'titre', label: 'Valeur' }, { cle: 'texte', label: 'Explication', long: true }], club.valeurs as unknown as Record<string, string>[]);
+    $('ajout-etape').onclick = etapes.ajouter; $('ajout-valeur').onclick = valeurs.ajouter;
+    fc.onsubmit = (e) => {
+      e.preventDefault();
+      const t = (k: string) => (fc.elements.namedItem(k) as HTMLTextAreaElement).value.trim();
+      enregistrer('club', { intro: t('intro'), histoire: t('histoire'), mission: t('mission'), etapes: etapes.valeurs(), valeurs: valeurs.valeurs() }, fc.querySelector('button[type=submit]'));
+    };
+
+    const fo = $('form-contact') as HTMLFormElement;
+    for (const k of ['email', 'whatsapp', 'instagram', 'linkedin', 'local'] as const) (fo.elements.namedItem(k) as HTMLInputElement).value = contact[k] ?? '';
+    fo.onsubmit = (e) => {
+      e.preventDefault();
+      const t = (k: string) => (fo.elements.namedItem(k) as HTMLInputElement).value.trim();
+      if (t('email') && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t('email'))) return toast('Adresse e-mail invalide.', 'erreur');
+      if (t('linkedin') && !/^https?:\/\//.test(t('linkedin'))) return toast('Le lien LinkedIn doit commencer par https://', 'erreur');
+      enregistrer('contact', { email: t('email'), whatsapp: t('whatsapp').replace(/\D/g, ''), instagram: t('instagram').replace(/^@/, ''), linkedin: t('linkedin'), local: t('local') }, fo.querySelector('button[type=submit]'));
+    };
+
+    const ff = $('form-faq') as HTMLFormElement;
+    const ed = editeur($('ed-faq'), [{ cle: 'q', label: 'Question' }, { cle: 'r', label: 'Réponse', long: true }], faq as unknown as Record<string, string>[]);
+    $('ajout-faq').onclick = ed.ajouter;
+    ff.onsubmit = (e) => { e.preventDefault(); enregistrer('faq', ed.valeurs(), ff.querySelector('button[type=submit]')); };
+  }
+
+  // ── Membres du bureau affichés sur le site
+  async function chargerEquipe() {
+    const { data, error } = await sb.from('bureau_membres').select('*').order('ordre').order('created_at');
+    const ul = $('equipe');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucun membre ajouté pour l’instant.'));
+    vider(ul, data.map((m, i) => {
+      const nom = h('input', { value: m.nom, 'aria-label': 'Nom', maxlength: 120 }) as HTMLInputElement;
+      const role = h('input', { value: m.role, 'aria-label': 'Rôle', maxlength: 120, list: 'roles-bureau' }) as HTMLInputElement;
+      const maj = async () => {
+        if (!nom.value.trim() || !role.value.trim()) return toast('Le nom et le rôle sont obligatoires.', 'erreur');
+        const { error: e } = await sb.from('bureau_membres').update({ nom: nom.value.trim(), role: role.value.trim() }).eq('id', m.id);
+        toast(e ? messageErreur(e) : 'Enregistré.', e ? 'erreur' : 'ok');
+      };
+      nom.addEventListener('change', maj); role.addEventListener('change', maj);
+      const photo = h('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp', class: 'sr-only', id: `photo-${m.id}` }) as HTMLInputElement;
+      photo.addEventListener('change', async () => {
+        const f = photo.files?.[0]; if (!f) return;
+        try {
+          const chemin = await envoyerImage(f, 'bureau');
+          const { error: e } = await sb.from('bureau_membres').update({ photo: chemin }).eq('id', m.id);
+          if (e) throw e;
+          if (m.photo) await sb.storage.from('medias').remove([m.photo]);
+          toast('Photo mise à jour.'); chargerEquipe();
+        } catch (err) { toast(messageErreur(err), 'erreur'); }
+      });
+      const monter = h('button', { type: 'button', class: 'btn-lien', disabled: i === 0 }, 'Monter') as HTMLButtonElement;
+      monter.addEventListener('click', async () => {
+        await Promise.all(data.map((x, j) => sb.from('bureau_membres').update({ ordre: j === i ? i - 1 : j === i - 1 ? i : j }).eq('id', x.id)));
+        chargerEquipe();
+      });
+      const suppr = h('button', { type: 'button', class: 'btn-lien' }, 'Retirer') as HTMLButtonElement;
+      suppr.addEventListener('click', () => pendant(suppr, '…', async () => {
+        if (m.photo) await sb.storage.from('medias').remove([m.photo]);
+        const { error: e } = await sb.from('bureau_membres').delete().eq('id', m.id);
+        if (e) return toast(messageErreur(e), 'erreur'); chargerEquipe();
+      }));
+      return h('li', { class: 'membre-ed' },
+        m.photo ? h('img', { src: urlMedia(m.photo), alt: '', class: 'portrait' }) : h('div', { class: 'portrait vide-photo' }, 'Photo'),
+        h('div', { class: 'infos champs-inline' }, nom, role),
+        h('div', { class: 'actions' }, h('label', { class: 'btn-lien', for: `photo-${m.id}`, style: 'cursor:pointer' }, m.photo ? 'Changer la photo' : 'Ajouter une photo'), photo, monter, suppr));
+    }));
+  }
+  $('form-membre').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!val(f, 'nom') || !val(f, 'role')) return toast('Le nom et le rôle sont obligatoires.', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Ajout…', async () => {
+      try {
+        const fichier = (f.elements.namedItem('photo') as HTMLInputElement).files?.[0];
+        const photo = fichier ? await envoyerImage(fichier, 'bureau') : null;
+        const { count } = await sb.from('bureau_membres').select('id', { count: 'exact', head: true });
+        const { error } = await sb.from('bureau_membres').insert({ nom: val(f, 'nom'), role: val(f, 'role'), photo, ordre: count ?? 0 });
+        if (error) throw error;
+        f.reset(); toast('Membre ajouté.'); chargerEquipe();
+      } catch (err) { toast(messageErreur(err), 'erreur'); }
+    });
+  });
 
   // ── Galerie
   async function chargerPhotos() {

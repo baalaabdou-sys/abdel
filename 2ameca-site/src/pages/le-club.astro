@@ -7,21 +7,11 @@ import Lignes from '../components/Lignes.astro';
 import AppelRejoindre from '../components/AppelRejoindre.astro';
 import bureau from '../data/bureau.json';
 import { FSAC } from '../config';
+import { CLUB_DEFAUT } from '../data/contenus';
 import { u } from '../lib/url';
 
-const historique = [
-  { quand: '[Année de création]', quoi: 'Création du club 2AMECA à la Faculté des Sciences Aïn Chock.', detail: '[Texte à fournir : fondateurs, contexte de création.]' },
-  { quand: 'Décembre 2025', quoi: '1re édition de « De l’Amphi à l’Entreprise ».', detail: 'Une rencontre entre étudiants et professionnels à l’amphithéâtre de la FSAC.' },
-  { quand: 'Avril 2026', quoi: 'Formation Data Mining avec l’AI & DEV Community.', detail: 'Une séance de la série « NEXTGEN AI: Morocco Tech Series », en salle 17 de la FSAC.' },
-  { quand: 'Octobre 2026', quoi: 'Journées portes ouvertes d’intégration.', detail: 'Trois jours pour accueillir les nouveaux étudiants de l’année 2026–2027.' },
-];
-
-const valeurs = [
-  { titre: 'Esprit citoyen', texte: 'Mettre nos compétences au service de la faculté et de la société : c’est le sens de notre devise.' },
-  { titre: 'Apprendre en faisant', texte: 'La théorie de l’amphi prend tout son sens quand on la met en pratique, à l’atelier.' },
-  { titre: 'Ouverture', texte: 'Le club est ouvert à toutes les filières et à tous les niveaux, débutants compris.' },
-  { titre: 'Esprit d’équipe', texte: 'Chaque projet est collectif : on partage les idées, les outils et les réussites.' },
-];
+const { etapes: historique, valeurs, histoire, mission } = CLUB_DEFAUT;
+const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 ---
 <Base titre="Le club" description="Histoire, mission et valeurs du Club 2AMECA, l’Atelier d’Applications Mécanique de la FSAC, et présentation de son bureau.">
   <EnTetePage
@@ -40,9 +30,11 @@ const valeurs = [
         <span class="surtitre">Histoire</span>
         <h2 id="histoire" class="titre-2">D’où vient 2AMECA</h2>
         <hr class="trait" />
-        <p><span class="a-fournir">[Texte à fournir : l’histoire du club en quelques paragraphes — qui l’a fondé, pourquoi, et ce qu’il a accompli depuis.]</span></p>
+        <div class="histoire-texte" data-c="histoire">
+          {histoire.split(/\n\s*\n/).map((t) => <p>{crochets(t) ? <span class="a-fournir">{t}</span> : t}</p>)}
+        </div>
       </div>
-      <ol class="frise" role="list">
+      <ol class="frise" role="list" data-c="etapes">
         {historique.map((h) => (
           <li class="reveal">
             <span class="label quand">{h.quand.startsWith('[') ? <span class="a-fournir">{h.quand}</span> : h.quand}</span>
@@ -60,13 +52,8 @@ const valeurs = [
     <div class="conteneur mission reveal">
       <span class="surtitre">Mission</span>
       <h2 id="mission" class="titre-1">Relier la théorie, la pratique et le monde professionnel</h2>
-      <div class="mission-texte">
-        <p class="chapo">
-          2AMECA donne aux étudiants de la FSAC un lieu pour mettre en pratique ce qu’ils apprennent :
-          concevoir et fabriquer en équipe, se former aux outils de la mécanique, et rencontrer
-          des professionnels du secteur.
-        </p>
-        <p class="chapo"><span class="a-fournir">[Texte à fournir : mission officielle du club, si elle diffère.]</span></p>
+      <div class="mission-texte" data-c="mission">
+        {mission.split(/\n\s*\n/).map((t) => <p class="chapo">{crochets(t) ? <span class="a-fournir">{t}</span> : t}</p>)}
       </div>
     </div>
   </section>
@@ -80,7 +67,7 @@ const valeurs = [
           <h2 id="valeurs" class="titre-2">Ce qui nous guide</h2>
         </div>
       </div>
-      <ul class="valeurs grille" role="list">
+      <ul class="valeurs grille" role="list" data-c="valeurs">
         {valeurs.map((v, i) => (
           <li class="reveal">
             <span class="num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
@@ -102,7 +89,7 @@ const valeurs = [
         </div>
         <p class="note">Les membres du bureau organisent les activités du club et accueillent les nouveaux.</p>
       </div>
-      <ul class="equipe" role="list">
+      <ul class="equipe" role="list" data-c="bureau">
         {bureau.map((m) => (
           <li class="membre reveal">
             {m.photo ? (
@@ -191,6 +178,32 @@ const valeurs = [
   @media (min-width: 720px) { .fsac { grid-template-columns: auto 1fr; } }
   .fsac .titre-3 { color: var(--marine); margin-bottom: .6rem; }
 </style>
+
+<script>
+  import { chargerContenus, chargerBureau, remplir, texte, paragraphes } from '../lib/contenu';
+  import { urlMedia as media } from '../lib/images';
+  import { h as el } from '../lib/dom';
+
+  (async () => {
+    const [{ club }, bureau] = await Promise.all([chargerContenus(), chargerBureau()]);
+    const zone = (c: string) => document.querySelector(`[data-c="${c}"]`);
+    if (club) {
+      if (club.histoire?.trim()) remplir(zone('histoire')!, paragraphes(club.histoire));
+      if (club.mission?.trim()) remplir(zone('mission')!, paragraphes(club.mission, 'chapo'));
+      if (club.etapes?.length) remplir(zone('etapes')!, club.etapes.map((e) => el('li', {},
+        el('span', { class: 'label quand' }, texte(e.quand)), el('p', { class: 'quoi' }, e.quoi), e.detail ? el('p', { class: 'detail' }, texte(e.detail)) : null)));
+      if (club.valeurs?.length) remplir(zone('valeurs')!, club.valeurs.map((v, i) => el('li', {},
+        el('span', { class: 'num', 'aria-hidden': 'true' }, String(i + 1).padStart(2, '0')), el('h3', { class: 'titre-3' }, v.titre), el('p', {}, v.texte))));
+    }
+    if (bureau.length) {
+      const modele = document.querySelector('[data-c="bureau"] .emplacement');
+      remplir(zone('bureau')!, bureau.map((m) => el('li', { class: 'membre' },
+        m.photo ? el('img', { src: media(m.photo), alt: `Portrait de ${m.nom}`, width: 480, height: 600, loading: 'lazy' })
+          : (modele?.cloneNode(true) as Element) ?? el('div', { class: 'emplacement' }),
+        el('div', { class: 'membre-texte' }, el('p', { class: 'nom' }, m.nom), el('p', { class: 'role label' }, m.role)))));
+    }
+  })();
+</script>
 
 <script>
   import { sb } from '../lib/supabase';

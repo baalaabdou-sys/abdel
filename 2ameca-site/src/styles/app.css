@@ -135,3 +135,16 @@ table.tableau { width: 100%; border-collapse: collapse; font-size: .95rem; }
 .galerie-admin figcaption { display: grid; gap: .25rem; }
 .galerie-admin input { width: 100%; min-height: 38px; padding: .35rem .55rem; font: inherit; font-size: .9rem; border: 1.5px solid rgb(45 45 45 / .25); border-radius: 8px; }
 .mini-logo { width: 56px; height: 40px; object-fit: contain; flex-shrink: 0; }
+
+/* Éditeurs de contenus */
+.lignes-ed { display: grid; gap: .75rem; margin: .4rem 0 .5rem; }
+.ligne-ed { display: grid; gap: .5rem; padding: .75rem; border: 1px solid var(--bleu-12); border-radius: 10px; background: var(--blanc); }
+@media (min-width: 720px) { .ligne-ed { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); align-items: end; } }
+.mini-champ { display: grid; gap: .25rem; min-width: 0; }
+.mini-champ span { font-family: var(--f-label); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--bleu); }
+.mini-champ input, .mini-champ textarea, .champs-inline input { width: 100%; min-height: 40px; padding: .45rem .6rem; font: inherit; font-size: .95rem; border: 1.5px solid rgb(45 45 45 / .25); border-radius: 8px; resize: vertical; }
+fieldset.champ { border: 0; padding: 0; margin: 0; }
+.membre-ed .portrait { width: 56px; height: 70px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+.membre-ed .vide-photo { display: grid; place-items: center; background: var(--bleu-06); color: var(--bleu); font-size: .7rem; font-family: var(--f-label); text-transform: uppercase; }
+.champs-inline { display: grid; gap: .4rem; }
+@media (min-width: 640px) { .champs-inline { grid-template-columns: 1fr 1fr; } }

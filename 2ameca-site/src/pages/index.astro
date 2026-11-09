@@ -110,11 +110,13 @@ const piliers = [
         <span class="surtitre">Le club</span>
         <h2 id="intro-titre" class="titre-2">De l’amphi<br />à l’atelier</h2>
         <hr class="trait" />
-        <p class="chapo">
-          2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock.
-          Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile
-          et de l’aéronautique, avec un même état d’esprit : <strong>l’esprit citoyen au centre</strong>.
-        </p>
+        <div data-c="intro">
+          <p class="chapo">
+            2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock.
+            Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile
+            et de l’aéronautique, avec un même état d’esprit : <strong>l’esprit citoyen au centre</strong>.
+          </p>
+        </div>
         <a class="lien-fleche" href={u('/le-club/')}>Découvrir le club <span aria-hidden="true">→</span></a>
       </div>
       <ol class="piliers" role="list">
@@ -246,3 +248,11 @@ const piliers = [
 
   .vide { font-size: 1.1rem; color: var(--encre-70); }
 </style>
+
+<script>
+  import { chargerContenus, remplir, paragraphes } from '../lib/contenu';
+  chargerContenus().then(({ club }) => {
+    const zone = document.querySelector('[data-c="intro"]');
+    if (club?.intro?.trim() && zone) remplir(zone, paragraphes(club.intro, 'chapo'));
+  });
+</script>
