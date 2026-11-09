@@ -118,7 +118,7 @@ import { FILIERES, ANNEES } from '../config';
 
   async function demarrer() {
     const p = await monProfil();
-    if (!p) { location.href = `${base}/connexion/?mode=connexion&suite=${encodeURIComponent('/espace/' + location.search)}`; return; }
+    if (!p) { location.href = `${base}/connexion/?mode=connexion&suite=${encodeURIComponent('/espace/' + location.search + location.hash)}`; return; }
     profil = p;
     $('bonjour').textContent = `Bonjour ${p.prenom || ''}`.trim();
     if (estBureau(p)) {
