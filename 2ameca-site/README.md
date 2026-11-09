@@ -154,6 +154,10 @@ il parle directement à Supabase depuis le navigateur.
 | `/bureau/activite/` | bureau | créer / modifier une activité, présences (case à cocher ou scan des QR codes), export Excel, dépôt des supports |
 | `/formations/` | tout le monde | activités publiées à venir |
 | `/verifier/` | tout le monde | vérifier une attestation grâce à son code |
+| `/bureau/contenus/` | bureau | galerie photos, partenaires, bibliothèque de ressources, annonces aux membres |
+| `/galerie/` | tout le monde | photos des activités (avec filtre par activité) |
+| `/ressources/` | tout le monde | ressources publiques ; les membres connectés voient aussi les leurs |
+| `/activites/realisation/` | tout le monde | compte-rendu et photos d'une activité passée |
 
 **Rôles** : *membre* (par défaut), *responsable* (gère les activités, les présences et les supports),
 *administrateur* (gère aussi les membres et leurs rôles). Les règles d'accès sont appliquées par
@@ -165,10 +169,15 @@ ni obtenir une attestation sans présence validée.
 - Une présence validée crée l'attestation (avec un code de vérification) et ouvre l'accès aux supports.
 - Une présence annulée retire l'attestation.
 - Une activité qui a délivré des attestations ne peut pas être supprimée (historique conservé) : dépubliez-la.
+- Notifications dans l'espace membre : nouvelle activité publiée (tous), nouveau support et attestation disponible (personnes concernées), annonces du bureau.
+- Les participants présents peuvent noter l'activité (1 à 5) et laisser un commentaire ; le bureau voit les avis et la note moyenne.
+- Boîte à idées (membres → bureau, avec statut), formulaire de contact public (clubs, partenaires, entreprises → onglet *Messages*).
+- Bibliothèque de ressources : chaque fichier est *public*, réservé aux *membres* ou au *bureau*.
+- Les administrateurs modifient ou suppriment un membre depuis l'onglet *Membres* (suppression définitive).
 
 **Installation (déjà faite pour le club)**
 
-1. Créer un projet Supabase, puis coller le fichier `supabase/schema.sql` dans *SQL Editor* → *Run*.
+1. Créer un projet Supabase, puis coller `supabase/schema.sql`, puis `supabase/schema-v2.sql`, dans *SQL Editor* → *Run*.
 2. *Authentication → Sign In / Providers* : désactiver « Confirm email » tant qu'aucun service
    d'e-mail n'est configuré (l'envoi d'e-mails par défaut de Supabase est réservé à l'équipe du projet).
 3. *Authentication → URL Configuration* : Site URL = l'adresse du site.
