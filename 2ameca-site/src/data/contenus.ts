@@ -14,13 +14,13 @@ export interface QuestionFaq { q: string; r: string }
 
 export const CLUB_DEFAUT: Club = {
   intro:
-    '2AMECA est un club étudiant de la Faculté des Sciences Aïn Chock. ' +
-    'Il réunit des étudiants de toutes les filières autour de projets, d’ateliers et de rencontres, ' +
+    '2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock. ' +
+    'Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile et de l’aéronautique, ' +
     'avec un même état d’esprit : l’esprit citoyen au centre.',
   histoire: '[Texte à fournir : l’histoire du club en quelques paragraphes — qui l’a fondé, pourquoi, et ce qu’il a accompli depuis.]',
   mission:
     '2AMECA donne aux étudiants de la FSAC un lieu pour mettre en pratique ce qu’ils apprennent : concevoir et fabriquer en équipe, ' +
-    'se former à de nouveaux outils, et rencontrer des professionnels.',
+    'se former aux outils de la mécanique, et rencontrer des professionnels du secteur.',
   etapes: [
     { quand: '[Année de création]', quoi: 'Création du club 2AMECA à la Faculté des Sciences Aïn Chock.', detail: '[Texte à fournir : fondateurs, contexte de création.]' },
     { quand: 'Décembre 2025', quoi: '1re édition de « De l’Amphi à l’Entreprise ».', detail: 'Une rencontre entre étudiants et professionnels à l’amphithéâtre de la FSAC.' },
@@ -44,8 +44,8 @@ export const CONTACT_DEFAUT: Contact = {
 };
 
 export const FAQ_DEFAUT: QuestionFaq[] = [
-  { q: 'Faut-il avoir de l’expérience pour rejoindre le club ?', r: 'Non. Le club est ouvert aux débutants : les ateliers et les projets en équipe sont justement là pour apprendre. La motivation compte plus que le niveau.' },
-  { q: 'Je ne suis pas en filière physique, puis-je m’inscrire ?', r: 'Oui. Tous les étudiants de la FSAC sont les bienvenus, quelle que soit leur filière. Les projets ont aussi besoin de profils en informatique, en communication ou en organisation.' },
+  { q: 'Faut-il avoir de l’expérience en mécanique pour rejoindre le club ?', r: 'Non. Le club est ouvert aux débutants : les ateliers et les projets en équipe sont justement là pour apprendre. La motivation compte plus que le niveau.' },
+  { q: 'Je ne suis pas en filière physique ou mécanique, puis-je m’inscrire ?', r: 'Oui. Tous les étudiants de la FSAC sont les bienvenus, quelle que soit leur filière. Les projets ont aussi besoin de profils en informatique, en communication ou en organisation.' },
   { q: 'Comment s’inscrire ?', r: 'Créez votre compte sur le site (bouton « Rejoindre »), puis inscrivez-vous aux activités depuis votre espace membre.' },
   { q: 'L’adhésion est-elle payante ?', r: '[Réponse à fournir : gratuité ou montant de la cotisation annuelle.]' },
   { q: 'Combien de temps faut-il consacrer au club ?', r: '[Réponse à fournir : fréquence des réunions et des ateliers.] Chacun participe selon ses disponibilités, en fonction de son emploi du temps.' },

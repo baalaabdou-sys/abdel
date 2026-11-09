@@ -106,7 +106,7 @@ ul, ol { margin: 0; }
   letter-spacing: .01em;
 }
 
-/* Petites capitales espacées, comme « CLUB ÉTUDIANT DE LA FSAC » */
+/* Petites capitales espacées, comme « ATELIER D'APPLICATIONS MÉCANIQUE » */
 .surtitre {
   display: block;
   font-family: var(--f-label);

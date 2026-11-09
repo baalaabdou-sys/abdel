@@ -7,11 +7,11 @@
  */
 export const SITE = {
   nom: 'Club 2AMECA',
-  nomComplet: 'Club 2AMECA — FSAC',
-  sousTitre: 'Club étudiant de la FSAC',
+  nomComplet: "Club 2AMECA — Atelier d'Applications Mécanique",
+  sousTitre: "Atelier d'Applications Mécanique",
   slogan: 'Esprit citoyen au centre',
   description:
-    "Club 2AMECA, club étudiant de la Faculté des Sciences Aïn Chock (Université Hassan II de Casablanca). Projets, ateliers et événements ouverts à tous les étudiants.",
+    "Club 2AMECA, l'Atelier d'Applications Mécanique de la Faculté des Sciences Aïn Chock (Université Hassan II de Casablanca). Projets, ateliers et événements autour de la mécanique, ouverts à tous les étudiants.",
   anneeUniversitaire: '2026–2027',
 };
 
@@ -28,7 +28,7 @@ export const INSCRIPTION_PATH = '/connexion/?mode=inscription';
 
 /** Filières et années proposées à la création de compte. */
 export const FILIERES = [
-  'Physique', 'Mathématiques', 'Informatique', 'Chimie', 'Biologie', 'Géologie',
+  'Physique', 'Mécanique', 'Mathématiques', 'Informatique', 'Chimie', 'Biologie', 'Géologie',
   'Master / Licence professionnelle', 'Autre',
 ];
 export const ANNEES = ['1re année', '2e année', '3e année', 'Master 1', 'Master 2', 'Doctorat'];
