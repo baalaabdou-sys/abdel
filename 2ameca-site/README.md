@@ -140,7 +140,49 @@ Une recherche de `[` dans `src/` les retrouve tous.
 
 ---
 
-## 7. Mettre le site en ligne
+## 7. Espace membre et tableau de bord du bureau (Supabase)
+
+Les comptes membres, les inscriptions, les présences, les supports et les attestations
+sont gérés avec [Supabase](https://supabase.com) (plan gratuit). Le site reste statique :
+il parle directement à Supabase depuis le navigateur.
+
+| Page | Pour qui | Rôle |
+| --- | --- | --- |
+| `/connexion/` | tout le monde | se connecter, créer un compte, mot de passe oublié |
+| `/espace/` | membres | s'inscrire aux activités, historique, QR code de présence, supports, attestations PDF |
+| `/bureau/` | bureau | chiffres clés, activités, membres (recherche, rôles, export Excel) |
+| `/bureau/activite/` | bureau | créer / modifier une activité, présences (case à cocher ou scan des QR codes), export Excel, dépôt des supports |
+| `/formations/` | tout le monde | activités publiées à venir |
+| `/verifier/` | tout le monde | vérifier une attestation grâce à son code |
+
+**Rôles** : *membre* (par défaut), *responsable* (gère les activités, les présences et les supports),
+*administrateur* (gère aussi les membres et leurs rôles). Les règles d'accès sont appliquées par
+Supabase lui-même : un membre ne peut ni voir les autres membres, ni télécharger un support,
+ni obtenir une attestation sans présence validée.
+
+**Règles automatiques**
+
+- Une présence validée crée l'attestation (avec un code de vérification) et ouvre l'accès aux supports.
+- Une présence annulée retire l'attestation.
+- Une activité qui a délivré des attestations ne peut pas être supprimée (historique conservé) : dépubliez-la.
+
+**Installation (déjà faite pour le club)**
+
+1. Créer un projet Supabase, puis coller le fichier `supabase/schema.sql` dans *SQL Editor* → *Run*.
+2. *Authentication → Sign In / Providers* : désactiver « Confirm email » tant qu'aucun service
+   d'e-mail n'est configuré (l'envoi d'e-mails par défaut de Supabase est réservé à l'équipe du projet).
+3. *Authentication → URL Configuration* : Site URL = l'adresse du site.
+4. Mettre l'URL du projet et la clé **publishable** dans `src/config.ts` (jamais la clé *secret*).
+
+**Nommer un administrateur** : la personne crée son compte sur le site, puis, dans *SQL Editor* :
+
+```sql
+update public.profiles set role = 'admin' where email = 'adresse@exemple.com';
+```
+
+Ensuite, les administrateurs changent les rôles directement depuis le tableau de bord (onglet *Membres*).
+
+## 8. Mettre le site en ligne
 
 ### Option A — Vercel (recommandé, le plus simple)
 

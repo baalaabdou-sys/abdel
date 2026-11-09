@@ -27,7 +27,7 @@ import '../../styles/app.css';
         </div>
 
         <div data-panneau="activites" role="tabpanel">
-          <div class="carte"><ul class="liste-app" id="activites"></ul></div>
+          <div class="carte"><ul class="liste-app" id="activites"><li class="aide">Chargement…</li></ul></div>
         </div>
 
         <div data-panneau="membres" role="tabpanel" hidden>
@@ -39,7 +39,7 @@ import '../../styles/app.css';
           <div class="tableau-wrap">
             <table class="tableau">
               <thead><tr><th>Nom</th><th>Filière</th><th>Année</th><th>Contact</th><th>Présences</th><th>Rôle</th></tr></thead>
-              <tbody id="membres"></tbody>
+              <tbody id="membres"><tr><td colspan="6" class="aide">Chargement…</td></tr></tbody>
             </table>
           </div>
           <p class="aide" id="info-roles" style="margin-top:.75rem"></p>
