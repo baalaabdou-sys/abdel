@@ -1,4 +1,4 @@
-# Site du Club 2AMECA — Atelier d'Applications Mécanique
+# Site du Club 2AMECA — FSAC
 
 Site officiel du Club 2AMECA (Faculté des Sciences Aïn Chock, Université Hassan II de Casablanca).
 

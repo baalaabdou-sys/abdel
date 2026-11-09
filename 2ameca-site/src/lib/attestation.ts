@@ -62,14 +62,14 @@ export async function genererAttestation(d: DonneesAttestation): Promise<Uint8Ar
     page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: .6, color: CIEL });
 
   // Logos
-  const hClub = 52, hFsac = 50;
+  const hClub = 36, hFsac = 50;
   page.drawImage(imgFsac, { x: 70, y: H - 70 - hFsac, width: (imgFsac.width / imgFsac.height) * hFsac, height: hFsac });
   const wClub = (imgClub.width / imgClub.height) * hClub;
   page.drawImage(imgClub, { x: W - 70 - wClub, y: H - 70 - hClub, width: wClub, height: hClub });
 
   // Texte
   centre('ATTESTATION DE PARTICIPATION', fTitre, 40, H - 190, BLEU);
-  centre('Le Club 2AMECA — Atelier d’Applications Mécanique — atteste que', fTexte, 14, H - 232);
+  centre('Le Club 2AMECA de la FSAC atteste que', fTexte, 14, H - 232);
   const nom = `${d.prenom} ${d.nom.toUpperCase()}`.trim();
   centre(nom, fTitre, ajuste(nom, fTitre, 38, W - 200), H - 290, MARINE);
   page.drawLine({ start: { x: W / 2 - 150, y: H - 302 }, end: { x: W / 2 + 150, y: H - 302 }, thickness: .8, color: CIEL });
