@@ -84,7 +84,7 @@ const types = [...new Set(projets.map((p) => p.data.type))];
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   (async () => {
     const [fRes, pRes] = await Promise.all([
-      sb.from('formations').select('*').eq('publiee', true).lt('date', aujourdhui()).order('date', { ascending: false }).limit(12),
+      sb.from('formations').select('*').eq('publiee', true).eq('annulee', false).lt('date', aujourdhui()).order('date', { ascending: false }).limit(12),
       sb.from('photos').select('chemin, formation_id').not('formation_id', 'is', null).order('created_at'),
     ]);
     const liste = (fRes.data ?? []) as Formation[];

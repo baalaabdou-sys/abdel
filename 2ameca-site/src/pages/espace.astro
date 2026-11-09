@@ -93,6 +93,8 @@ import { FILIERES, ANNEES } from '../config';
             </div>
             <div class="champ"><label for="p-tel">Téléphone / WhatsApp</label><input id="p-tel" name="telephone" type="tel" autocomplete="tel" /></div>
             <div class="champ"><span class="lbl">E-mail</span><span id="p-email"></span></div>
+            <label class="case" for="p-emails"><input type="checkbox" id="p-emails" name="emails_actifs" />
+              <span>Recevoir par e-mail les messages qui me concernent (activité annulée ou modifiée, attestation disponible, nouveaux supports).</span></label>
             <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
           </form>
         </div>
@@ -268,6 +270,10 @@ import { FILIERES, ANNEES } from '../config';
     vider(ul, formations.map((f, n) => {
       const inscrit = mes.get(f.id);
       const complet = f.places != null && nombres[n] >= f.places && !inscrit;
+      if (f.annulee) return h('li', {},
+        h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${TYPES[f.type]} · ${dateLongue(f.date)}`),
+          f.motif_annulation && h('p', { class: 'aide' }, `Motif : ${f.motif_annulation}`)),
+        h('span', { class: 'pastille-etat annulee' }, 'Annulée'));
       const btn = h('button', { type: 'button', class: inscrit ? 'btn btn-contour btn-petit' : 'btn btn-petit', disabled: complet }) as HTMLButtonElement;
       btn.textContent = inscrit ? 'Me désinscrire' : complet ? 'Complet' : 'M’inscrire';
       btn.addEventListener('click', () => pendant(btn, '…', async () => {
@@ -297,7 +303,8 @@ import { FILIERES, ANNEES } from '../config';
     liste.sort((a, b) => b.formations.date.localeCompare(a.formations.date));
     vider(ul, liste.map((i) => {
       const passe = i.formations.date < today;
-      const etat = i.present ? h('span', { class: 'pastille-etat ok' }, 'Présent')
+      const etat = i.formations.annulee ? h('span', { class: 'pastille-etat annulee' }, 'Annulée')
+        : i.present ? h('span', { class: 'pastille-etat ok' }, 'Présent')
         : passe ? h('span', { class: 'pastille-etat' }, 'Absent') : h('span', { class: 'pastille-etat attente' }, 'Inscrit');
       return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, i.formations.titre), h('span', {}, `${TYPES[i.formations.type]} · ${dateCourte(i.formations.date)}`)), etat);
     }));
@@ -339,6 +346,7 @@ import { FILIERES, ANNEES } from '../config';
     for (const k of ['prenom', 'nom', 'filiere', 'annee', 'telephone'] as const)
       (f.elements.namedItem(k) as HTMLInputElement).value = profil[k] ?? '';
     $('p-email').textContent = profil.email;
+    (f.elements.namedItem('emails_actifs') as HTMLInputElement).checked = profil.emails_actifs !== false;
   }
   $('form-profil').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -346,7 +354,8 @@ import { FILIERES, ANNEES } from '../config';
     const v = (k: string) => (f.elements.namedItem(k) as HTMLInputElement).value.trim();
     if (!v('prenom') || !v('nom')) return toast('Le prénom et le nom sont obligatoires.', 'erreur');
     await pendant(f.querySelector('button[type=submit]'), 'Enregistrement…', async () => {
-      const maj = { prenom: v('prenom'), nom: v('nom'), filiere: v('filiere') || null, annee: v('annee') || null, telephone: v('telephone') || null };
+      const maj = { prenom: v('prenom'), nom: v('nom'), filiere: v('filiere') || null, annee: v('annee') || null, telephone: v('telephone') || null,
+        emails_actifs: (f.elements.namedItem('emails_actifs') as HTMLInputElement).checked };
       const { error } = await sb.from('profiles').update(maj).eq('id', profil.id);
       if (error) return toast(messageErreur(error), 'erreur');
       profil = { ...profil, ...maj };

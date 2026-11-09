@@ -23,6 +23,7 @@ import '../../styles/app.css';
           <button type="button" role="tab" aria-selected="false" data-onglet="partenaires">Partenaires</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="ressources">Ressources</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="annonces">Annonces</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="emails">E-mails</button>
         </div>
 
         <!-- Le club -->
@@ -130,6 +131,18 @@ import '../../styles/app.css';
             <div class="actions"><button class="btn" type="submit">Ajouter</button></div>
           </form>
           <div class="carte"><h2>Bibliothèque</h2><ul class="liste-app" id="ressources"></ul></div>
+        </div>
+
+        <!-- E-mails -->
+        <div data-panneau="emails" role="tabpanel" hidden>
+          <div class="carte">
+            <h2>E-mails automatiques (Brevo)</h2>
+            <p>Les membres reçoivent un e-mail quand une activité à laquelle ils sont inscrits est <strong>annulée</strong>, <strong>rétablie</strong> ou <strong>modifiée</strong> (date, heure, lieu), quand leur <strong>attestation</strong> est disponible et quand un <strong>support</strong> est ajouté. Chacun peut les désactiver dans « Mon profil ».</p>
+            <p class="aide">Les annonces à tous et les nouvelles activités restent dans les notifications du site, pour rester dans la limite gratuite de Brevo (300 e-mails par jour).</p>
+            <div class="actions" style="margin-top:1rem"><button class="btn" type="button" id="btn-test-email">M’envoyer un e-mail de test</button></div>
+            <div id="resultat-email" style="margin-top:1rem"></div>
+          </div>
+          <div class="carte"><h2>Derniers envois</h2><ul class="liste-app" id="envois"></ul></div>
         </div>
 
         <!-- Annonces -->
@@ -463,6 +476,27 @@ import '../../styles/app.css';
       f.reset(); toast('Annonce publiée.'); chargerAnnonces();
     });
   });
+
+  // ── E-mails : test et derniers envois
+  async function chargerEnvois() {
+    const { data, error } = await sb.rpc('emails_recents');
+    const ul = $('envois');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucun envoi récent (les 6 dernières heures).'));
+    const q = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Casablanca' });
+    vider(ul, data.map((e: { quand: string; statut: number | null; erreur: string | null }) => h('li', {},
+      h('div', { class: 'infos' }, h('strong', {}, e.statut && e.statut < 300 ? 'Envoyé' : 'Échec'), h('span', {}, q.format(new Date(e.quand))), e.erreur ? h('p', { class: 'aide' }, e.erreur) : null),
+      h('span', { class: `pastille-etat ${e.statut && e.statut < 300 ? 'ok' : 'annulee'}` }, e.statut ? `Code ${e.statut}` : 'Erreur'))));
+  }
+  $('btn-test-email').addEventListener('click', () => pendant($('btn-test-email') as HTMLButtonElement, 'Envoi…', async () => {
+    const { data, error } = await sb.rpc('email_test');
+    const zone = $('resultat-email');
+    if (error) return vider(zone, h('p', { class: 'erreur-form' }, messageErreur(error)));
+    if (data === 'non_configure') return vider(zone, h('p', { class: 'erreur-form' }, 'Brevo n’est pas encore configuré : la clé API et l’adresse d’envoi doivent être ajoutées dans Supabase (fichier supabase/brevo.sql).'));
+    vider(zone, h('p', { class: 'succes-form' }, 'E-mail de test envoyé à votre adresse. Vérifiez votre boîte de réception (et les courriers indésirables).'));
+    setTimeout(chargerEnvois, 4000);
+  }));
+  document.querySelector('[data-onglet="emails"]')!.addEventListener('click', chargerEnvois);
 
   demarrer().catch((e) => { $('chargement').textContent = messageErreur(e); });
 </script>

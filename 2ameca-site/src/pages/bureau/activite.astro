@@ -17,6 +17,7 @@ import '../../styles/app.css';
 
         <div class="colonnes">
           <!-- Fiche de l'activité -->
+          <div>
           <form class="carte form" id="fiche" novalidate>
             <h2>Informations</h2>
             <div class="champ"><label for="f-titre">Titre</label><input id="f-titre" name="titre" required maxlength="200" /></div>
@@ -44,6 +45,18 @@ import '../../styles/app.css';
               <button class="btn btn-contour" type="button" id="supprimer" hidden>Supprimer</button>
             </div>
           </form>
+
+          <div class="carte" id="carte-annulation" hidden>
+            <h2>Annuler l’activité</h2>
+            <div id="etat-annulation"></div>
+            <div class="form" id="zone-annuler">
+              <p class="aide">L’activité reste visible avec la mention « Annulée » et les inscriptions sont fermées. Toutes les personnes inscrites reçoivent une notification et un e-mail. Vous pourrez la rétablir.</p>
+              <div class="champ"><label for="motif">Motif (facultatif, envoyé aux inscrits)</label><input id="motif" maxlength="300" placeholder="Ex. : salle indisponible, report à une date ultérieure" /></div>
+              <div class="actions"><button class="btn btn-contour" type="button" id="btn-annuler">Annuler l’activité</button></div>
+            </div>
+            <div class="actions" id="zone-retablir" hidden><button class="btn" type="button" id="btn-retablir">Rétablir l’activité</button></div>
+          </div>
+          </div>
 
           <div id="gestion" hidden>
             <!-- Présences -->
@@ -134,6 +147,7 @@ import '../../styles/app.css';
     champ('places').value = formation.places ? String(formation.places) : '';
     champ('publiee').checked = formation.publiee;
     $('supprimer').hidden = false; $('gestion').hidden = false;
+    afficherAnnulation();
   }
 
   fiche.addEventListener('submit', async (e) => {
@@ -160,10 +174,35 @@ import '../../styles/app.css';
   });
 
   // Suppression en deux temps (pas de boîte de dialogue système).
+  // ── Annulation (réversible) et rétablissement
+  function afficherAnnulation() {
+    if (!formation) return;
+    $('carte-annulation').hidden = false;
+    const annulee = !!formation.annulee;
+    $('zone-annuler').hidden = annulee; $('zone-retablir').hidden = !annulee;
+    vider($('etat-annulation'), annulee ? h('p', { class: 'erreur-form annulee' }, `Cette activité est annulée${formation.motif_annulation ? ` (motif : ${formation.motif_annulation})` : ''}. Les inscrits ont été prévenus.`) : null);
+  }
+  let confirmerAnnulation = false;
+  $('btn-annuler').addEventListener('click', async () => {
+    const btn = $('btn-annuler') as HTMLButtonElement;
+    if (!confirmerAnnulation) { confirmerAnnulation = true; btn.textContent = `Confirmer : prévenir ${inscrits.length} inscrit(s)`; setTimeout(() => { confirmerAnnulation = false; btn.textContent = 'Annuler l’activité'; }, 6000); return; }
+    await pendant(btn, 'Annulation…', async () => {
+      const { data, error } = await sb.from('formations').update({ annulee: true, motif_annulation: ($('motif') as HTMLInputElement).value.trim() }).eq('id', id!).select().single();
+      if (error) return toast(messageErreur(error), 'erreur');
+      formation = data as Formation; afficherAnnulation(); toast('Activité annulée : les inscrits sont prévenus.');
+    });
+    confirmerAnnulation = false; btn.textContent = 'Annuler l’activité';
+  });
+  $('btn-retablir').addEventListener('click', () => pendant($('btn-retablir') as HTMLButtonElement, 'Rétablissement…', async () => {
+    const { data, error } = await sb.from('formations').update({ annulee: false, motif_annulation: '' }).eq('id', id!).select().single();
+    if (error) return toast(messageErreur(error), 'erreur');
+    formation = data as Formation; afficherAnnulation(); toast('Activité rétablie : les inscrits sont prévenus.');
+  }));
+
   let confirmation = false;
   $('supprimer').addEventListener('click', async () => {
     const btn = $('supprimer') as HTMLButtonElement;
-    if (!confirmation) { confirmation = true; btn.textContent = 'Confirmer la suppression'; setTimeout(() => { confirmation = false; btn.textContent = 'Supprimer'; }, 5000); return; }
+    if (!confirmation) { confirmation = true; btn.textContent = inscrits.length ? `Confirmer : supprimer et prévenir ${inscrits.length} inscrit(s)` : 'Confirmer la suppression'; setTimeout(() => { confirmation = false; btn.textContent = 'Supprimer'; }, 5000); return; }
     const { error } = await sb.from('formations').delete().eq('id', id!);
     if (error) return toast(messageErreur(error), 'erreur');
     location.href = `${base}/bureau/`;

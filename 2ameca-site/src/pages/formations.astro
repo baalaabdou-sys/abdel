@@ -41,7 +41,8 @@ import { INSCRIPTION_PATH } from '../config';
       h('h2', { style: 'margin-top:.75rem' }, f.titre),
       h('p', { class: 'aide' }, `${dateLongue(f.date)}${f.heure_debut ? ` · ${horaire(f.heure_debut, f.heure_fin)}` : ''}${f.lieu ? ` · ${f.lieu}` : ''}`),
       f.description && h('p', { style: 'margin-top:.6rem' }, f.description),
-      h('a', { class: 'btn btn-petit', href: lien, style: 'margin-top:.5rem' }, 'M’inscrire'),
+      f.annulee ? h('p', { class: 'erreur-form annulee' }, `Annulée${f.motif_annulation ? ` — ${f.motif_annulation}` : ''}`)
+        : h('a', { class: 'btn btn-petit', href: lien, style: 'margin-top:.5rem' }, 'M’inscrire'),
     )));
   })();
 </script>

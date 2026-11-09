@@ -148,3 +148,6 @@ fieldset.champ { border: 0; padding: 0; margin: 0; }
 .membre-ed .vide-photo { display: grid; place-items: center; background: var(--bleu-06); color: var(--bleu); font-size: .7rem; font-family: var(--f-label); text-transform: uppercase; }
 .champs-inline { display: grid; gap: .4rem; }
 @media (min-width: 640px) { .champs-inline { grid-template-columns: 1fr 1fr; } }
+
+.pastille-etat.annulee { border-color: var(--encre); color: var(--encre); background: var(--bleu-06); text-decoration: line-through; text-decoration-thickness: 1px; }
+.erreur-form.annulee::before { content: ''; }

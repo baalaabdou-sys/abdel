@@ -17,6 +17,7 @@ export interface Profil {
   filiere: string | null;
   annee: string | null;
   role: Role;
+  emails_actifs?: boolean;
   created_at: string;
 }
 
@@ -32,6 +33,8 @@ export interface Formation {
   places: number | null;
   publiee: boolean;
   compte_rendu?: string;
+  annulee?: boolean;
+  motif_annulation?: string;
   created_at: string;
 }
 

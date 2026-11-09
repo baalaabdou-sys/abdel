@@ -144,7 +144,8 @@ import '../../styles/app.css';
     const today = aujourdhui();
     vider(ul, formations.map((f) => {
       const c = compte.get(f.id) ?? { inscrits: 0, presents: 0 };
-      const etat = !f.publiee ? h('span', { class: 'pastille-etat brouillon' }, 'Brouillon')
+      const etat = f.annulee ? h('span', { class: 'pastille-etat annulee' }, 'Annulée')
+        : !f.publiee ? h('span', { class: 'pastille-etat brouillon' }, 'Brouillon')
         : f.date < today ? h('span', { class: 'pastille-etat' }, 'Passée') : h('span', { class: 'pastille-etat attente' }, 'Publiée');
       return h('li', {},
         h('div', { class: 'infos' },
