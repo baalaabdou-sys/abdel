@@ -353,8 +353,25 @@ import { FILIERES, ANNEES } from '../config';
         certUrl: `${location.origin}${base}/verifier/?code=${a.code}`,
         certId: a.code,
       });
-      const lien = h('a', { class: 'btn btn-contour btn-petit', href: linkedin, target: '_blank', rel: 'noopener' }, 'Ajouter à LinkedIn');
-      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · code ${a.code}`)), h('div', { class: 'actions' }, btn, lien));
+      // « Partager sur LinkedIn » : une publication déjà rédigée, avec le lien de vérification.
+      // Téléphone : menu de partage du téléphone (on choisit LinkedIn, le texte est déjà là).
+      // Ordinateur : LinkedIn s'ouvre avec la publication pré-remplie.
+      const urlVerif = `${location.origin}${base}/verifier/?code=${a.code}`;
+      const quoi = f.type === 'formation' ? 'à la formation' : f.type === 'atelier' ? 'à l’atelier' : 'à l’événement';
+      const texte = `Je viens de recevoir mon attestation de participation ${quoi} « ${f.titre} » avec le Club 2AMECA, à la Faculté des Sciences Aïn Chock (Université Hassan II de Casablanca). Merci à toute l’équipe du club !\n\nAttestation vérifiable ici : ${urlVerif}\n\n#2AMECA #FSAC #UH2C`;
+      const partager = h('button', { type: 'button', class: 'btn btn-contour btn-petit' }, 'Partager sur LinkedIn') as HTMLButtonElement;
+      partager.addEventListener('click', async () => {
+        try { await navigator.clipboard?.writeText(texte); } catch { /* copie facultative */ }
+        const telephone = matchMedia('(pointer: coarse)').matches && typeof navigator.share === 'function';
+        if (telephone) {
+          try { await navigator.share({ title: `Attestation — ${f.titre}`, text: texte }); return; }
+          catch (e) { if ((e as DOMException).name === 'AbortError') return; }
+        }
+        window.open('https://www.linkedin.com/feed/?' + new URLSearchParams({ shareActive: 'true', text: texte }), '_blank', 'noopener');
+        toast('Publication prête. Si le texte n’apparaît pas, collez-le : il est copié.');
+      });
+      const lien = h('a', { class: 'btn-lien', href: linkedin, target: '_blank', rel: 'noopener' }, 'Ajouter à mon profil LinkedIn');
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · code ${a.code}`)), h('div', { class: 'actions' }, btn, partager, lien));
     }));
   }
 
