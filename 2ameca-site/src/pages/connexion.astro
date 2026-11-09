@@ -117,13 +117,25 @@ import { FILIERES, ANNEES } from '../config';
   document.getElementById('lien-oubli')!.addEventListener('click', () => afficher('oubli'));
   document.getElementById('retour-connexion')!.addEventListener('click', () => afficher('connexion'));
 
+  // Lu tout de suite : la bibliothèque de connexion efface ces informations de l'adresse juste après.
+  const infosLien = new URLSearchParams(location.hash.slice(1) || location.search);
+  const retourMotDePasse = infosLien.get('type') === 'recovery';
+  const erreurLien = infosLien.get('error_code') || infosLien.get('error');
+
   const mode = new URLSearchParams(location.search).get('mode');
-  afficher(mode === 'inscription' ? 'inscription' : 'connexion');
+  afficher(retourMotDePasse ? 'nouveau' : mode === 'inscription' ? 'inscription' : 'connexion');
+  if (erreurLien) {
+    afficher('oubli');
+    message(/expired|otp/i.test(erreurLien + (infosLien.get('error_description') ?? ''))
+      ? 'Ce lien a expiré ou a déjà été utilisé. Indiquez votre e-mail pour en recevoir un nouveau.'
+      : 'Ce lien ne fonctionne pas. Indiquez votre e-mail pour en recevoir un nouveau.');
+    history.replaceState(null, '', location.pathname);
+  }
 
   // Déjà connecté : direction l'espace membre (sauf retour d'un lien « mot de passe oublié »).
   sb.auth.onAuthStateChange((evt) => { if (evt === 'PASSWORD_RECOVERY') afficher('nouveau'); });
   sb.auth.getSession().then(({ data }) => {
-    if (data.session && !location.hash.includes('type=recovery')) suite();
+    if (data.session && !retourMotDePasse && !erreurLien) suite();
   });
 
   function valide(form: HTMLFormElement) {
