@@ -4,6 +4,7 @@ import EnTetePage from '../components/EnTetePage.astro';
 import Lignes from '../components/Lignes.astro';
 import { CONTACT, FSAC } from '../config';
 import { u } from '../lib/url';
+import '../styles/app.css';
 import { getEvenementsParPeriode } from '../lib/collections';
 import { plageDates, heureFr } from '../lib/dates';
 
@@ -104,6 +105,32 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
     </div>
   </section>
 
+  <section class="section teinte" aria-labelledby="ecrire">
+    <div class="conteneur faq-mise">
+      <div class="reveal">
+        <span class="surtitre">Clubs, partenaires, entreprises</span>
+        <h2 id="ecrire" class="titre-2">Écrivez-nous</h2>
+        <hr class="trait" />
+        <p>Une proposition de partenariat, un événement commun, une intervention ? Votre message arrive directement au bureau du club.</p>
+      </div>
+      <form class="form carte" id="form-contact" novalidate>
+        <div class="ligne-2">
+          <div class="champ"><label for="ct-nom">Nom et prénom</label><input id="ct-nom" name="nom" autocomplete="name" maxlength="120" required /></div>
+          <div class="champ"><label for="ct-org">Organisation (facultatif)</label><input id="ct-org" name="organisation" autocomplete="organization" maxlength="150" /></div>
+        </div>
+        <div class="ligne-2">
+          <div class="champ"><label for="ct-email">E-mail</label><input id="ct-email" name="email" type="email" autocomplete="email" inputmode="email" required /></div>
+          <div class="champ"><label for="ct-type">Vous êtes</label>
+            <select id="ct-type" name="type"><option value="entreprise">Une entreprise</option><option value="partenaire">Un partenaire</option><option value="club">Un club</option><option value="autre">Autre</option></select></div>
+        </div>
+        <div class="champ"><label for="ct-msg">Message</label><textarea id="ct-msg" name="message" maxlength="4000" required></textarea></div>
+        <input type="text" name="site_web" class="sr-only" tabindex="-1" autocomplete="off" aria-hidden="true" />
+        <div class="actions"><button class="btn" type="submit">Envoyer le message</button></div>
+        <div id="ct-retour" role="status" aria-live="polite" hidden></div>
+      </form>
+    </div>
+  </section>
+
   <section class="section" aria-labelledby="faq">
     <div class="conteneur faq-mise">
       <div class="reveal">
@@ -160,3 +187,24 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
   details[open] .signe::after { transform: rotate(0); }
   details p { margin: 0 0 1.2rem; color: var(--encre-70); max-width: 40em; }
 </style>
+
+<script>
+  import { sb, messageErreur } from '../lib/supabase';
+  import { pendant } from '../lib/dom';
+  const form = document.getElementById('form-contact') as HTMLFormElement;
+  const retour = document.getElementById('ct-retour')!;
+  const dire = (texte: string, ok: boolean) => { retour.hidden = false; retour.className = ok ? 'succes-form' : 'erreur-form'; retour.textContent = texte; };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const v = (k: string) => (form.elements.namedItem(k) as HTMLInputElement).value.trim();
+    if (v('site_web')) return dire('Merci, votre message a bien été envoyé.', true); // piège à robots
+    if (v('nom').length < 2) return dire('Indiquez votre nom.', false);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v('email'))) return dire('Adresse e-mail invalide.', false);
+    if (v('message').length < 10) return dire('Votre message est trop court (10 caractères minimum).', false);
+    await pendant(form.querySelector('button[type=submit]'), 'Envoi…', async () => {
+      const { error } = await sb.from('messages_contact').insert({ nom: v('nom'), organisation: v('organisation'), email: v('email'), type: v('type'), message: v('message') });
+      if (error) return dire(messageErreur(error), false);
+      form.reset(); dire('Merci, votre message a bien été envoyé. Le bureau vous répondra par e-mail.', true);
+    });
+  });
+</script>

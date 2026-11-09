@@ -31,6 +31,7 @@ export interface Formation {
   lieu: string;
   places: number | null;
   publiee: boolean;
+  compte_rendu?: string;
   created_at: string;
 }
 
@@ -45,6 +46,11 @@ export const ROLES: Record<Role, string> = {
   responsable: 'Responsable',
   admin: 'Administrateur',
 };
+
+export const STATUTS_IDEE = { nouvelle: 'Nouvelle', etudiee: 'À l’étude', retenue: 'Retenue', realisee: 'Réalisée', ecartee: 'Écartée' } as const;
+export const TYPES_IDEE = { projet: 'Projet', evenement: 'Événement', autre: 'Autre' } as const;
+export const ACCES = { public: 'Public', membres: 'Membres', bureau: 'Bureau' } as const;
+export const TYPES_CONTACT = { club: 'Club', partenaire: 'Partenaire', entreprise: 'Entreprise', autre: 'Autre' } as const;
 
 export async function utilisateur(): Promise<User | null> {
   const { data } = await sb.auth.getSession();

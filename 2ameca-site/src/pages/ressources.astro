@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+import EnTetePage from '../components/EnTetePage.astro';
+import '../styles/app.css';
+import { u } from '../lib/url';
+---
+<Base titre="Ressources" description="Bibliothèque de ressources du Club 2AMECA : cours, logiciels, modèles et documents utiles en mécanique.">
+  <EnTetePage surtitre="Bibliothèque" titre="Ressources" chapo="Cours, guides, modèles et documents partagés par le club. Certaines ressources sont réservées aux membres." />
+  <section class="app">
+    <div class="conteneur">
+      <p class="aide" id="info-membres" hidden style="margin-bottom:1.25rem">
+        Vous voyez les ressources publiques. <a href={u('/connexion/?suite=/ressources/')}>Connectez-vous</a> pour accéder aussi aux ressources réservées aux membres.
+      </p>
+      <p class="chargement" id="chargement">Chargement…</p>
+      <div id="ressources"></div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { sb, messageErreur } from '../lib/supabase';
+  import { h, vider, taille, pendant, toast } from '../lib/dom';
+  const zone = document.getElementById('ressources')!;
+  (async () => {
+    const [{ data: session }, { data, error }] = await Promise.all([
+      sb.auth.getSession(),
+      sb.from('ressources').select('*').order('categorie').order('titre'),
+    ]);
+    document.getElementById('chargement')!.hidden = true;
+    document.getElementById('info-membres')!.hidden = !!session.session;
+    if (error) return vider(zone, h('p', { class: 'erreur-form' }, messageErreur(error)));
+    if (!data?.length) return vider(zone, h('p', { class: 'vide' }, 'Aucune ressource disponible pour le moment.'));
+    const parCat = new Map<string, typeof data>();
+    for (const r of data) parCat.set(r.categorie, [...(parCat.get(r.categorie) ?? []), r]);
+    vider(zone, [...parCat].map(([cat, liste]) => h('div', { class: 'carte categorie' }, h('h2', {}, cat),
+      h('ul', { class: 'liste-app' }, liste.map((r) => {
+        const btn = h('button', { type: 'button', class: 'btn btn-contour btn-petit' }, 'Télécharger') as HTMLButtonElement;
+        btn.addEventListener('click', () => pendant(btn, '…', async () => {
+          const { data: lien, error: e } = await sb.storage.from('ressources').createSignedUrl(r.chemin, 600, { download: r.nom_fichier });
+          if (e || !lien) return toast(messageErreur(e), 'erreur');
+          location.href = lien.signedUrl;
+        }));
+        return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, r.titre), h('span', {}, [r.description, taille(r.taille)].filter(Boolean).join(' · '))), btn);
+      })))));
+  })();
+</script>

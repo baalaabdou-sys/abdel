@@ -120,6 +120,16 @@ const valeurs = [
     </div>
   </section>
 
+  <!-- Partenaires (gérés depuis le tableau de bord) -->
+  <section class="section teinte serree" aria-labelledby="partenaires" id="bloc-partenaires" hidden>
+    <div class="conteneur">
+      <span class="surtitre">Ils nous soutiennent</span>
+      <h2 id="partenaires" class="titre-2">Nos partenaires</h2>
+      <hr class="trait" />
+      <ul class="partenaires" id="liste-partenaires" role="list"></ul>
+    </div>
+  </section>
+
   <!-- FSAC -->
   <section class="section serree" aria-labelledby="fsac">
     <div class="conteneur fsac reveal">
@@ -180,4 +190,33 @@ const valeurs = [
   .fsac { display: grid; gap: 1.5rem 3rem; align-items: center; }
   @media (min-width: 720px) { .fsac { grid-template-columns: auto 1fr; } }
   .fsac .titre-3 { color: var(--marine); margin-bottom: .6rem; }
+</style>
+
+<script>
+  import { sb } from '../lib/supabase';
+  import { h, vider } from '../lib/dom';
+  import { urlMedia } from '../lib/images';
+  (async () => {
+    const { data } = await sb.from('partenaires').select('*').order('ordre').order('created_at');
+    if (!data?.length) return;
+    document.getElementById('bloc-partenaires')!.hidden = false;
+    vider(document.getElementById('liste-partenaires')!, data.map((p) => {
+      const contenu = [
+        p.logo ? h('img', { src: urlMedia(p.logo), alt: p.nom, loading: 'lazy' }) : h('strong', { class: 'nom' }, p.nom),
+        p.logo ? h('span', { class: 'sr-only' }, p.nom) : null,
+        p.description ? h('span', { class: 'desc' }, p.description) : null,
+      ];
+      return h('li', {}, p.site && /^https?:/.test(p.site)
+        ? h('a', { href: p.site, target: '_blank', rel: 'noopener' }, ...contenu, h('span', { class: 'sr-only' }, ' (nouvel onglet)'))
+        : h('div', {}, ...contenu));
+    }));
+  })();
+</script>
+<style>
+  .partenaires { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 1rem; }
+  .partenaires li > * { display: grid; gap: .5rem; justify-items: center; text-align: center; height: 100%; padding: 1.1rem; background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon); text-decoration: none; color: var(--encre); }
+  .partenaires a:hover { border-color: var(--bleu); }
+  .partenaires img { max-height: 64px; width: auto; max-width: 100%; object-fit: contain; }
+  .partenaires .nom { font-family: var(--f-label); font-weight: 600; text-transform: uppercase; color: var(--marine); }
+  .partenaires .desc { font-size: .9rem; color: var(--encre-70); }
 </style>

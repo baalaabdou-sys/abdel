@@ -1,0 +1,284 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/app.css';
+---
+<Base prive titre="Contenus du site" description="Galerie, partenaires, ressources et annonces du Club 2AMECA.">
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement…</p>
+
+      <div id="page" hidden>
+        <div class="app-tete">
+          <div>
+            <a class="lien-fleche" id="retour" href="#"><span aria-hidden="true">←</span> Tableau de bord</a>
+            <h1 class="titre-2">Contenus du site</h1>
+          </div>
+        </div>
+
+        <div class="onglets" role="tablist" aria-label="Contenus">
+          <button type="button" role="tab" aria-selected="true" data-onglet="galerie">Galerie</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="partenaires">Partenaires</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="ressources">Ressources</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="annonces">Annonces</button>
+        </div>
+
+        <!-- Galerie -->
+        <div data-panneau="galerie" role="tabpanel">
+          <form class="carte form" id="form-photos" novalidate>
+            <h2>Ajouter des photos</h2>
+            <div class="ligne-2">
+              <div class="champ"><label for="ph-activite">Activité (facultatif)</label><select id="ph-activite" name="formation_id"><option value="">— Aucune —</option></select></div>
+              <div class="champ"><label for="ph-legende">Légende (facultatif)</label><input id="ph-legende" name="legende" maxlength="200" /></div>
+            </div>
+            <div class="champ"><label for="ph-fichiers">Photos (JPEG, PNG ou WebP)</label><input id="ph-fichiers" name="fichiers" type="file" accept="image/jpeg,image/png,image/webp" multiple required /></div>
+            <p class="aide">Les photos sont réduites automatiquement avant l’envoi. Elles apparaissent dans la galerie publique et sur la page de l’activité choisie.</p>
+            <div class="actions"><button class="btn" type="submit">Envoyer</button></div>
+          </form>
+          <div class="carte"><h2>Photos publiées</h2><div class="galerie-admin" id="photos"></div></div>
+        </div>
+
+        <!-- Partenaires -->
+        <div data-panneau="partenaires" role="tabpanel" hidden>
+          <form class="carte form" id="form-partenaire" novalidate>
+            <h2>Ajouter un partenaire</h2>
+            <div class="ligne-2">
+              <div class="champ"><label for="pa-nom">Nom</label><input id="pa-nom" name="nom" maxlength="120" required /></div>
+              <div class="champ"><label for="pa-site">Site web (facultatif)</label><input id="pa-site" name="site" type="url" placeholder="https://…" /></div>
+            </div>
+            <div class="champ"><label for="pa-desc">Description (facultatif)</label><textarea id="pa-desc" name="description" maxlength="500" style="min-height:4.5rem"></textarea></div>
+            <div class="champ"><label for="pa-logo">Logo (facultatif, PNG de préférence)</label><input id="pa-logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp" /></div>
+            <div class="actions"><button class="btn" type="submit">Ajouter</button></div>
+          </form>
+          <div class="carte"><h2>Partenaires affichés</h2><ul class="liste-app" id="partenaires"></ul></div>
+        </div>
+
+        <!-- Ressources -->
+        <div data-panneau="ressources" role="tabpanel" hidden>
+          <form class="carte form" id="form-ressource" novalidate>
+            <h2>Ajouter une ressource</h2>
+            <div class="ligne-2">
+              <div class="champ"><label for="re-titre">Titre</label><input id="re-titre" name="titre" maxlength="200" required /></div>
+              <div class="champ"><label for="re-cat">Catégorie</label><input id="re-cat" name="categorie" list="categories" placeholder="Cours, Logiciels, Modèles…" /><datalist id="categories"></datalist></div>
+            </div>
+            <div class="champ"><label for="re-desc">Description (facultatif)</label><input id="re-desc" name="description" maxlength="300" /></div>
+            <div class="ligne-2">
+              <div class="champ"><label for="re-acces">Qui peut y accéder ?</label>
+                <select id="re-acces" name="acces">
+                  <option value="membres">Membres connectés</option>
+                  <option value="public">Tout le monde (sans compte)</option>
+                  <option value="bureau">Bureau uniquement</option>
+                </select></div>
+              <div class="champ"><label for="re-fichier">Fichier (50 Mo max.)</label><input id="re-fichier" name="fichier" type="file" required /></div>
+            </div>
+            <div class="actions"><button class="btn" type="submit">Ajouter</button></div>
+          </form>
+          <div class="carte"><h2>Bibliothèque</h2><ul class="liste-app" id="ressources"></ul></div>
+        </div>
+
+        <!-- Annonces -->
+        <div data-panneau="annonces" role="tabpanel" hidden>
+          <form class="carte form" id="form-annonce" novalidate>
+            <h2>Envoyer une annonce aux membres</h2>
+            <p class="aide">Elle apparaît dans l’onglet « Notifications » de l’espace de chaque membre. Les nouvelles activités publiées, les supports ajoutés et les attestations disponibles sont déjà annoncés automatiquement.</p>
+            <div class="champ"><label for="an-titre">Titre</label><input id="an-titre" name="titre" maxlength="120" required /></div>
+            <div class="champ"><label for="an-msg">Message</label><textarea id="an-msg" name="message" maxlength="1000"></textarea></div>
+            <div class="actions"><button class="btn" type="submit">Publier l’annonce</button></div>
+          </form>
+          <div class="carte"><h2>Annonces récentes</h2><ul class="liste-app" id="annonces"></ul></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { sb, monProfil, estBureau, messageErreur, ACCES, type Formation } from '../../lib/supabase';
+  import { h, vider, toast, dateCourte, taille, pendant } from '../../lib/dom';
+  import { urlMedia, reduireImage } from '../../lib/images';
+  import { nomFichier } from '../../lib/attestation';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  const val = (f: HTMLFormElement, k: string) => (f.elements.namedItem(k) as HTMLInputElement).value.trim();
+  let formations: Formation[] = [];
+
+  async function demarrer() {
+    const p = await monProfil();
+    if (!p) { location.href = `${base}/connexion/?suite=/bureau/contenus/`; return; }
+    if (!estBureau(p)) { vider($('chargement'), 'Cette page est réservée aux membres du bureau.'); return; }
+    ($('retour') as HTMLAnchorElement).href = `${base}/bureau/`;
+    const { data } = await sb.from('formations').select('*').order('date', { ascending: false });
+    formations = (data ?? []) as Formation[];
+    $('ph-activite').append(...formations.map((f) => h('option', { value: f.id }, `${f.titre} (${dateCourte(f.date)})`)));
+    $('chargement').hidden = true; $('page').hidden = false;
+    await Promise.all([chargerPhotos(), chargerPartenaires(), chargerRessources(), chargerAnnonces()]);
+  }
+
+  function ouvrir(nom: string) {
+    const b = document.querySelector<HTMLButtonElement>(`[data-onglet="${nom}"]`); if (!b) return;
+    document.querySelectorAll('[data-onglet]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== nom));
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => ouvrir(b.dataset.onglet!)));
+  if (location.hash) ouvrir(location.hash.slice(1));
+
+  /** Envoie une image dans « medias » et renvoie son chemin. */
+  async function envoyerImage(fichier: File, dossier: string) {
+    const { blob, ext, type } = await reduireImage(fichier, dossier === 'logos' ? 600 : 1600);
+    const chemin = `${dossier}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${nomFichier(fichier.name.replace(/\.[^.]+$/, '')) || 'image'}${ext}`;
+    const { error } = await sb.storage.from('medias').upload(chemin, blob, { contentType: type });
+    if (error) throw error;
+    return chemin;
+  }
+
+  // ── Galerie
+  async function chargerPhotos() {
+    const { data, error } = await sb.from('photos').select('*').order('created_at', { ascending: false });
+    const zone = $('photos');
+    if (error) return vider(zone, h('p', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(zone, h('p', { class: 'vide' }, 'Aucune photo pour l’instant.'));
+    const titres = new Map(formations.map((f) => [f.id, f.titre]));
+    vider(zone, data.map((p) => {
+      const leg = h('input', { value: p.legende, 'aria-label': 'Légende', maxlength: 200, placeholder: 'Légende' }) as HTMLInputElement;
+      leg.addEventListener('change', async () => {
+        const { error: e } = await sb.from('photos').update({ legende: leg.value.trim() }).eq('id', p.id);
+        toast(e ? messageErreur(e) : 'Légende enregistrée.', e ? 'erreur' : 'ok');
+      });
+      const suppr = h('button', { type: 'button', class: 'btn-lien' }, 'Supprimer') as HTMLButtonElement;
+      suppr.addEventListener('click', () => pendant(suppr, '…', async () => {
+        await sb.storage.from('medias').remove([p.chemin]);
+        const { error: e } = await sb.from('photos').delete().eq('id', p.id);
+        if (e) return toast(messageErreur(e), 'erreur');
+        chargerPhotos();
+      }));
+      return h('figure', {}, h('img', { src: urlMedia(p.chemin), alt: p.legende || 'Photo', loading: 'lazy' }),
+        h('figcaption', {}, leg, h('span', { class: 'aide' }, p.formation_id ? titres.get(p.formation_id) ?? '' : 'Sans activité'), suppr));
+    }));
+  }
+  $('form-photos').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    const fichiers = [...((f.elements.namedItem('fichiers') as HTMLInputElement).files ?? [])];
+    if (!fichiers.length) return toast('Choisissez au moins une photo.', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Envoi…', async () => {
+      let n = 0;
+      for (const fichier of fichiers) {
+        try {
+          const chemin = await envoyerImage(fichier, 'galerie');
+          const { error } = await sb.from('photos').insert({ chemin, legende: val(f, 'legende'), formation_id: val(f, 'formation_id') || null });
+          if (error) throw error;
+          n++;
+        } catch (err) { toast(`${fichier.name} : ${messageErreur(err)}`, 'erreur'); }
+      }
+      if (n) { toast(`${n} photo(s) publiée(s).`); f.reset(); chargerPhotos(); }
+    });
+  });
+
+  // ── Partenaires
+  async function chargerPartenaires() {
+    const { data, error } = await sb.from('partenaires').select('*').order('ordre').order('created_at');
+    const ul = $('partenaires');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucun partenaire pour l’instant. Ils s’affichent sur la page « Le club ».'));
+    vider(ul, data.map((p, i) => {
+      const monter = h('button', { type: 'button', class: 'btn-lien', disabled: i === 0, 'aria-label': `Monter ${p.nom}` }, 'Monter') as HTMLButtonElement;
+      monter.addEventListener('click', async () => {
+        const autre = data[i - 1];
+        await Promise.all([sb.from('partenaires').update({ ordre: i - 1 }).eq('id', p.id), sb.from('partenaires').update({ ordre: i }).eq('id', autre.id)]);
+        chargerPartenaires();
+      });
+      const suppr = h('button', { type: 'button', class: 'btn-lien' }, 'Supprimer') as HTMLButtonElement;
+      suppr.addEventListener('click', () => pendant(suppr, '…', async () => {
+        if (p.logo) await sb.storage.from('medias').remove([p.logo]);
+        const { error: e } = await sb.from('partenaires').delete().eq('id', p.id);
+        if (e) return toast(messageErreur(e), 'erreur');
+        chargerPartenaires();
+      }));
+      return h('li', {},
+        p.logo ? h('img', { class: 'mini-logo', src: urlMedia(p.logo), alt: '' }) : null,
+        h('div', { class: 'infos' }, h('strong', {}, p.nom), h('span', {}, [p.site, p.description].filter(Boolean).join(' · '))),
+        h('div', { class: 'actions' }, monter, suppr));
+    }));
+  }
+  $('form-partenaire').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!val(f, 'nom')) return toast('Le nom est obligatoire.', 'erreur');
+    const site = val(f, 'site');
+    if (site && !/^https?:\/\//i.test(site)) return toast('Le site doit commencer par https://', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Ajout…', async () => {
+      try {
+        const fichier = (f.elements.namedItem('logo') as HTMLInputElement).files?.[0];
+        const logo = fichier ? await envoyerImage(fichier, 'logos') : null;
+        const { error } = await sb.from('partenaires').insert({ nom: val(f, 'nom'), site: site || null, description: val(f, 'description'), logo, ordre: 999 });
+        if (error) throw error;
+        f.reset(); toast('Partenaire ajouté.'); chargerPartenaires();
+      } catch (err) { toast(messageErreur(err), 'erreur'); }
+    });
+  });
+
+  // ── Ressources
+  async function chargerRessources() {
+    const { data, error } = await sb.from('ressources').select('*').order('categorie').order('titre');
+    const ul = $('ressources');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    vider($('categories'), [...new Set((data ?? []).map((r) => r.categorie))].map((c) => h('option', { value: c })));
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'La bibliothèque est vide.'));
+    vider(ul, data.map((r) => {
+      const suppr = h('button', { type: 'button', class: 'btn-lien' }, 'Supprimer') as HTMLButtonElement;
+      suppr.addEventListener('click', () => pendant(suppr, '…', async () => {
+        await sb.storage.from('ressources').remove([r.chemin]);
+        const { error: e } = await sb.from('ressources').delete().eq('id', r.id);
+        if (e) return toast(messageErreur(e), 'erreur');
+        chargerRessources();
+      }));
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, r.titre), h('span', {}, `${r.categorie} · ${r.nom_fichier}${r.taille ? ` · ${taille(r.taille)}` : ''}`)),
+        h('div', { class: 'actions' }, h('span', { class: `pastille-etat ${r.acces === 'public' ? 'ok' : r.acces === 'membres' ? 'attente' : ''}` }, ACCES[r.acces as keyof typeof ACCES]), suppr));
+    }));
+  }
+  $('form-ressource').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    const fichier = (f.elements.namedItem('fichier') as HTMLInputElement).files?.[0];
+    if (!val(f, 'titre')) return toast('Le titre est obligatoire.', 'erreur');
+    if (!fichier) return toast('Choisissez un fichier.', 'erreur');
+    if (fichier.size > 50 * 1024 * 1024) return toast('Fichier trop lourd (50 Mo maximum).', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Envoi…', async () => {
+      const ext = fichier.name.includes('.') ? fichier.name.slice(fichier.name.lastIndexOf('.')).toLowerCase() : '';
+      const chemin = `${Date.now()}-${nomFichier(fichier.name.replace(/\.[^.]+$/, '')) || 'fichier'}${ext}`;
+      const up = await sb.storage.from('ressources').upload(chemin, fichier, { contentType: fichier.type || 'application/octet-stream' });
+      if (up.error) return toast(messageErreur(up.error), 'erreur');
+      const { error } = await sb.from('ressources').insert({ titre: val(f, 'titre'), description: val(f, 'description'), categorie: val(f, 'categorie') || 'Général', acces: val(f, 'acces'), chemin, nom_fichier: fichier.name, taille: fichier.size });
+      if (error) { await sb.storage.from('ressources').remove([chemin]); return toast(messageErreur(error), 'erreur'); }
+      f.reset(); toast('Ressource ajoutée.'); chargerRessources();
+    });
+  });
+
+  // ── Annonces
+  async function chargerAnnonces() {
+    const { data, error } = await sb.from('notifications').select('*').is('membre_id', null).order('created_at', { ascending: false }).limit(30);
+    const ul = $('annonces');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune annonce.'));
+    vider(ul, data.map((n) => {
+      const suppr = h('button', { type: 'button', class: 'btn-lien' }, 'Supprimer') as HTMLButtonElement;
+      suppr.addEventListener('click', async () => {
+        const { error: e } = await sb.from('notifications').delete().eq('id', n.id);
+        if (e) return toast(messageErreur(e), 'erreur'); chargerAnnonces();
+      });
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, n.titre), h('span', {}, `${dateCourte(n.created_at.slice(0, 10))}${n.message ? ` · ${n.message}` : ''}`)), suppr);
+    }));
+  }
+  $('form-annonce').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    if (!val(f, 'titre')) return toast('Le titre est obligatoire.', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Publication…', async () => {
+      const { error } = await sb.from('notifications').insert({ titre: val(f, 'titre'), message: val(f, 'message'), lien: '/espace/' });
+      if (error) return toast(messageErreur(error), 'erreur');
+      f.reset(); toast('Annonce publiée.'); chargerAnnonces();
+    });
+  });
+
+  demarrer().catch((e) => { $('chargement').textContent = messageErreur(e); });
+</script>

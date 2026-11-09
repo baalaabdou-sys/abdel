@@ -15,6 +15,7 @@ import '../../styles/app.css';
           </div>
           <div class="actions">
             <a class="btn btn-petit" id="nouvelle" href="#">Nouvelle activité</a>
+            <a class="btn btn-contour btn-petit" id="contenus" href="#">Galerie, partenaires, ressources</a>
             <a class="btn btn-contour btn-petit" id="mon-espace" href="#">Mon espace</a>
           </div>
         </div>
@@ -24,6 +25,9 @@ import '../../styles/app.css';
         <div class="onglets" role="tablist" aria-label="Tableau de bord">
           <button type="button" role="tab" aria-selected="true" data-onglet="activites">Activités</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="membres">Membres</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="messages">Messages <span class="compteur" id="nb-messages" hidden></span></button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="idees">Idées <span class="compteur" id="nb-idees" hidden></span></button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="retours">Avis</button>
         </div>
 
         <div data-panneau="activites" role="tabpanel">
@@ -38,11 +42,23 @@ import '../../styles/app.css';
           </div>
           <div class="tableau-wrap">
             <table class="tableau">
-              <thead><tr><th>Nom</th><th>Filière</th><th>Année</th><th>Contact</th><th>Présences</th><th>Rôle</th></tr></thead>
-              <tbody id="membres"><tr><td colspan="6" class="aide">Chargement…</td></tr></tbody>
+              <thead><tr><th>Nom</th><th>Filière</th><th>Année</th><th>Contact</th><th>Présences</th><th>Rôle</th><th><span class="sr-only">Actions</span></th></tr></thead>
+              <tbody id="membres"><tr><td colspan="7" class="aide">Chargement…</td></tr></tbody>
             </table>
           </div>
           <p class="aide" id="info-roles" style="margin-top:.75rem"></p>
+        </div>
+
+        <div data-panneau="messages" role="tabpanel" hidden>
+          <div class="carte"><p class="aide" style="margin-bottom:.75rem">Messages envoyés depuis le formulaire de la page Contact (clubs, partenaires, entreprises).</p><ul class="liste-app" id="messages"></ul></div>
+        </div>
+
+        <div data-panneau="idees" role="tabpanel" hidden>
+          <div class="carte"><ul class="liste-app" id="idees"></ul></div>
+        </div>
+
+        <div data-panneau="retours" role="tabpanel" hidden>
+          <div class="carte"><p class="aide" style="margin-bottom:.75rem">Avis laissés par les participants après chaque activité (note sur 5).</p><ul class="liste-app" id="avis"></ul></div>
         </div>
       </div>
     </div>
@@ -51,7 +67,8 @@ import '../../styles/app.css';
 
 <script>
   import { exporterExcel } from '../../lib/excel';
-  import { sb, monProfil, estBureau, messageErreur, TYPES, ROLES, type Formation, type Profil, type Role } from '../../lib/supabase';
+  import { sb, monProfil, estBureau, messageErreur, TYPES, ROLES, STATUTS_IDEE, TYPES_IDEE, TYPES_CONTACT, type Formation, type Profil, type Role } from '../../lib/supabase';
+  import { FILIERES, ANNEES } from '../../config';
   import { h, vider, toast, dateCourte, aujourdhui, nomComplet } from '../../lib/dom';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -67,6 +84,7 @@ import '../../styles/app.css';
     $('role').textContent = `Bureau · ${ROLES[p.role]}`;
     ($('nouvelle') as HTMLAnchorElement).href = `${base}/bureau/activite/`;
     ($('mon-espace') as HTMLAnchorElement).href = `${base}/espace/`;
+    ($('contenus') as HTMLAnchorElement).href = `${base}/bureau/contenus/`;
     $('info-roles').textContent = p.role === 'admin'
       ? 'Rôles : « Responsable » gère les activités, les présences et les supports ; « Administrateur » gère aussi les membres et leurs rôles.'
       : 'Seuls les administrateurs peuvent changer les rôles.';
@@ -74,10 +92,13 @@ import '../../styles/app.css';
     await charger();
   }
 
-  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => {
+  function ouvrir(nom: string) {
+    const b = document.querySelector<HTMLButtonElement>(`[data-onglet="${nom}"]`); if (!b) return;
     document.querySelectorAll('[data-onglet]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
-    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== b.dataset.onglet));
-  }));
+    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== nom));
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => ouvrir(b.dataset.onglet!)));
+  if (location.hash) ouvrir(location.hash.slice(1));
 
   async function charger() {
     const [fRes, pRes, iRes] = await Promise.all([
@@ -99,10 +120,17 @@ import '../../styles/app.css';
     }
     membres = ((pRes.data ?? []) as Profil[]).map((m) => ({ ...m, presences: presences.get(m.id) ?? 0 }));
 
+    const passees = formations.filter((f) => f.date < aujourdhui()).map((f) => f.id);
+    const insPassees = inscriptions.filter((i) => passees.includes(i.formation_id));
+    const taux = insPassees.length ? Math.round((100 * insPassees.filter((i) => i.present).length) / insPassees.length) : null;
+    const { data: notes } = await sb.from('retours').select('note');
+    const moyenne = notes?.length ? (notes.reduce((a, n) => a + n.note, 0) / notes.length).toFixed(1).replace('.', ',') : '—';
     vider($('chiffres'), [
       ['Membres', membres.length], ['Activités', formations.length],
       ['Inscriptions', inscriptions.length], ['Présences validées', inscriptions.filter((i) => i.present).length],
+      ['Taux de présence', taux === null ? '—' : `${taux} %`], ['Note moyenne', moyenne === '—' ? '—' : `${moyenne}/5`],
     ].map(([l, n]) => h('div', { class: 'chiffre' }, h('b', {}, n), h('span', {}, l))));
+    chargerMessages(); chargerIdees(); chargerAvis(formations);
 
     afficherActivites(formations, parFormation);
     afficherMembres();
@@ -129,7 +157,7 @@ import '../../styles/app.css';
     const q = ($('recherche') as HTMLInputElement).value.trim().toLowerCase();
     const liste = membres.filter((m) => !q || [m.prenom, m.nom, m.email, m.filiere, m.annee, m.telephone].join(' ').toLowerCase().includes(q));
     const tbody = $('membres');
-    if (!liste.length) return vider(tbody, h('tr', {}, h('td', { colspan: 6, class: 'aide' }, q ? 'Aucun membre ne correspond à la recherche.' : 'Aucun membre inscrit pour l’instant.')));
+    if (!liste.length) return vider(tbody, h('tr', {}, h('td', { colspan: 7, class: 'aide' }, q ? 'Aucun membre ne correspond à la recherche.' : 'Aucun membre inscrit pour l’instant.')));
     vider(tbody, liste.map((m) => {
       let role: HTMLElement;
       if (moi.role === 'admin' && m.id !== moi.id) {
@@ -141,16 +169,113 @@ import '../../styles/app.css';
         });
         role = sel;
       } else role = h('span', { class: `pastille-etat ${m.role === 'membre' ? '' : 'attente'}` }, ROLES[m.role]);
-      return h('tr', {},
+      return h('tr', { 'data-id': m.id },
         h('td', {}, h('strong', {}, nomComplet(m))),
         h('td', {}, m.filiere ?? '—'), h('td', {}, m.annee ?? '—'),
         h('td', {}, h('a', { href: `mailto:${m.email}` }, m.email), m.telephone ? h('div', { class: 'aide' }, m.telephone) : null),
         h('td', { class: 'nombre' }, m.presences),
         h('td', {}, role),
+        h('td', {}, moi.role === 'admin' && m.id !== moi.id ? h('button', { type: 'button', class: 'btn-lien', onclick: () => editerMembre(m) }, 'Modifier') : null),
       );
     }));
   }
   $('recherche').addEventListener('input', afficherMembres);
+
+  // ── Modifier / supprimer un membre (administrateurs)
+  function editerMembre(m: Profil & { presences: number }) {
+    const ligne = $('membres').querySelector(`tr[data-id="${m.id}"]`);
+    const form = h('form', { class: 'form edition' }) as HTMLFormElement;
+    const champ = (nom: string, label: string, valeur: string | null, opts?: readonly string[]) => h('div', { class: 'champ' }, h('label', { for: `ed-${nom}` }, label),
+      opts ? h('select', { id: `ed-${nom}`, name: nom }, h('option', { value: '' }, '—'), opts.map((o) => h('option', { selected: o === valeur }, o)))
+        : h('input', { id: `ed-${nom}`, name: nom, value: valeur ?? '' }));
+    let confirmer = false;
+    const suppr = h('button', { type: 'button', class: 'btn btn-contour btn-petit' }, 'Supprimer le compte') as HTMLButtonElement;
+    suppr.addEventListener('click', async () => {
+      if (!confirmer) { confirmer = true; suppr.textContent = 'Confirmer : supprimer définitivement'; setTimeout(() => { confirmer = false; suppr.textContent = 'Supprimer le compte'; }, 6000); return; }
+      const { error } = await sb.rpc('admin_supprimer_membre', { p_membre: m.id });
+      if (error) return toast(messageErreur(error), 'erreur');
+      toast(`Compte de ${nomComplet(m)} supprimé.`); charger();
+    });
+    form.append(
+      h('div', { class: 'ligne-2' }, champ('prenom', 'Prénom', m.prenom), champ('nom', 'Nom', m.nom)),
+      h('div', { class: 'ligne-2' }, champ('filiere', 'Filière', m.filiere, FILIERES), champ('annee', 'Année', m.annee, ANNEES)),
+      champ('telephone', 'Téléphone', m.telephone),
+      h('p', { class: 'aide' }, 'La suppression efface le compte et tout son historique (inscriptions, attestations). Elle est irréversible.'),
+      h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'btn btn-petit' }, 'Enregistrer'), h('button', { type: 'button', class: 'btn-lien', onclick: () => afficherMembres() }, 'Annuler'), suppr));
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const v = (k: string) => (form.elements.namedItem(k) as HTMLInputElement).value.trim();
+      const { error } = await sb.rpc('admin_modifier_membre', { p_membre: m.id, p_prenom: v('prenom'), p_nom: v('nom'), p_telephone: v('telephone'), p_filiere: v('filiere'), p_annee: v('annee') });
+      if (error) return toast(messageErreur(error), 'erreur');
+      toast('Membre mis à jour.'); charger();
+    });
+    const tr = h('tr', {}, h('td', { colspan: 7 }, form));
+    if (ligne) ligne.replaceWith(tr); else $('membres').prepend(tr);
+    (form.querySelector('input') as HTMLInputElement).focus();
+  }
+
+  // ── Messages de contact
+  async function chargerMessages() {
+    const { data, error } = await sb.from('messages_contact').select('*').order('created_at', { ascending: false }).limit(200);
+    const ul = $('messages');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    const nouveaux = (data ?? []).filter((m) => !m.traite).length;
+    $('nb-messages').hidden = !nouveaux; $('nb-messages').textContent = String(nouveaux);
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucun message reçu.'));
+    vider(ul, data.map((m) => {
+      const btn = h('button', { type: 'button', class: m.traite ? 'btn-lien' : 'btn btn-petit' }, m.traite ? 'Marquer non traité' : 'Marquer traité') as HTMLButtonElement;
+      btn.addEventListener('click', async () => {
+        const { error: e } = await sb.from('messages_contact').update({ traite: !m.traite }).eq('id', m.id);
+        if (e) return toast(messageErreur(e), 'erreur'); chargerMessages();
+      });
+      return h('li', { class: m.traite ? '' : 'non-lue' },
+        h('div', { class: 'infos' },
+          h('strong', {}, `${m.nom}${m.organisation ? ` — ${m.organisation}` : ''}`),
+          h('span', {}, `${TYPES_CONTACT[m.type as keyof typeof TYPES_CONTACT]} · ${dateCourte(m.created_at.slice(0, 10))} · `, h('a', { href: `mailto:${m.email}` }, m.email)),
+          h('p', { class: 'message-texte' }, m.message)),
+        btn);
+    }));
+  }
+
+  // ── Boîte à idées
+  async function chargerIdees() {
+    const { data, error } = await sb.from('idees').select('*, profiles(prenom, nom)').order('created_at', { ascending: false });
+    const ul = $('idees');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    const nouvelles = (data ?? []).filter((i) => i.statut === 'nouvelle').length;
+    $('nb-idees').hidden = !nouvelles; $('nb-idees').textContent = String(nouvelles);
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune idée proposée pour l’instant.'));
+    vider(ul, data.map((i) => {
+      const sel = h('select', { 'aria-label': `Statut de l’idée ${i.titre}` }, Object.entries(STATUTS_IDEE).map(([k, l]) => h('option', { value: k, selected: k === i.statut }, l))) as HTMLSelectElement;
+      sel.addEventListener('change', async () => {
+        const { error: e } = await sb.from('idees').update({ statut: sel.value }).eq('id', i.id);
+        if (e) { sel.value = i.statut; return toast(messageErreur(e), 'erreur'); }
+        i.statut = sel.value; toast('Statut mis à jour.'); chargerIdees();
+      });
+      const auteur = i.profiles ? nomComplet(i.profiles) : 'Membre supprimé';
+      return h('li', { class: i.statut === 'nouvelle' ? 'non-lue' : '' },
+        h('div', { class: 'infos' }, h('strong', {}, i.titre), h('span', {}, `${TYPES_IDEE[i.type as keyof typeof TYPES_IDEE]} · ${auteur} · ${dateCourte(i.created_at.slice(0, 10))}`), i.description && h('p', { class: 'message-texte' }, i.description)),
+        sel);
+    }));
+  }
+
+  // ── Avis des participants
+  async function chargerAvis(formations: Formation[]) {
+    const { data, error } = await sb.from('retours').select('formation_id, note, commentaire, created_at');
+    const ul = $('avis');
+    if (error) return vider(ul, h('li', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Aucun avis pour l’instant. Les participants peuvent noter une activité depuis leur espace, une fois leur présence validée.'));
+    const parF = new Map<string, typeof data>();
+    for (const r of data) parF.set(r.formation_id, [...(parF.get(r.formation_id) ?? []), r]);
+    vider(ul, formations.filter((f) => parF.has(f.id)).map((f) => {
+      const avis = parF.get(f.id)!;
+      const moy = (avis.reduce((a, r) => a + r.note, 0) / avis.length).toFixed(1).replace('.', ',');
+      const coms = avis.filter((r) => r.commentaire);
+      return h('li', {}, h('div', { class: 'infos' },
+        h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · ${avis.length} avis · moyenne ${moy}/5`),
+        coms.length ? h('ul', { class: 'commentaires' }, coms.map((c) => h('li', {}, `${c.note}/5 — ${c.commentaire}`))) : null));
+    }));
+  }
 
   $('export-membres').addEventListener('click', () => exporterExcel(membres, [
     { titre: 'Prénom', valeur: (m) => m.prenom, largeur: 18 },

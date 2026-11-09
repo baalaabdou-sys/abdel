@@ -4,6 +4,8 @@ import EnTetePage from '../../components/EnTetePage.astro';
 import CarteProjet from '../../components/CarteProjet.astro';
 import AppelRejoindre from '../../components/AppelRejoindre.astro';
 import { getProjets } from '../../lib/collections';
+import { u } from '../../lib/url';
+import '../../styles/app.css';
 
 const projets = await getProjets();
 const types = [...new Set(projets.map((p) => p.data.type))];
@@ -14,6 +16,16 @@ const types = [...new Set(projets.map((p) => p.data.type))];
     titre="Projets & ateliers"
     chapo="Ce que les membres du club construisent, apprennent et partagent au fil de l’année."
   />
+
+  <section class="section serree" aria-labelledby="realisees" id="bloc-realisees" hidden>
+    <div class="conteneur">
+      <div class="entete-section">
+        <div><span class="surtitre">Déjà réalisé</span><h2 id="realisees" class="titre-2">Activités réalisées</h2></div>
+        <a class="btn btn-contour" href={u('/galerie/')}>Voir la galerie</a>
+      </div>
+      <ul class="grille grille-3 liste" id="liste-realisees" role="list"></ul>
+    </div>
+  </section>
 
   <section class="section" aria-labelledby="liste">
     <div class="conteneur">
@@ -64,3 +76,37 @@ const types = [...new Set(projets.map((p) => p.data.type))];
     if (etat) etat.textContent = `${n} activité${n > 1 ? 's' : ''} affichée${n > 1 ? 's' : ''}.`;
   }));
 </script>
+
+<script>
+  import { sb, TYPES, type Formation } from '../../lib/supabase';
+  import { h, vider, dateLongue, aujourdhui } from '../../lib/dom';
+  import { urlMedia } from '../../lib/images';
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  (async () => {
+    const [fRes, pRes] = await Promise.all([
+      sb.from('formations').select('*').eq('publiee', true).lt('date', aujourdhui()).order('date', { ascending: false }).limit(12),
+      sb.from('photos').select('chemin, formation_id').not('formation_id', 'is', null).order('created_at'),
+    ]);
+    const liste = (fRes.data ?? []) as Formation[];
+    if (!liste.length) return;
+    const couverture = new Map<string, string>();
+    for (const p of pRes.data ?? []) if (!couverture.has(p.formation_id!)) couverture.set(p.formation_id!, p.chemin);
+    document.getElementById('bloc-realisees')!.hidden = false;
+    vider(document.getElementById('liste-realisees')!, liste.map((f) => h('li', {}, h('article', { class: 'carte-real' },
+      couverture.has(f.id) ? h('img', { src: urlMedia(couverture.get(f.id)!), alt: '', loading: 'lazy' }) : h('div', { class: 'sans-photo' }, h('span', {}, '[Photo de l’activité]')),
+      h('div', { class: 'corps' },
+        h('span', { class: 'etiquette' }, TYPES[f.type]),
+        h('h3', { class: 'titre-3' }, h('a', { href: `${base}/activites/realisation/?id=${f.id}` }, f.titre)),
+        h('p', { class: 'aide' }, dateLongue(f.date)))))));
+  })();
+</script>
+<style>
+  .carte-real { position: relative; background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon); overflow: hidden; height: 100%; }
+  .carte-real:hover { border-color: var(--bleu); }
+  .carte-real img, .carte-real .sans-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: grid; place-items: center; background: var(--bleu-06); }
+  .carte-real .sans-photo span { font-family: var(--f-label); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--bleu); background: var(--blanc); padding: .3em .7em; border-radius: 4px; }
+  .carte-real .corps { padding: 1rem 1.2rem 1.2rem; }
+  .carte-real .titre-3 { color: var(--marine); font-size: 1.25rem; margin: .6rem 0 .3rem; }
+  .carte-real .titre-3 a { color: inherit; text-decoration: none; }
+  .carte-real .titre-3 a::after { content: ''; position: absolute; inset: 0; }
+</style>

@@ -1,0 +1,87 @@
+---
+import Base from '../layouts/Base.astro';
+import EnTetePage from '../components/EnTetePage.astro';
+import '../styles/app.css';
+---
+<Base titre="Galerie" description="Photos des activités, formations et événements du Club 2AMECA à la FSAC.">
+  <EnTetePage surtitre="Galerie" titre="En images" chapo="Ateliers, formations, événements : la vie du club en photos." />
+  <section class="app">
+    <div class="conteneur">
+      <div class="filtres" id="filtres" role="group" aria-label="Filtrer par activité" hidden></div>
+      <p class="chargement" id="chargement">Chargement des photos…</p>
+      <ul class="galerie" id="galerie" role="list"></ul>
+    </div>
+  </section>
+
+  <dialog class="visionneuse" id="visionneuse" aria-label="Photo agrandie">
+    <button type="button" class="fermer" id="fermer">Fermer</button>
+    <img id="grande" alt="" />
+    <p id="legende"></p>
+  </dialog>
+</Base>
+
+<style>
+  .galerie { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: .75rem; }
+  .galerie button { display: block; width: 100%; padding: 0; border: 0; background: var(--bleu-06); border-radius: 10px; overflow: hidden; cursor: zoom-in; }
+  .galerie img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; transition: transform .3s; }
+  .galerie button:hover img { transform: scale(1.03); }
+  .galerie figcaption { font-size: .9rem; color: var(--encre-70); padding: .35rem .1rem 0; }
+  .filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+  .filtres button { min-height: 40px; padding: .4em 1em; border-radius: 999px; cursor: pointer; font-family: var(--f-label); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; background: var(--blanc); color: var(--bleu); border: 1.5px solid var(--bleu-12); }
+  .filtres button[aria-pressed='true'] { background: var(--bleu); color: var(--blanc); border-color: var(--bleu); }
+  .visionneuse { border: 0; padding: 0; background: var(--marine); color: var(--blanc); max-width: min(96vw, 1100px); max-height: 92vh; border-radius: 12px; }
+  .visionneuse::backdrop { background: rgb(4 34 58 / .85); }
+  .visionneuse img { max-width: 100%; max-height: 80vh; display: block; margin: 0 auto; }
+  .visionneuse p { padding: .6rem 1rem .9rem; margin: 0; }
+  .fermer { position: absolute; top: .5rem; right: .5rem; min-height: 40px; padding: .3em .9em; border-radius: 999px; border: 0; background: var(--blanc); color: var(--marine); font-family: var(--f-label); text-transform: uppercase; letter-spacing: .1em; cursor: pointer; }
+</style>
+
+<script>
+  import { sb, messageErreur } from '../lib/supabase';
+  import { h, vider } from '../lib/dom';
+  import { urlMedia } from '../lib/images';
+
+  const ul = document.getElementById('galerie')!;
+  const chargement = document.getElementById('chargement')!;
+  const dlg = document.getElementById('visionneuse') as HTMLDialogElement;
+  type Photo = { id: string; chemin: string; legende: string; formation_id: string | null; formations: { titre: string } | null };
+  let photos: Photo[] = [];
+
+  function afficher(filtre: string | null) {
+    const liste = filtre ? photos.filter((p) => p.formation_id === filtre) : photos;
+    vider(ul, liste.map((p) => {
+      const texte = p.legende || p.formations?.titre || '';
+      return h('li', {}, h('figure', { style: 'margin:0' },
+        h('button', { type: 'button', 'aria-label': `Agrandir${texte ? ` : ${texte}` : ' la photo'}`, onclick: () => {
+          (document.getElementById('grande') as HTMLImageElement).src = urlMedia(p.chemin);
+          (document.getElementById('grande') as HTMLImageElement).alt = texte;
+          document.getElementById('legende')!.textContent = [p.legende, p.formations?.titre].filter(Boolean).join(' — ');
+          dlg.showModal();
+        } }, h('img', { src: urlMedia(p.chemin), alt: texte, loading: 'lazy' })),
+        texte ? h('figcaption', {}, texte) : null));
+    }));
+  }
+
+  (async () => {
+    const { data, error } = await sb.from('photos').select('id, chemin, legende, formation_id, formations(titre)').order('created_at', { ascending: false });
+    if (error) { chargement.textContent = messageErreur(error); return; }
+    chargement.hidden = true;
+    photos = (data ?? []) as unknown as Photo[];
+    if (!photos.length) return vider(ul, h('li', { class: 'vide', style: 'grid-column:1/-1' }, 'Les premières photos arrivent bientôt.'));
+    const activites = new Map(photos.filter((p) => p.formation_id && p.formations).map((p) => [p.formation_id!, p.formations!.titre]));
+    if (activites.size > 1) {
+      const zone = document.getElementById('filtres')!;
+      zone.hidden = false;
+      const boutons = [h('button', { type: 'button', 'aria-pressed': 'true', 'data-id': '' }, 'Tout'), ...[...activites].map(([id, t]) => h('button', { type: 'button', 'aria-pressed': 'false', 'data-id': id }, t))];
+      boutons.forEach((b) => b.addEventListener('click', () => {
+        boutons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        afficher(b.dataset.id || null);
+      }));
+      vider(zone, boutons);
+    }
+    afficher(null);
+  })();
+
+  document.getElementById('fermer')!.addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+</script>

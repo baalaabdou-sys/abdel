@@ -23,7 +23,10 @@ import { FILIERES, ANNEES } from '../config';
         <div class="onglets" role="tablist" aria-label="Mon espace">
           <button type="button" role="tab" aria-selected="true" data-onglet="activites">Activités</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="parcours">Mon parcours</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="notifications">Notifications <span class="compteur" id="nb-notifs" hidden></span></button>
           <button type="button" role="tab" aria-selected="false" data-onglet="qr">Mon QR code</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="ressources">Ressources</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="idees">Boîte à idées</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="profil">Mon profil</button>
         </div>
 
@@ -33,7 +36,10 @@ import { FILIERES, ANNEES } from '../config';
 
         <div data-panneau="parcours" role="tabpanel" hidden>
           <div class="colonnes large-gauche">
-            <div class="carte"><h2>Mes participations</h2><ul class="liste-app" id="historique"><li class="aide">Chargement…</li></ul></div>
+            <div>
+              <div class="carte"><h2>Mes participations</h2><ul class="liste-app" id="historique"><li class="aide">Chargement…</li></ul></div>
+              <div class="carte" id="carte-retours" hidden><h2>Votre avis compte</h2><p class="aide">Notez les activités auxquelles vous avez participé : cela aide le bureau à les améliorer.</p><div id="retours"></div></div>
+            </div>
             <div>
               <div class="carte"><h2>Mes attestations</h2><ul class="liste-app" id="attestations"><li class="aide">Chargement…</li></ul></div>
               <div class="carte"><h2>Mes supports de formation</h2><ul class="liste-app" id="supports"><li class="aide">Chargement…</li></ul></div>
@@ -46,6 +52,29 @@ import { FILIERES, ANNEES } from '../config';
             <h2>Mon QR code de présence</h2>
             <img id="qr" alt="Votre QR code personnel de présence" width="220" height="220" />
             <p class="aide">Présentez ce code à l’entrée de chaque activité : un responsable le scanne pour valider votre présence. Vos supports et votre attestation sont ensuite disponibles automatiquement.</p>
+          </div>
+        </div>
+
+        <div data-panneau="notifications" role="tabpanel" hidden>
+          <div class="carte"><h2>Notifications</h2><ul class="liste-app" id="notifications"><li class="aide">Chargement…</li></ul></div>
+        </div>
+
+        <div data-panneau="ressources" role="tabpanel" hidden>
+          <div class="carte"><h2>Bibliothèque de ressources</h2><div id="ressources"><p class="aide">Chargement…</p></div></div>
+        </div>
+
+        <div data-panneau="idees" role="tabpanel" hidden>
+          <div class="colonnes">
+            <form class="carte form" id="form-idee" novalidate>
+              <h2>Proposer une idée</h2>
+              <p class="aide">Un projet, un atelier, un événement ? Le bureau lit chaque proposition.</p>
+              <div class="champ"><label for="idee-type">Type</label>
+                <select id="idee-type" name="type"><option value="projet">Projet</option><option value="evenement">Événement</option><option value="autre">Autre</option></select></div>
+              <div class="champ"><label for="idee-titre">Titre</label><input id="idee-titre" name="titre" maxlength="150" required /></div>
+              <div class="champ"><label for="idee-desc">Description</label><textarea id="idee-desc" name="description" maxlength="3000"></textarea></div>
+              <div class="actions"><button class="btn" type="submit">Envoyer mon idée</button></div>
+            </form>
+            <div class="carte"><h2>Mes idées</h2><ul class="liste-app" id="mes-idees"><li class="aide">Chargement…</li></ul></div>
           </div>
         </div>
 
@@ -77,6 +106,7 @@ import { FILIERES, ANNEES } from '../config';
   import { sb, monProfil, estBureau, messageErreur, TYPES, ROLES, type Formation, type Profil } from '../lib/supabase';
   import { h, vider, toast, dateLongue, dateCourte, horaire, aujourdhui, taille, pendant } from '../lib/dom';
   import { genererAttestation, telecharger, nomFichier } from '../lib/attestation';
+  import { STATUTS_IDEE, TYPES_IDEE } from '../lib/supabase';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;
@@ -98,13 +128,18 @@ import { FILIERES, ANNEES } from '../config';
       await QRCode.toDataURL(`2AMECA:${p.id}`, { margin: 1, width: 440, errorCorrectionLevel: 'M', color: { dark: '#04223A', light: '#FFFFFF' } });
     $('chargement').hidden = true; $('espace').hidden = false;
     await charger();
+    if (location.hash) ouvrir(location.hash.slice(1));
   }
 
   // ── Onglets
-  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => {
+  function ouvrir(nom: string) {
+    const b = document.querySelector<HTMLButtonElement>(`[data-onglet="${nom}"]`);
+    if (!b) return;
     document.querySelectorAll('[data-onglet]').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
-    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== b.dataset.onglet));
-  }));
+    document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== nom));
+    if (nom === 'notifications') marquerLues();
+  }
+  document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => ouvrir(b.dataset.onglet!)));
 
   async function charger() {
     const [fRes, iRes, aRes, sRes] = await Promise.all([
@@ -123,7 +158,108 @@ import { FILIERES, ANNEES } from '../config';
     afficherAttestations(aRes.data ?? [], parFormation);
     const presentes = new Set(inscriptions.filter((i) => i.present).map((i) => i.formation_id));
     afficherSupports((sRes.data ?? []).filter((s) => presentes.has(s.formation_id)), parFormation);
+    await Promise.all([chargerRetours(inscriptions), chargerNotifications(), chargerRessources(), chargerIdees()]);
   }
+
+  // ── Retours d'expérience (activités passées où la présence est validée)
+  async function chargerRetours(inscriptions: Inscription[]) {
+    const faites = inscriptions.filter((i) => i.present && i.formations.date <= aujourdhui());
+    $('carte-retours').hidden = !faites.length;
+    if (!faites.length) return;
+    const { data } = await sb.from('retours').select('formation_id, note, commentaire').eq('membre_id', profil.id);
+    const donnes = new Map((data ?? []).map((r) => [r.formation_id, r]));
+    vider($('retours'), faites.map((i) => {
+      const deja = donnes.get(i.formation_id);
+      const form = h('form', { class: 'form retour' }) as HTMLFormElement;
+      const nom = `note-${i.formation_id}`;
+      const etoiles = h('fieldset', { class: 'etoiles' }, h('legend', { class: 'lbl' }, i.formations.titre),
+        [1, 2, 3, 4, 5].map((n) => h('label', {}, h('input', { type: 'radio', name: nom, value: n, checked: deja?.note === n, required: true }), h('span', {}, `${n}`))));
+      const com = h('textarea', { name: 'commentaire', maxlength: 2000, placeholder: 'Ce qui vous a plu, ce qui peut être amélioré… (facultatif)', 'aria-label': `Commentaire sur ${i.formations.titre}` }) as HTMLTextAreaElement;
+      com.value = deja?.commentaire ?? '';
+      const btn = h('button', { class: 'btn btn-petit', type: 'submit' }, deja ? 'Mettre à jour mon avis' : 'Envoyer mon avis') as HTMLButtonElement;
+      form.append(etoiles, h('div', { class: 'champ' }, com), h('div', { class: 'actions' }, btn));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const note = Number((form.querySelector(`input[name="${nom}"]:checked`) as HTMLInputElement | null)?.value);
+        if (!note) return toast('Choisissez une note de 1 à 5.', 'erreur');
+        pendant(btn, 'Envoi…', async () => {
+          const { error } = await sb.from('retours').upsert({ formation_id: i.formation_id, membre_id: profil.id, note, commentaire: com.value.trim() });
+          if (error) return toast(messageErreur(error), 'erreur');
+          btn.textContent = 'Mettre à jour mon avis'; toast('Merci pour votre avis !');
+        });
+      });
+      return form;
+    }));
+  }
+
+  // ── Notifications
+  type Notif = { id: string; titre: string; message: string; lien: string | null; created_at: string; membre_id: string | null };
+  let nonLues: string[] = [];
+  async function chargerNotifications() {
+    const depuis = new Date(Date.now() - 60 * 864e5).toISOString();
+    const [nRes, lRes] = await Promise.all([
+      sb.from('notifications').select('*').or(`membre_id.is.null,membre_id.eq.${profil.id}`).gte('created_at', depuis).order('created_at', { ascending: false }).limit(50),
+      sb.from('notifications_lues').select('notification_id'),
+    ]);
+    const notifs = (nRes.data ?? []) as Notif[];
+    const lues = new Set((lRes.data ?? []).map((l) => l.notification_id));
+    nonLues = notifs.filter((n) => !lues.has(n.id)).map((n) => n.id);
+    const badge = $('nb-notifs');
+    badge.hidden = !nonLues.length; badge.textContent = String(nonLues.length);
+    const ul = $('notifications');
+    if (!notifs.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune notification pour le moment.'));
+    const quand = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Casablanca' });
+    vider(ul, notifs.map((n) => h('li', { class: lues.has(n.id) ? '' : 'non-lue' },
+      h('div', { class: 'infos' }, h('strong', {}, n.titre), n.message && h('span', {}, n.message)),
+      h('div', { class: 'actions' }, h('span', { class: 'aide' }, quand.format(new Date(n.created_at))),
+        n.lien && h('a', { class: 'btn-lien', href: base + n.lien, onclick: () => { const t = n.lien!.split('#')[1]; if (t && n.lien!.startsWith('/espace/')) setTimeout(() => ouvrir(t)); } }, 'Voir')))));
+  }
+  async function marquerLues() {
+    if (!nonLues.length) return;
+    const ids = nonLues; nonLues = [];
+    await sb.from('notifications_lues').upsert(ids.map((id) => ({ notification_id: id, membre_id: profil.id })), { ignoreDuplicates: true });
+    $('nb-notifs').hidden = true;
+  }
+
+  // ── Ressources
+  async function chargerRessources() {
+    const { data, error } = await sb.from('ressources').select('*').order('categorie').order('titre');
+    const zone = $('ressources');
+    if (error) return vider(zone, h('p', { class: 'aide' }, messageErreur(error)));
+    if (!data?.length) return vider(zone, h('p', { class: 'vide' }, 'La bibliothèque est encore vide.'));
+    const parCat = new Map<string, typeof data>();
+    for (const r of data) parCat.set(r.categorie, [...(parCat.get(r.categorie) ?? []), r]);
+    vider(zone, [...parCat].map(([cat, liste]) => h('div', { class: 'categorie' }, h('h3', {}, cat),
+      h('ul', { class: 'liste-app' }, liste.map((r) => {
+        const btn = h('button', { type: 'button', class: 'btn btn-contour btn-petit' }, 'Télécharger') as HTMLButtonElement;
+        btn.addEventListener('click', () => pendant(btn, '…', async () => {
+          const { data: u, error: e } = await sb.storage.from('ressources').createSignedUrl(r.chemin, 600, { download: r.nom_fichier });
+          if (e || !u) return toast(messageErreur(e), 'erreur');
+          location.href = u.signedUrl;
+        }));
+        return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, r.titre), h('span', {}, [r.description, taille(r.taille)].filter(Boolean).join(' · '))), btn);
+      })))));
+  }
+
+  // ── Boîte à idées
+  async function chargerIdees() {
+    const { data } = await sb.from('idees').select('*').eq('membre_id', profil.id).order('created_at', { ascending: false });
+    const ul = $('mes-idees');
+    if (!data?.length) return vider(ul, h('li', { class: 'vide' }, 'Vous n’avez pas encore proposé d’idée.'));
+    vider(ul, data.map((i) => h('li', {}, h('div', { class: 'infos' }, h('strong', {}, i.titre), h('span', {}, `${TYPES_IDEE[i.type as keyof typeof TYPES_IDEE]} · ${dateCourte(i.created_at.slice(0, 10))}`)),
+      h('span', { class: `pastille-etat ${i.statut === 'retenue' || i.statut === 'realisee' ? 'ok' : i.statut === 'nouvelle' ? 'attente' : ''}` }, STATUTS_IDEE[i.statut as keyof typeof STATUTS_IDEE]))));
+  }
+  $('form-idee').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    const v = (k: string) => (f.elements.namedItem(k) as HTMLInputElement).value.trim();
+    if (v('titre').length < 3) return toast('Donnez un titre à votre idée (3 caractères minimum).', 'erreur');
+    await pendant(f.querySelector('button[type=submit]'), 'Envoi…', async () => {
+      const { error } = await sb.from('idees').insert({ membre_id: profil.id, type: v('type'), titre: v('titre'), description: v('description') });
+      if (error) return toast(messageErreur(error), 'erreur');
+      f.reset(); toast('Merci ! Votre idée a été transmise au bureau.'); chargerIdees();
+    });
+  });
 
   async function afficherAVenir(formations: Formation[], mes: Map<string, Inscription>) {
     const ul = $('a-venir');
