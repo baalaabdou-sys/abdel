@@ -169,8 +169,10 @@ import '../../styles/app.css';
     const { data } = await sb.from('formations').select('*').order('date', { ascending: false });
     formations = (data ?? []) as Formation[];
     $('ph-activite').append(...formations.map((f) => h('option', { value: f.id }, `${f.titre} (${dateCourte(f.date)})`)));
+    // Les formulaires de textes ne s'affichent qu'une fois remplis, pour ne jamais écraser une saisie.
+    await chargerTextes();
     $('chargement').hidden = true; $('page').hidden = false;
-    await Promise.all([chargerTextes(), chargerEquipe(), chargerPhotos(), chargerPartenaires(), chargerRessources(), chargerAnnonces()]);
+    await Promise.all([chargerEquipe(), chargerPhotos(), chargerPartenaires(), chargerRessources(), chargerAnnonces()]);
   }
 
   function ouvrir(nom: string) {
