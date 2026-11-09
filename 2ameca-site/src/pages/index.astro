@@ -118,18 +118,29 @@ const piliers = [
           </p>
         </div>
         <a class="lien-fleche" href={u('/le-club/')}>Découvrir le club <span aria-hidden="true">→</span></a>
+        <ol class="piliers" role="list">
+          {piliers.map((p) => (
+            <li class="reveal">
+              <span class="num" aria-hidden="true">{p.n}</span>
+              <div>
+                <h3 class="titre-3">{p.titre}</h3>
+                <p>{p.texte}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
-      <ol class="piliers" role="list">
-        {piliers.map((p) => (
-          <li class="reveal">
-            <span class="num" aria-hidden="true">{p.n}</span>
-            <div>
-              <h3 class="titre-3">{p.titre}</h3>
-              <p>{p.texte}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <figure class="video-club reveal">
+        <video id="video-club" muted loop playsinline preload="none" width="720" height="1280"
+          poster={u('/video/2ameca-intro.jpg')} aria-label="Animation du logo 2AMECA : des engrenages s’ouvrent sur le logo, avec la devise « Esprit citoyen au centre »">
+          <source src={u('/video/2ameca-intro.mp4')} type="video/mp4" />
+          <source src={u('/video/2ameca-intro.webm')} type="video/webm" />
+        </video>
+        <div class="video-boutons">
+          <button type="button" class="video-btn" id="video-lecture" aria-pressed="false">Lecture</button>
+          <button type="button" class="video-btn" id="video-son" aria-pressed="false">Activer le son</button>
+        </div>
+      </figure>
     </div>
   </section>
 
@@ -237,7 +248,17 @@ const piliers = [
 
   /* Intro */
   .grille-intro { display: grid; gap: 2.5rem 4rem; }
-  @media (min-width: 900px) { .grille-intro { grid-template-columns: 1fr 1fr; align-items: center; } }
+  @media (min-width: 900px) { .grille-intro { grid-template-columns: 1.25fr 1fr; align-items: center; } }
+  .grille-intro .piliers { margin-top: 2rem; }
+
+  /* Animation du logo (vidéo verticale) */
+  .video-club { position: relative; margin: 0; width: min(100%, 80vw, 380px); justify-self: center; }
+  .video-club video { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; border-radius: 18px; background: var(--marine);
+    box-shadow: 0 30px 60px -30px rgb(4 34 58 / .7); }
+  .video-boutons { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; justify-content: space-between; gap: .5rem; }
+  .video-btn { min-height: 40px; padding: .35em .95em; border-radius: 999px; border: 1px solid rgb(255 255 255 / .5); cursor: pointer;
+    background: rgb(4 34 58 / .8); color: var(--blanc); font-family: var(--f-label); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+  .video-btn:hover { background: var(--marine); }
   .grille-intro .chapo { color: var(--encre); }
   .piliers { list-style: none; padding: 0; display: grid; gap: 0; counter-reset: none; }
   .piliers li { display: grid; grid-template-columns: 3.5rem 1fr; gap: 1rem; padding: 1.4rem 0; border-top: 1px solid var(--bleu-12); }
@@ -248,6 +269,32 @@ const piliers = [
 
   .vide { font-size: 1.1rem; color: var(--encre-70); }
 </style>
+
+<script>
+  // Animation du logo : lecture muette en boucle quand elle est visible ;
+  // image fixe si l'utilisateur a demandé à réduire les animations.
+  const v = document.getElementById('video-club') as HTMLVideoElement | null;
+  const bLecture = document.getElementById('video-lecture') as HTMLButtonElement;
+  const bSon = document.getElementById('video-son') as HTMLButtonElement;
+  if (v) {
+    const reduit = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const majBoutons = () => {
+      bLecture.textContent = v.paused ? 'Lecture' : 'Pause'; bLecture.setAttribute('aria-pressed', String(!v.paused));
+      bSon.textContent = v.muted ? 'Activer le son' : 'Couper le son'; bSon.setAttribute('aria-pressed', String(!v.muted));
+    };
+    let choixUtilisateur = false;
+    bLecture.addEventListener('click', () => { choixUtilisateur = true; v.paused ? v.play() : v.pause(); });
+    bSon.addEventListener('click', () => { v.muted = !v.muted; if (!v.muted && v.paused) v.play(); majBoutons(); });
+    v.addEventListener('play', majBoutons); v.addEventListener('pause', majBoutons);
+    if (!reduit && 'IntersectionObserver' in window) {
+      new IntersectionObserver(([e]) => {
+        if (choixUtilisateur) return;
+        if (e.isIntersecting) { v.preload = 'auto'; v.play().catch(() => {}); } else v.pause();
+      }, { threshold: .4 }).observe(v);
+    }
+    majBoutons();
+  }
+</script>
 
 <script>
   import { chargerContenus, remplir, paragraphes } from '../lib/contenu';
