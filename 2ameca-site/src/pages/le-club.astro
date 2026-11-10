@@ -10,17 +10,29 @@ import { FSAC } from '../config';
 import { CLUB_DEFAUT } from '../data/contenus';
 import { u } from '../lib/url';
 
-const { etapes: historique, valeurs, histoire, mission } = CLUB_DEFAUT;
+const { etapes: historique, valeurs, histoire, mission, intro } = CLUB_DEFAUT;
 const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 ---
-<Base titre="Le club" description="Histoire, mission et valeurs du Club 2AMECA, l’Atelier d’Applications Mécanique de la FSAC, et présentation de son bureau.">
+<Base titre="Le club" description="2AMECA, Atelier d’Application Mécanique et Esprit au Citoyen : club estudiantin de la FSAC. Histoire, mission, valeurs et bureau.">
   <EnTetePage
     surtitre="Le club"
-    titre="Atelier d’applications mécanique"
-    chapo="Un club étudiant de la Faculté des Sciences Aïn Chock, Université Hassan II de Casablanca, consacré à la mécanique appliquée, à l’automobile et à l’aéronautique."
+    titre="2AMECA"
+    chapo="Atelier d’Application Mécanique et Esprit au Citoyen. La science, l’innovation et l’engagement au service des étudiants."
   >
     <p slot="script" class="script devise" aria-hidden="true">Esprit citoyen au centre</p>
   </EnTetePage>
+
+  <!-- Présentation -->
+  <section class="section serree" aria-labelledby="presentation">
+    <div class="conteneur presentation reveal">
+      <span class="surtitre">Le club</span>
+      <h2 id="presentation" class="titre-2">Atelier d’Application Mécanique et Esprit au Citoyen</h2>
+      <hr class="trait" />
+      <div class="presentation-texte" data-c="intro">
+        {intro.split(/\n\s*\n/).map((t) => <p class="chapo">{t}</p>)}
+      </div>
+    </div>
+  </section>
 
   <!-- Histoire -->
   <section class="section" aria-labelledby="histoire">
@@ -138,6 +150,9 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 <style>
   .devise { font-size: clamp(2.6rem, 10vw, 4.5rem); margin: .4rem 0 0; transform: rotate(-3deg); transform-origin: left; }
 
+  .presentation .titre-2 { max-width: 22ch; }
+  .presentation-texte { display: grid; gap: 0 3rem; margin-top: 1.5rem; }
+  @media (min-width: 900px) { .presentation-texte { grid-template-columns: 1fr 1fr; } }
   .deux-col { display: grid; gap: 2.5rem 4rem; }
   @media (min-width: 900px) { .deux-col { grid-template-columns: 1fr 1fr; } }
 
@@ -188,6 +203,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
     const [{ club }, bureau] = await Promise.all([chargerContenus(), chargerBureau()]);
     const zone = (c: string) => document.querySelector(`[data-c="${c}"]`);
     if (club) {
+      if (club.intro?.trim()) remplir(zone('intro')!, paragraphes(club.intro, 'chapo'));
       if (club.histoire?.trim()) remplir(zone('histoire')!, paragraphes(club.histoire));
       if (club.mission?.trim()) remplir(zone('mission')!, paragraphes(club.mission, 'chapo'));
       if (club.etapes?.length) remplir(zone('etapes')!, club.etapes.map((e) => el('li', {},

@@ -9,6 +9,7 @@ import { getEvenementsParPeriode, getProjets } from '../lib/collections';
 import { plageDates, plageJours, heureFr, ymd } from '../lib/dates';
 import { u } from '../lib/url';
 import { SITE, INSCRIPTION_PATH } from '../config';
+import { CLUB_DEFAUT } from '../data/contenus';
 
 const { aVenir } = await getEvenementsParPeriode();
 const vedette = aVenir[0];
@@ -111,11 +112,7 @@ const piliers = [
         <h2 id="intro-titre" class="titre-2">De l’amphi<br />à l’atelier</h2>
         <hr class="trait" />
         <div data-c="intro">
-          <p class="chapo">
-            2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock.
-            Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile
-            et de l’aéronautique, avec un même état d’esprit : <strong>l’esprit citoyen au centre</strong>.
-          </p>
+          {CLUB_DEFAUT.intro.split(/\n\s*\n/).map((t) => <p class="chapo">{t}</p>)}
         </div>
         <a class="lien-fleche" href={u('/le-club/')}>Découvrir le club <span aria-hidden="true">→</span></a>
         <ol class="piliers" role="list">

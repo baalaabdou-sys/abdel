@@ -14,15 +14,19 @@ export interface QuestionFaq { q: string; r: string }
 
 export const CLUB_DEFAUT: Club = {
   intro:
-    '2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock. ' +
-    'Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile et de l’aéronautique, ' +
-    'avec un même état d’esprit : l’esprit citoyen au centre.',
+    '2AMECA est un club estudiantin de la Faculté des Sciences Aïn Chock, relevant de l’Université Hassan II de Casablanca. '
+    + 'Ouvert aux étudiants de toutes les filières, il constitue un espace d’échange, d’apprentissage, de créativité et de partage.\n\n'
+    + 'À travers des activités scientifiques, techniques, culturelles et citoyennes, le club encourage l’esprit d’initiative, '
+    + 'le travail collaboratif et le développement des compétences, tout en favorisant l’ouverture sur le monde professionnel.',
   histoire:
-    'Le Club 2AMECA a été créé par des étudiants de la Faculté des Sciences Aïn Chock, avec une idée simple : '
-    + 'donner aux étudiants un lieu pour passer de la théorie de l’amphi à la pratique.\n\n'
-    + 'Sa vocation est de faire découvrir la mécanique appliquée, l’automobile et l’aéronautique à travers des projets, '
-    + 'des ateliers et des formations, de rapprocher les étudiants du monde professionnel, et de faire grandir chacun '
-    + 'dans un esprit d’équipe, avec l’esprit citoyen au centre.',
+    'Le Club 2AMECA a été créé par des étudiants de la Faculté des Sciences Aïn Chock avec une ambition commune : '
+    + 'faire de la vie universitaire un espace d’apprentissage, d’initiative et d’épanouissement.\n\n'
+    + 'Depuis sa création, le club œuvre à rapprocher les connaissances théoriques de la pratique, à encourager la découverte '
+    + 'de nouveaux domaines et à offrir aux étudiants des opportunités pour développer leurs compétences.\n\n'
+    + 'À travers des ateliers, des formations, des conférences, des visites, des projets collaboratifs et des actions citoyennes, '
+    + '2AMECA rassemble des étudiants de différentes filières autour de valeurs communes : le partage, l’innovation, '
+    + 'l’engagement et l’esprit d’équipe.\n\n'
+    + 'Parce que les idées n’ont pas de filière, 2AMECA est un espace ouvert à tous les étudiants de la FSAC.',
   mission:
     '2AMECA donne aux étudiants de la FSAC un lieu pour mettre en pratique ce qu’ils apprennent : concevoir et fabriquer en équipe, ' +
     'se former aux outils de la mécanique, et rencontrer des professionnels du secteur.',
