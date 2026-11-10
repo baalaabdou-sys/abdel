@@ -194,10 +194,99 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   .fsac .titre-3 { color: var(--marine); margin-bottom: .6rem; }
 </style>
 
+<style is:global>
+  /* Animation des cartes du bureau : « plan technique » + icônes du rôle en orbite */
+  .photo-bouton { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; overflow: hidden; container-type: inline-size; }
+  .photo-bouton:focus-visible { outline: 3px solid var(--ciel); outline-offset: -3px; }
+  .photo-bouton img { display: block; transition: transform .6s, filter .6s; }
+  .photo-bouton.joue img { transform: scale(1.05); filter: grayscale(.35) brightness(.9); }
+  .orbite {
+    --r: 31cqw; --d: 3.6s;
+    position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; pointer-events: none; color: var(--ciel);
+    /* voile bleu nuit + quadrillage fin de plan technique */
+    background:
+      repeating-linear-gradient(0deg, rgb(159 208 245 / .12) 0 1px, transparent 1px 18px),
+      repeating-linear-gradient(90deg, rgb(159 208 245 / .12) 0 1px, transparent 1px 18px),
+      linear-gradient(rgb(4 34 58 / .45), rgb(4 34 58 / .62));
+  }
+  .orbite-lignes { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .orbite-lignes line { stroke: var(--ciel); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  .orbite-cadran { position: absolute; width: 74%; aspect-ratio: 1; }
+  .orbite-role {
+    position: absolute; left: 0; right: 0; bottom: 7%; text-align: center; padding: 0 .5rem;
+    font-family: var(--f-label); font-weight: 500; font-size: clamp(.62rem, 6.5cqw, .9rem); letter-spacing: .2em; text-transform: uppercase; color: var(--blanc);
+  }
+  .orbite-icone {
+    position: absolute; width: clamp(34px, 25cqw, 48px); height: clamp(34px, 25cqw, 48px); display: grid; place-items: center;
+    background: var(--marine); color: var(--ciel); border: 1.5px solid var(--ciel); border-radius: 50%;
+    box-shadow: 0 0 0 4px rgb(159 208 245 / .15);
+    transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) rotate(calc(var(--a) * -1));
+  }
+  .orbite-icone svg { width: 55%; height: 55%; }
+  .orbite-pivot { position: absolute; inset: 0; display: grid; place-items: center; }
+
+  .joue .orbite { animation: orbite-apparait var(--d) ease forwards; }
+  .joue .orbite-lignes line { animation: trait-trace 1s cubic-bezier(.3,.7,.3,1) forwards; }
+  .joue .orbite-lignes line:nth-child(2) { animation-delay: .12s; } .joue .orbite-lignes line:nth-child(3) { animation-delay: .2s; } .joue .orbite-lignes line:nth-child(4) { animation-delay: .3s; }
+  .joue .orbite-cadran { animation: cadran-tourne var(--d) cubic-bezier(.45,.05,.35,1) forwards; }
+  .joue .orbite-pivot { animation: orbite-tourne var(--d) cubic-bezier(.45,.05,.35,1) forwards; }
+  .joue .orbite-icone { animation: icone-garde-droite var(--d) cubic-bezier(.45,.05,.35,1) forwards, icone-pop .45s cubic-bezier(.3,1.5,.5,1) backwards; animation-delay: 0s, calc(.25s + var(--i) * .08s); }
+  .joue .orbite-role { animation: role-monte .6s .35s ease backwards; }
+
+  @keyframes orbite-apparait { 0% { opacity: 0; } 8% { opacity: 1; } 84% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes trait-trace { to { stroke-dashoffset: 0; } }
+  @keyframes cadran-tourne { from { transform: rotate(0) scale(.85); } 15% { transform: rotate(-20deg) scale(1); } to { transform: rotate(-120deg) scale(1); } }
+  @keyframes orbite-tourne { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+  @keyframes icone-garde-droite {
+    from { transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) rotate(calc(var(--a) * -1)) rotate(0); }
+    to   { transform: rotate(var(--a)) translateY(calc(var(--r) * -1)) rotate(calc(var(--a) * -1)) rotate(-360deg); }
+  }
+  @keyframes icone-pop { from { scale: 0; } to { scale: 1; } }
+  @keyframes role-monte { from { opacity: 0; translate: 0 8px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .joue .orbite-cadran, .joue .orbite-pivot, .joue .orbite-icone, .joue .orbite-role { animation: none; }
+    .joue .orbite-lignes line { animation: none; stroke-dashoffset: 0; }
+  }
+</style>
+
 <script>
   import { chargerContenus, chargerBureau, remplir, texte, paragraphes } from '../lib/contenu';
   import { urlMedia as media } from '../lib/images';
   import { h as el } from '../lib/dom';
+  import { iconesDuRole } from '../lib/roles';
+
+  /** Photo cliquable : les icônes du rôle tournent autour du portrait. */
+  function photoAnimee(m: { nom: string; role: string; photo: string | null }, contenu: Element) {
+    const icones = iconesDuRole(m.role);
+    // cadran gradué (comme l'animation du logo) et lignes de construction
+    const NS = 'http://www.w3.org/2000/svg';
+    const cadran = document.createElementNS(NS, 'svg');
+    cadran.setAttribute('viewBox', '0 0 200 200'); cadran.setAttribute('class', 'orbite-cadran');
+    let traits = '<circle cx="100" cy="100" r="78" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 5"/>';
+    for (let k = 0; k < 60; k++) {
+      const ang = (k / 60) * Math.PI * 2, r1 = 86, r2 = k % 5 === 0 ? 96 : 91;
+      traits += `<line x1="${(100 + r1 * Math.cos(ang)).toFixed(1)}" y1="${(100 + r1 * Math.sin(ang)).toFixed(1)}" x2="${(100 + r2 * Math.cos(ang)).toFixed(1)}" y2="${(100 + r2 * Math.sin(ang)).toFixed(1)}" stroke="currentColor" stroke-width="${k % 5 === 0 ? 1.4 : .8}"/>`;
+    }
+    cadran.innerHTML = traits;
+    const lignes = document.createElementNS(NS, 'svg');
+    lignes.setAttribute('viewBox', '0 0 100 125'); lignes.setAttribute('preserveAspectRatio', 'none'); lignes.setAttribute('class', 'orbite-lignes');
+    lignes.innerHTML = '<line x1="-5" y1="38" x2="45" y2="-5" pathLength="1"/><line x1="-5" y1="52" x2="60" y2="-5" pathLength="1"/><line x1="105" y1="88" x2="40" y2="130" pathLength="1"/><line x1="105" y1="102" x2="58" y2="130" pathLength="1"/>';
+    const libelle = m.role.replace(/^resp(onsable|\.)\s*(de la |du |des |de l’|de )?/i, '');
+    const orbite = el('span', { class: 'orbite', 'aria-hidden': 'true' },
+      lignes, cadran,
+      el('span', { class: 'orbite-role' }, libelle),
+      el('span', { class: 'orbite-pivot' }, ...icones.map((svg, i) => {
+        const pastille = el('span', { class: 'orbite-icone', style: `--a:${(360 / icones.length) * i}deg;--i:${i}` });
+        pastille.innerHTML = svg;   // SVG fixe, défini dans lib/roles.ts
+        return pastille;
+      })));
+    const b = el('button', { type: 'button', class: 'photo-bouton', 'aria-label': `${m.nom}, ${m.role} : lancer l’animation` }, contenu, orbite);
+    b.addEventListener('click', () => {
+      b.classList.remove('joue'); void b.offsetWidth; b.classList.add('joue');
+    });
+    orbite.addEventListener('animationend', (e) => { if (e.target === orbite) b.classList.remove('joue'); });
+    return b;
+  }
 
   (async () => {
     const [{ club }, bureau] = await Promise.all([chargerContenus(), chargerBureau()]);
@@ -214,8 +303,8 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
     if (bureau.length) {
       const modele = document.querySelector('[data-c="bureau"] .emplacement');
       remplir(zone('bureau')!, bureau.map((m) => el('li', { class: 'membre' },
-        m.photo ? el('img', { src: media(m.photo), alt: `Portrait de ${m.nom}`, width: 480, height: 600, loading: 'lazy' })
-          : (modele?.cloneNode(true) as Element) ?? el('div', { class: 'emplacement' }),
+        photoAnimee(m, m.photo ? el('img', { src: media(m.photo), alt: `Portrait de ${m.nom}`, width: 480, height: 600, loading: 'lazy' })
+          : (modele?.cloneNode(true) as Element) ?? el('div', { class: 'emplacement' })),
         el('div', { class: 'membre-texte' }, el('p', { class: 'nom' }, m.nom), el('p', { class: 'role label' }, m.role)))));
     }
   })();
