@@ -119,6 +119,16 @@ import '../styles/app.css';
     return parts.length > 1 ? { titre: parts.slice(0, -1).join(' — '), date: parts.at(-1)! } : { titre: p.legende || 'Photos du club', date: '' };
   }
 
+  const MOIS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  /** Date de l'événement (activité liée, ou « mois année » de la légende), sinon date d'ajout. */
+  function cleDate(a: Album) {
+    const p = a.photos[0];
+    if (p.formations?.date) return Date.parse(p.formations.date);
+    const m = a.date.toLowerCase().match(/([a-zéû]+)\s+(\d{4})/);
+    if (m && MOIS.includes(m[1])) return Date.UTC(Number(m[2]), MOIS.indexOf(m[1]), 15);
+    return Date.parse(p.created_at);
+  }
+
   function regrouper(photos: Photo[]): Album[] {
     const albums = new Map<string, Album>();
     for (const p of photos) {
@@ -129,7 +139,8 @@ import '../styles/app.css';
     }
     // Dans un album, les photos dans l'ordre où elles ont été ajoutées.
     for (const a of albums.values()) a.photos.reverse();
-    return [...albums.values()];
+    // Les albums du plus récent au plus ancien, selon la date de l'événement.
+    return [...albums.values()].sort((x, y) => cleDate(y) - cleDate(x));
   }
 
   function afficherAlbums(albums: Album[]) {
