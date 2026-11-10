@@ -4,84 +4,218 @@ import EnTetePage from '../components/EnTetePage.astro';
 import '../styles/app.css';
 ---
 <Base titre="Galerie" description="Photos des activités, formations et événements du Club 2AMECA à la FSAC.">
-  <EnTetePage surtitre="Galerie" titre="En images" chapo="Ateliers, formations, événements : la vie du club en photos." />
+  <EnTetePage surtitre="Galerie" titre="En images" chapo="Ateliers, formations, événements : la vie du club en photos. Touchez un album pour revivre la journée." />
   <section class="app">
     <div class="conteneur">
-      <div class="filtres" id="filtres" role="group" aria-label="Filtrer par activité" hidden></div>
       <p class="chargement" id="chargement">Chargement des photos…</p>
-      <ul class="galerie" id="galerie" role="list"></ul>
+      <ul class="albums" id="albums" role="list"></ul>
     </div>
   </section>
 
-  <dialog class="visionneuse" id="visionneuse" aria-label="Photo agrandie">
-    <button type="button" class="fermer" id="fermer">Fermer</button>
-    <img id="grande" alt="" />
-    <p id="legende"></p>
+  <!-- Visionneuse plein écran : les photos d'une même journée -->
+  <dialog class="album" id="album" aria-labelledby="album-titre">
+    <svg class="album-lignes" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
+        <line x1="0" y1="70" x2="90" y2="0" /><line x1="0" y1="100" x2="125" y2="0" />
+        <line x1="400" y1="230" x2="310" y2="300" /><line x1="400" y1="200" x2="275" y2="300" />
+      </g>
+    </svg>
+    <header class="album-tete">
+      <div>
+        <p class="album-date" id="album-date"></p>
+        <h2 class="album-titre" id="album-titre"></h2>
+      </div>
+      <button type="button" class="album-fermer" id="album-fermer">Fermer</button>
+    </header>
+    <div class="album-scene" id="album-scene">
+      <button type="button" class="album-nav prec" id="album-prec" aria-label="Photo précédente"><span aria-hidden="true">←</span></button>
+      <figure class="album-photo">
+        <img id="album-img" alt="" />
+      </figure>
+      <button type="button" class="album-nav suiv" id="album-suiv" aria-label="Photo suivante"><span aria-hidden="true">→</span></button>
+    </div>
+    <p class="album-compteur" id="album-compteur" aria-live="polite"></p>
+    <ol class="album-vignettes" id="album-vignettes" role="list" aria-label="Toutes les photos de la journée"></ol>
   </dialog>
 </Base>
 
-<style>
-  .galerie { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: .75rem; }
-  .galerie button { display: block; width: 100%; padding: 0; border: 0; background: var(--bleu-06); border-radius: 10px; overflow: hidden; cursor: zoom-in; }
-  .galerie img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; transition: transform .3s; }
-  .galerie button:hover img { transform: scale(1.03); }
-  .galerie figcaption { font-size: .9rem; color: var(--encre-70); padding: .35rem .1rem 0; }
-  .filtres { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
-  .filtres button { min-height: 40px; padding: .4em 1em; border-radius: 999px; cursor: pointer; font-family: var(--f-label); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; background: var(--blanc); color: var(--bleu); border: 1.5px solid var(--bleu-12); }
-  .filtres button[aria-pressed='true'] { background: var(--bleu); color: var(--blanc); border-color: var(--bleu); }
-  .visionneuse { border: 0; padding: 0; background: var(--marine); color: var(--blanc); max-width: min(96vw, 1100px); max-height: 92vh; border-radius: 12px; }
-  .visionneuse::backdrop { background: rgb(4 34 58 / .85); }
-  .visionneuse img { max-width: 100%; max-height: 80vh; display: block; margin: 0 auto; }
-  .visionneuse p { padding: .6rem 1rem .9rem; margin: 0; }
-  .fermer { position: absolute; top: .5rem; right: .5rem; min-height: 40px; padding: .3em .9em; border-radius: 999px; border: 0; background: var(--blanc); color: var(--marine); font-family: var(--f-label); text-transform: uppercase; letter-spacing: .1em; cursor: pointer; }
+<style is:global>
+  /* ── Albums ───────────────────────────────────────────── */
+  .albums { list-style: none; padding: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+  .carte-album {
+    display: block; width: 100%; padding: 0; text-align: left; cursor: pointer;
+    background: var(--blanc); color: var(--encre); border: 1px solid var(--bleu-12); border-radius: var(--rayon); overflow: hidden;
+    transition: border-color .2s, transform .2s;
+  }
+  .carte-album:hover { border-color: var(--bleu); transform: translateY(-2px); }
+  .carte-album:focus-visible { outline: 3px solid var(--ciel); outline-offset: 3px; }
+  .pile { position: relative; display: block; aspect-ratio: 4 / 3; background: var(--bleu-06); overflow: hidden; }
+  .pile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+  .carte-album:hover .pile img { transform: scale(1.04); }
+  /* deuxième photo en vignette dans le coin, comme une pile de tirages */
+  .pile .seconde { inset: auto .7rem .7rem auto; width: 34%; height: auto; aspect-ratio: 4 / 3; border: 3px solid var(--blanc); border-radius: 6px; transform: rotate(3deg); }
+  .carte-album:hover .pile .seconde { transform: rotate(0); }
+  .nb { position: absolute; left: .7rem; top: .7rem; padding: .3em .8em; border-radius: 999px; background: var(--marine); color: var(--blanc); font-family: var(--f-label); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; }
+  .carte-texte { display: grid; gap: .3rem; padding: 1rem 1.1rem 1.15rem; }
+  .carte-date { font-family: var(--f-label); font-size: .75rem; letter-spacing: .18em; text-transform: uppercase; color: var(--bleu); }
+  .carte-titre { font-family: var(--f-label); font-weight: 600; font-size: 1.15rem; line-height: 1.25; color: var(--marine); }
+
+  /* ── Visionneuse ──────────────────────────────────────── */
+  .album {
+    width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+    background: var(--marine); color: var(--blanc);
+    display: grid; grid-template-rows: auto 1fr auto auto; overflow: hidden;
+  }
+  .album:not([open]) { display: none; }
+  .album::backdrop { background: var(--marine); }
+  .album-lignes { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ciel); opacity: .35; pointer-events: none; }
+  .album-tete { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1rem var(--gouttiere) .5rem; }
+  .album-date { margin: 0; font-family: var(--f-label); font-size: .75rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ciel); }
+  .album-titre { margin: .25rem 0 0; font-family: var(--f-titre); font-weight: 400; font-size: clamp(1.4rem, 5vw, 2.2rem); line-height: 1.05; text-transform: uppercase; color: var(--blanc); }
+  .album-fermer { flex-shrink: 0; min-height: 44px; padding: .3em 1.1em; border-radius: 999px; border: 1px solid var(--blanc-25); background: transparent; color: var(--blanc); font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .album-fermer:hover { background: var(--blanc); color: var(--marine); }
+  .album-scene { position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; min-height: 0; padding: 0 .5rem; touch-action: pan-y; }
+  .album-photo { margin: 0; height: 100%; min-height: 0; display: grid; place-items: center; }
+  .album-photo img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; opacity: 0; transform: scale(.98); transition: opacity .35s, transform .35s; }
+  .album-photo img.vue { opacity: 1; transform: none; }
+  .album-photo img.vers-gauche { transform: translateX(-24px); }
+  .album-photo img.vers-droite { transform: translateX(24px); }
+  .album-nav { width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--blanc-25); background: rgb(4 34 58 / .6); color: var(--blanc); font-size: 1.2rem; cursor: pointer; z-index: 1; }
+  .album-nav:hover:not(:disabled) { background: var(--blanc); color: var(--marine); }
+  .album-nav:disabled { opacity: .25; cursor: default; }
+  .album-compteur { position: relative; margin: .5rem 0 0; text-align: center; font-family: var(--f-label); font-size: .85rem; letter-spacing: .2em; color: var(--ciel); }
+  .album-vignettes { position: relative; list-style: none; display: flex; gap: .5rem; overflow-x: auto; padding: .75rem var(--gouttiere) 1.1rem; margin: 0; justify-content: safe center; scrollbar-width: none; }
+  .album-vignettes button { display: block; width: 64px; height: 48px; padding: 0; border: 2px solid transparent; border-radius: 6px; overflow: hidden; cursor: pointer; opacity: .5; background: none; transition: opacity .2s, border-color .2s; }
+  .album-vignettes button[aria-current='true'] { opacity: 1; border-color: var(--ciel); }
+  .album-vignettes button:hover { opacity: 1; }
+  .album-vignettes img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  @media (max-width: 600px) {
+    .album-nav { position: absolute; top: 50%; translate: 0 -50%; }
+    .album-nav.prec { left: .5rem; } .album-nav.suiv { right: .5rem; }
+    .album-scene { grid-template-columns: 1fr; padding: 0; }
+    .album-photo img { border-radius: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .album-photo img, .carte-album, .pile img { transition: none; } }
 </style>
 
 <script>
   import { sb, messageErreur } from '../lib/supabase';
-  import { h, vider } from '../lib/dom';
+  import { h, vider, dateLongue } from '../lib/dom';
   import { urlMedia } from '../lib/images';
 
-  const ul = document.getElementById('galerie')!;
-  const chargement = document.getElementById('chargement')!;
-  const dlg = document.getElementById('visionneuse') as HTMLDialogElement;
-  type Photo = { id: string; chemin: string; legende: string; formation_id: string | null; formations: { titre: string } | null };
-  let photos: Photo[] = [];
+  type Photo = { id: string; chemin: string; legende: string; formation_id: string | null; created_at: string; formations: { titre: string; date: string } | null };
+  type Album = { cle: string; titre: string; date: string; photos: Photo[] };
 
-  function afficher(filtre: string | null) {
-    const liste = filtre ? photos.filter((p) => p.formation_id === filtre) : photos;
-    vider(ul, liste.map((p) => {
-      const texte = p.legende || p.formations?.titre || '';
-      return h('li', {}, h('figure', { style: 'margin:0' },
-        h('button', { type: 'button', 'aria-label': `Agrandir${texte ? ` : ${texte}` : ' la photo'}`, onclick: () => {
-          (document.getElementById('grande') as HTMLImageElement).src = urlMedia(p.chemin);
-          (document.getElementById('grande') as HTMLImageElement).alt = texte;
-          document.getElementById('legende')!.textContent = [p.legende, p.formations?.titre].filter(Boolean).join(' — ');
-          dlg.showModal();
-        } }, h('img', { src: urlMedia(p.chemin), alt: texte, loading: 'lazy' })),
-        texte ? h('figcaption', {}, texte) : null));
+  const $ = (id: string) => document.getElementById(id)!;
+  const dlg = $('album') as HTMLDialogElement;
+  const img = $('album-img') as HTMLImageElement;
+  let album: Album | null = null;
+  let i = 0;
+
+  /** « Titre — mois année » → titre et date ; sinon l'activité liée. */
+  function decouper(p: Photo) {
+    if (p.formations) return { titre: p.formations.titre, date: dateLongue(p.formations.date) };
+    const parts = p.legende.split(' — ');
+    return parts.length > 1 ? { titre: parts.slice(0, -1).join(' — '), date: parts.at(-1)! } : { titre: p.legende || 'Photos du club', date: '' };
+  }
+
+  function regrouper(photos: Photo[]): Album[] {
+    const albums = new Map<string, Album>();
+    for (const p of photos) {
+      const { titre, date } = decouper(p);
+      const cle = p.formation_id ?? titre;
+      if (!albums.has(cle)) albums.set(cle, { cle, titre, date, photos: [] });
+      albums.get(cle)!.photos.push(p);
+    }
+    // Dans un album, les photos dans l'ordre où elles ont été ajoutées.
+    for (const a of albums.values()) a.photos.reverse();
+    return [...albums.values()];
+  }
+
+  function afficherAlbums(albums: Album[]) {
+    vider($('albums'), albums.map((a) => {
+      const [premiere, seconde] = [a.photos.at(-1)!, a.photos.length > 1 ? a.photos[0] : null];
+      const b = h('button', { type: 'button', class: 'carte-album', 'aria-label': `Ouvrir l’album « ${a.titre} », ${a.photos.length} photo${a.photos.length > 1 ? 's' : ''}` },
+        h('span', { class: 'pile' },
+          h('img', { src: urlMedia(premiere.chemin), alt: '', loading: 'lazy' }),
+          seconde ? h('img', { class: 'seconde', src: urlMedia(seconde.chemin), alt: '', loading: 'lazy' }) : null,
+          h('span', { class: 'nb' }, `${a.photos.length} photo${a.photos.length > 1 ? 's' : ''}`)),
+        h('span', { class: 'carte-texte' },
+          a.date ? h('span', { class: 'carte-date' }, a.date) : null,
+          h('span', { class: 'carte-titre' }, a.titre)));
+      b.addEventListener('click', () => ouvrir(a));
+      return h('li', {}, b);
     }));
   }
 
+  function montrer(n: number, sens = 0) {
+    if (!album) return;
+    i = Math.max(0, Math.min(album.photos.length - 1, n));
+    const p = album.photos[i];
+    img.classList.remove('vue', 'vers-gauche', 'vers-droite');
+    if (sens) img.classList.add(sens > 0 ? 'vers-droite' : 'vers-gauche');
+    const charge = () => requestAnimationFrame(() => { img.classList.remove('vers-gauche', 'vers-droite'); img.classList.add('vue'); });
+    img.onload = charge;
+    img.src = urlMedia(p.chemin);
+    img.alt = `${album.titre} — photo ${i + 1} sur ${album.photos.length}`;
+    if (img.complete) charge();
+    $('album-compteur').textContent = `${i + 1} / ${album.photos.length}`;
+    ($('album-prec') as HTMLButtonElement).disabled = i === 0;
+    ($('album-suiv') as HTMLButtonElement).disabled = i === album.photos.length - 1;
+    $('album-vignettes').querySelectorAll('button').forEach((v, k) => {
+      v.setAttribute('aria-current', String(k === i));
+      if (k === i) v.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    });
+    // Précharge la suivante
+    const suivante = album.photos[i + 1]; if (suivante) new Image().src = urlMedia(suivante.chemin);
+  }
+
+  function ouvrir(a: Album) {
+    album = a;
+    $('album-titre').textContent = a.titre;
+    $('album-date').textContent = a.date;
+    vider($('album-vignettes'), a.photos.map((p, k) => {
+      const v = h('button', { type: 'button', 'aria-label': `Photo ${k + 1}` }, h('img', { src: urlMedia(p.chemin), alt: '', loading: 'lazy' }));
+      v.addEventListener('click', () => montrer(k, k - i));
+      return h('li', {}, v);
+    }));
+    const unique = a.photos.length < 2;
+    $('album-vignettes').hidden = unique; $('album-compteur').hidden = unique;
+    $('album-prec').hidden = unique; $('album-suiv').hidden = unique;
+    dlg.showModal();
+    document.body.style.overflow = 'hidden';
+    montrer(0);
+  }
+
+  $('album-prec').addEventListener('click', () => montrer(i - 1, -1));
+  $('album-suiv').addEventListener('click', () => montrer(i + 1, 1));
+  $('album-fermer').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('close', () => { document.body.style.overflow = ''; album = null; });
+  dlg.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') montrer(i + 1, 1);
+    if (e.key === 'ArrowLeft') montrer(i - 1, -1);
+  });
+  // Glisser du doigt (écran tactile) ou de la souris
+  let x0: number | null = null;
+  const fin = (x: number) => {
+    if (x0 === null) return;
+    const dx = x - x0; x0 = null;
+    if (Math.abs(dx) > 40) dx < 0 ? montrer(i + 1, 1) : montrer(i - 1, -1);
+  };
+  const scene = $('album-scene');
+  scene.addEventListener('touchstart', (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+  scene.addEventListener('touchend', (e) => fin(e.changedTouches[0].clientX));
+  scene.addEventListener('mousedown', (e) => { x0 = e.clientX; });
+  scene.addEventListener('mouseup', (e) => fin(e.clientX));
+  img.draggable = false;
+
   (async () => {
-    const { data, error } = await sb.from('photos').select('id, chemin, legende, formation_id, formations(titre)').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('photos').select('id, chemin, legende, formation_id, created_at, formations(titre, date)').order('created_at', { ascending: false });
+    const chargement = $('chargement');
     if (error) { chargement.textContent = messageErreur(error); return; }
     chargement.hidden = true;
-    photos = (data ?? []) as unknown as Photo[];
-    if (!photos.length) return vider(ul, h('li', { class: 'vide', style: 'grid-column:1/-1' }, 'Les premières photos arrivent bientôt.'));
-    const activites = new Map(photos.filter((p) => p.formation_id && p.formations).map((p) => [p.formation_id!, p.formations!.titre]));
-    if (activites.size > 1) {
-      const zone = document.getElementById('filtres')!;
-      zone.hidden = false;
-      const boutons = [h('button', { type: 'button', 'aria-pressed': 'true', 'data-id': '' }, 'Tout'), ...[...activites].map(([id, t]) => h('button', { type: 'button', 'aria-pressed': 'false', 'data-id': id }, t))];
-      boutons.forEach((b) => b.addEventListener('click', () => {
-        boutons.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-        afficher(b.dataset.id || null);
-      }));
-      vider(zone, boutons);
-    }
-    afficher(null);
+    const photos = (data ?? []) as unknown as Photo[];
+    if (!photos.length) return vider($('albums'), h('li', { class: 'vide', style: 'grid-column:1/-1' }, 'Les premières photos arrivent bientôt.'));
+    afficherAlbums(regrouper(photos));
   })();
-
-  document.getElementById('fermer')!.addEventListener('click', () => dlg.close());
-  dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 </script>

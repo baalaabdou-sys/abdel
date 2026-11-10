@@ -30,7 +30,6 @@ export const CLUB_DEFAUT: Club = {
     { quand: 'Décembre 2025', quoi: 'ANSYS Workshop, puis RISE : « Votre plan de carrière en 180 minutes ».', detail: 'Simulation avec Ayoub Elmouhri (Analytics Systems Africa), puis carrière avec Mohamed Reffadi (You & Me Consulting).' },
     { quand: 'Mars 2026', quoi: 'Conférence « Femmes Leaders à l’ère de l’Intelligence Artificielle ».', detail: 'Pour la Journée internationale des droits des femmes, avec le Club Santé et d’autres clubs de la FSAC.' },
     { quand: 'Avril 2026', quoi: '« Machine Learning Training » avec El Mehdi Lghaouch.', detail: 'Deux séances intensives en salle digitale de la FSAC, dans la série NEXTGEN AI, avec l’AI & DEV Community et la FSBM.' },
-    { quand: 'Avril 2026', quoi: 'Formation Data Mining avec l’AI & DEV Community.', detail: 'Une séance de la série « NEXTGEN AI: Morocco Tech Series », en salle 17 de la FSAC.' },
     { quand: 'Octobre 2026', quoi: 'Journées portes ouvertes d’intégration.', detail: 'Trois jours pour accueillir les nouveaux étudiants de l’année 2026–2027.' },
     { quand: 'Novembre 2026', quoi: '1re Journée d’Excellence 2AMECA.', detail: 'Rencontres, partage d’expériences, jeux et challenges, à l’amphithéâtre de la FSAC.' },
   ],
