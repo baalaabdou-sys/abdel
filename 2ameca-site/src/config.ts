@@ -35,7 +35,7 @@ export const ANNEES = ['1re année', '2e année', '3e année', 'Master 1', 'Mast
 
 export const CONTACT = {
   /** ex. 'club2ameca@gmail.com' */
-  email: null as string | null,
+  email: '2ameca.club@gmail.com' as string | null,
   /** Identifiant Instagram sans @, ex. '2ameca.fsac' */
   instagram: '2ameca_fsac' as string | null,
   /** Adresse complète de la page LinkedIn, ex. 'https://www.linkedin.com/company/…' */

@@ -22,7 +22,6 @@ Pendant trois jours, du mercredi au vendredi, l'équipe du club vous accueille �
 ## Au programme
 
 - **Découverte du club** : qui nous sommes, nos projets, nos ateliers.
-- **Activités** : [Détail des activités à fournir].
 - **Esprit d'équipe** : rencontrer les membres et les autres nouveaux venus.
 
 Passez quand vous voulez pendant ces trois jours. Aucune expérience en mécanique n'est demandée : la curiosité suffit.

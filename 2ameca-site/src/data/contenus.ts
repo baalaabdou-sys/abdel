@@ -17,12 +17,16 @@ export const CLUB_DEFAUT: Club = {
     '2AMECA — Atelier d’Applications Mécanique — est un club étudiant de la Faculté des Sciences Aïn Chock. ' +
     'Il réunit des étudiants de toutes les filières autour de la mécanique appliquée, de l’automobile et de l’aéronautique, ' +
     'avec un même état d’esprit : l’esprit citoyen au centre.',
-  histoire: '[Texte à fournir : l’histoire du club en quelques paragraphes — qui l’a fondé, pourquoi, et ce qu’il a accompli depuis.]',
+  histoire:
+    'Le Club 2AMECA a été créé par des étudiants de la Faculté des Sciences Aïn Chock, avec une idée simple : '
+    + 'donner aux étudiants un lieu pour passer de la théorie de l’amphi à la pratique.\n\n'
+    + 'Sa vocation est de faire découvrir la mécanique appliquée, l’automobile et l’aéronautique à travers des projets, '
+    + 'des ateliers et des formations, de rapprocher les étudiants du monde professionnel, et de faire grandir chacun '
+    + 'dans un esprit d’équipe, avec l’esprit citoyen au centre.',
   mission:
     '2AMECA donne aux étudiants de la FSAC un lieu pour mettre en pratique ce qu’ils apprennent : concevoir et fabriquer en équipe, ' +
     'se former aux outils de la mécanique, et rencontrer des professionnels du secteur.',
   etapes: [
-    { quand: '[Année de création]', quoi: 'Création du club 2AMECA à la Faculté des Sciences Aïn Chock.', detail: '[Texte à fournir : fondateurs, contexte de création.]' },
     { quand: 'Novembre 2024', quoi: 'Journée d’intégration de la famille 2AMECA.', detail: 'Rencontres, jeu en binômes et places de cinéma offertes par Pathé Californie Casablanca.' },
     { quand: 'Décembre 2024', quoi: 'Séminaire « Initiation aux logiciels CAD ».', detail: 'AutoCAD, SolidWorks et CATIA, avec Mohammed Amine El Hariri et Zouhair Baslam.' },
     { quand: 'Novembre 2025', quoi: '« The Career Workshop » avec Xperience, puis « Cap sur l’Espace ».', detail: 'CV et LinkedIn avec Ali El Harti, puis ingénierie aérospatiale avec Idir Loudaoui, en ligne.' },

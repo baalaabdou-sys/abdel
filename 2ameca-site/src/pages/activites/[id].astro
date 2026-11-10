@@ -36,18 +36,15 @@ const ogImage = p.data.couverture?.src;
         )}
         <div class="texte reveal"><Content /></div>
 
-        <h2 class="titre-3 titre-photos">Photos</h2>
-        {p.data.photos.length > 0 ? (
-          <ul class="photos" role="list">
-            {p.data.photos.map((ph) => (
-              <li><Image src={ph.src} alt={ph.alt} widths={[400, 800]} sizes="(min-width: 720px) 360px, 50vw" /></li>
-            ))}
-          </ul>
-        ) : (
-          <ul class="photos" role="list">
-            <li><Emplacement texte="[Photo]" ratio="1" /></li>
-            <li><Emplacement texte="[Photo]" ratio="1" /></li>
-          </ul>
+        {p.data.photos.length > 0 && (
+          <>
+            <h2 class="titre-3 titre-photos">Photos</h2>
+            <ul class="photos" role="list">
+              {p.data.photos.map((ph) => (
+                <li><Image src={ph.src} alt={ph.alt} widths={[400, 800]} sizes="(min-width: 720px) 360px, 50vw" /></li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
 
@@ -56,14 +53,12 @@ const ogImage = p.data.couverture?.src;
           <div><dt class="label">Type</dt><dd>{p.data.type}</dd></div>
           <div><dt class="label">Date</dt><dd>{dateLongue(p.data.date)}</dd></div>
           <div><dt class="label">Statut</dt><dd>{p.data.statut}</dd></div>
-          <div>
-            <dt class="label">Membres impliqués</dt>
-            <dd>
-              {p.data.membres.length ? (
-                <ul role="list">{p.data.membres.map((m) => <li>{m.startsWith('[') ? <span class="a-fournir">{m}</span> : m}</li>)}</ul>
-              ) : <span class="a-fournir">[À fournir]</span>}
-            </dd>
-          </div>
+          {p.data.membres.length > 0 && (
+            <div>
+              <dt class="label">Membres impliqués</dt>
+              <dd><ul role="list">{p.data.membres.map((m) => <li>{m}</li>)}</ul></dd>
+            </div>
+          )}
         </dl>
         <a class="lien-fleche" href={u('/activites/')}><span aria-hidden="true">←</span> Toutes les activités</a>
       </aside>

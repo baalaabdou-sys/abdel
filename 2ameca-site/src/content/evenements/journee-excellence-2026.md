@@ -10,6 +10,7 @@ programme:
   - "Un partage d'expériences inspirant"
   - "Des jeux et des challenges"
 anneeUniversitaire: "2026–2027"
+inscription: "/espace/?inscrire=6303f9c7-7ba0-4bff-99f6-f4ccd4b5f120"
 affiche: ./images/journee-excellence-2026.jpg
 afficheAlt: "Affiche « You are invited » de la Journée d'Excellence 2AMECA : samedi 14 novembre, 9h00, FSAC."
 ---
