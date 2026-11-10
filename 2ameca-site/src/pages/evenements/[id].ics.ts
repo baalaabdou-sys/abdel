@@ -19,7 +19,7 @@ export const GET: APIRoute = ({ props, site }) => {
   const lignes = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Club 2AMECA//Site//FR', 'CALSCALE:GREGORIAN'];
   for (let d = debut; d <= fin; d = new Date(d.getTime() + 864e5)) {
     const jour = d.toISOString().slice(0, 10);
-    const s = casablanca(jour, e.data.heure);
+    const s = casablanca(jour, e.data.heure ?? '09:00');
     const f = casablanca(jour, e.data.heureFin ?? '17:00');
     lignes.push(
       'BEGIN:VEVENT',

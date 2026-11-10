@@ -34,7 +34,7 @@ const externe = /^https?:/.test(inscription);
         </span>
         <h1 class="titre-1">{e.data.titre}</h1>
         <p class="dates">{plageDates(e.data.dateDebut, e.data.dateFin)}</p>
-        <p class="heure"><span class="jours">{plageJours(e.data.dateDebut, e.data.dateFin)}</span>{' · '}à partir de {heureFr(e.data.heure)}</p>
+        <p class="heure"><span class="jours">{plageJours(e.data.dateDebut, e.data.dateFin)}</span>{e.data.heure && <>{' · '}à partir de {heureFr(e.data.heure)}</>}</p>
 
         {aVenir && (
           <div class="rebours-zone" data-a-venir>

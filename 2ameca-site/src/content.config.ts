@@ -13,7 +13,7 @@ const evenements = defineCollection({
       resume: z.string().describe('Une ou deux phrases, utilisées dans les cartes et le SEO.'),
       dateDebut: jour,
       dateFin: jour.optional(),
-      heure: z.string().regex(/^\d{1,2}:\d{2}$/).default('09:00'),
+      heure: z.string().regex(/^\d{1,2}:\d{2}$/).optional().describe('Laisser vide si l’heure n’est pas connue.'),
       heureFin: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
       lieu: z.string(),
       lieuDetail: z.string().optional(),

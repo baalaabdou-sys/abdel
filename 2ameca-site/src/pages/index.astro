@@ -52,7 +52,7 @@ const piliers = [
 
           <p class="dates">{plageDates(vedette.data.dateDebut, vedette.data.dateFin)}</p>
           <p class="heure">
-            <span class="jours">{plageJours(vedette.data.dateDebut, vedette.data.dateFin)}</span>{' · '}À partir de {heureFr(vedette.data.heure)}
+            <span class="jours">{plageJours(vedette.data.dateDebut, vedette.data.dateFin)}</span>{vedette.data.heure && <>{' · '}À partir de {heureFr(vedette.data.heure)}</>}
           </p>
 
           {vedette.data.programme.length > 0 && (

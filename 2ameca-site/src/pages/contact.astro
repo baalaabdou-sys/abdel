@@ -78,7 +78,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
           <div>
             <span class="label">Prochain rendez-vous</span>
             <strong><a class="lien-evt" href={u(`/evenements/${prochain.id}/`)}>{prochain.data.titre}</a></strong>
-            <small>{prochain.data.lieu}{prochain.data.lieuDetail && `, ${prochain.data.lieuDetail}`} — {plageDates(prochain.data.dateDebut, prochain.data.dateFin)}, dès {heureFr(prochain.data.heure)}</small>
+            <small>{prochain.data.lieu}{prochain.data.lieuDetail && `, ${prochain.data.lieuDetail}`} — {plageDates(prochain.data.dateDebut, prochain.data.dateFin)}{prochain.data.heure && `, dès ${heureFr(prochain.data.heure)}`}</small>
           </div>
         </div>
       )}

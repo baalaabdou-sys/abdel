@@ -23,7 +23,11 @@ export const CLUB_DEFAUT: Club = {
     'se former aux outils de la mécanique, et rencontrer des professionnels du secteur.',
   etapes: [
     { quand: '[Année de création]', quoi: 'Création du club 2AMECA à la Faculté des Sciences Aïn Chock.', detail: '[Texte à fournir : fondateurs, contexte de création.]' },
-    { quand: 'Décembre 2025', quoi: '1re édition de « De l’Amphi à l’Entreprise ».', detail: 'Une rencontre entre étudiants et professionnels à l’amphithéâtre de la FSAC.' },
+    { quand: 'Novembre 2024', quoi: 'Journée d’intégration de la famille 2AMECA.', detail: 'Rencontres, jeu en binômes et places de cinéma offertes par Pathé Californie Casablanca.' },
+    { quand: 'Décembre 2024', quoi: 'Séminaire « Initiation aux logiciels CAD ».', detail: 'AutoCAD, SolidWorks et CATIA, avec Mohammed Amine El Hariri et Zouhair Baslam.' },
+    { quand: 'Novembre 2025', quoi: '« The Career Workshop » avec Xperience, puis « Cap sur l’Espace ».', detail: 'CV et LinkedIn avec Ali El Harti, puis ingénierie aérospatiale avec Idir Loudaoui, en ligne.' },
+    { quand: 'Décembre 2025', quoi: '1re édition de « De l’Amphi à l’Entreprise ».', detail: 'Cinq invités et une journée d’échanges avec des professionnels, à l’amphithéâtre de la FSAC.' },
+    { quand: 'Décembre 2025', quoi: 'ANSYS Workshop, puis RISE : « Votre plan de carrière en 180 minutes ».', detail: 'Simulation avec Ayoub Elmouhri (Analytics Systems Africa), puis carrière avec Mohamed Reffadi (You & Me Consulting).' },
     { quand: 'Avril 2026', quoi: 'Formation Data Mining avec l’AI & DEV Community.', detail: 'Une séance de la série « NEXTGEN AI: Morocco Tech Series », en salle 17 de la FSAC.' },
     { quand: 'Octobre 2026', quoi: 'Journées portes ouvertes d’intégration.', detail: 'Trois jours pour accueillir les nouveaux étudiants de l’année 2026–2027.' },
   ],

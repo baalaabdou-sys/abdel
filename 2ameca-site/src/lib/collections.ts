@@ -9,7 +9,7 @@ export async function getEvenements(): Promise<Evenement[]> {
   return all
     .map((e) => ({
       ...e,
-      debut: casablanca(ymd(e.data.dateDebut), e.data.heure),
+      debut: casablanca(ymd(e.data.dateDebut), e.data.heure ?? '09:00'),
       // Un événement reste « à venir » jusqu'à la fin de son dernier jour.
       fin: casablanca(ymd(e.data.dateFin ?? e.data.dateDebut), e.data.heureFin ?? '23:59'),
     }))
