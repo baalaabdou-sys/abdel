@@ -40,22 +40,148 @@ const I: Record<string, string> = {
   formes: '<circle cx="8" cy="8" r="4.5"/><rect x="12" y="12" width="8.5" height="8.5" rx="1"/><path d="M15.5 3.5l4 6.5h-8z"/>',
 };
 
-const ROLES: [RegExp, string[]][] = [
-  [/r[ée]seaux|social/i, ['instagram', 'linkedin', 'coeur', 'bulle', 'partage']],
-  [/design/i, ['palette', 'pinceau', 'stylo', 'formes']],
-  [/m[ée]dia|communication|photo|vid[ée]o/i, ['appareil', 'lecture', 'megaphone', 'micro', 'image']],
-  [/pr[ée]sid/i, ['etoile', 'drapeau', 'mains', 'cible']],
-  [/organisation|logistique/i, ['calendrier', 'liste', 'horloge', 'coche']],
-  [/atelier|technique|formation/i, ['regle', 'ordinateur', 'ampoule', 'puce']],
-  [/secr[ée]tariat|secr[ée]taire/i, ['stylo', 'document', 'enveloppe', 'dossier']],
-  [/parascolaire|activit[ée]s|sport|culture/i, ['ballon', 'musique', 'palette', 'trophee']],
-  [/inscription|adh[ée]sion|membres/i, ['badge', 'ajout', 'liste', 'coche']],
-  [/tr[ée]sor|finance/i, ['liste', 'document', 'cible', 'coche']],
+/* ── Scènes animées par rôle (SVG 200 × 250, même format que le portrait) ───────── */
+
+const D = (t: number, du?: number) => `style="--t:${t}s${du ? `;--du:${du}s` : ''}"`;
+const pol = (cx: number, cy: number, r: number, deg: number) => {
+  const a = (deg * Math.PI) / 180;
+  return [+(cx + r * Math.cos(a)).toFixed(1), +(cy + r * Math.sin(a)).toFixed(1)];
+};
+/** Icône dans une pastille ronde, centrée en (x, y). */
+const pastille = (nom: string, x: number, y: number, t: number, extra = '') =>
+  `<g transform="translate(${x} ${y})"><g class="${extra}"><g class="pp" ${D(t)}><circle r="15" class="past"/><g transform="translate(-10.8 -10.8) scale(.9)" class="ic">${I[nom]}</g></g></g></g>`;
+
+function orbite(noms: string[], extra = '') {
+  const n = noms.length;
+  return `<circle cx="100" cy="102" r="62" pathLength="1" class="tr fin" ${D(0, 1)}/>
+    <g class="orb">${noms.map((nom, i) => { const [x, y] = pol(100, 102, 62, -90 + (360 / n) * i); return pastille(nom, x, y, 0.25 + i * 0.09, 'droit'); }).join('')}</g>${extra}`;
+}
+
+const SCENES: Record<string, () => string> = {
+  reseaux: () => orbite(['instagram', 'linkedin', 'bulle', 'partage'],
+    [[38, 1.0, 1.3], [74, 1.5, 1], [118, 1.2, 1.5], [158, 1.8, 1.2], [96, 2.2, .9], [140, 2.5, 1.3]].map(([x, t, k]) =>
+      `<g transform="translate(${x} 214) scale(${k})"><path class="up plein" ${D(t, 1.7)} d="M0 8s-9-5.5-9-12.2A5 5 0 0 1 0-7a5 5 0 0 1 9 2.8C9 2.5 0 8 0 8z"/></g>`).join('')),
+
+  media: () => `
+    <g class="fd fin" ${D(.1)}><path d="M67 0v250M133 0v250M0 83h200M0 167h200" opacity=".45"/></g>
+    ${[[42, 40, 1, 1], [158, 40, -1, 1], [42, 166, 1, -1], [158, 166, -1, -1]].map(([x, y, sx, sy], i) =>
+      `<path pathLength="1" class="tr gras" ${D(.15 + i * .08, .5)} d="M${x} ${y + 20 * sy}V${y}H${x + 20 * sx}"/>`).join('')}
+    <rect x="72" y="72" width="56" height="56" class="focus"/>
+    <path class="fd" ${D(1.1)} d="M100 92v20M90 102h20"/>
+    <circle cx="20" cy="20" r="4.5" class="plein rec"/><text x="29" y="24" class="txt fd" ${D(.3)}>REC</text>
+    <g class="fd" ${D(.5)}><rect x="160" y="14" width="22" height="11" rx="2"/><path d="M184 17.5v4"/><rect x="162.5" y="16.5" width="12" height="6" class="plein" stroke="none"/></g>
+    <rect width="200" height="250" class="flash"/>`,
+
+  communication: () => {
+    const arcs = [34, 62, 90, 118, 146].map((r, i) => {
+      const [x1, y1] = pol(46, 176, r, -78), [x2, y2] = pol(46, 176, r, 4);
+      return `<path class="onde" ${D(.45 + i * .16)} d="M${x1} ${y1}A${r} ${r} 0 0 1 ${x2} ${y2}"/>`;
+    }).join('');
+    return `${arcs}
+      <g transform="translate(40 182) rotate(-22)"><g class="pp" ${D(.1)}><circle r="21" class="past"/><g transform="translate(-16.8 -16.8) scale(1.4)" class="ic">${I.megaphone}</g></g></g>
+      ${pastille('bulle', 160, 46, 1.3)}${pastille('micro', 168, 150, 1.6)}${pastille('coeur', 118, 28, 1.9)}`;
+  },
+
+  design: () => `
+    <path pathLength="1" class="tr pinceau" ${D(.1, 1.1)} d="M-12 196C30 150 70 214 112 182S178 150 214 172"/>
+    <path pathLength="1" class="tr fin" ${D(.5, .5)} d="M30 74L58 22"/><path pathLength="1" class="tr fin" ${D(.5, .5)} d="M170 74L142 22"/>
+    <path pathLength="1" class="tr gras" ${D(.8, 1)} d="M30 74C58 22 142 22 170 74"/>
+    <rect x="25.5" y="69.5" width="9" height="9" class="pp past" ${D(.35)}/><rect x="165.5" y="69.5" width="9" height="9" class="pp past" ${D(.35)}/>
+    <circle cx="58" cy="22" r="4" class="pp plein" ${D(.9)}/><circle cx="142" cy="22" r="4" class="pp plein" ${D(.9)}/>
+    ${[['#FFFFFF', 96], ['#9FD0F5', 119], ['#0A4A7A', 142], ['#04223A', 165]].map(([c, y], i) =>
+      `<circle cx="180" cy="${y}" r="9" fill="${c}" class="pp nuance" ${D(1.5 + i * .12)}/>`).join('')}
+    <g transform="translate(22 150)"><g class="pp" ${D(1.9)}><circle r="15" class="past"/><g transform="translate(-10.8 -10.8) scale(.9)" class="ic">${I.stylo}</g></g></g>`,
+
+  president: () => {
+    const rayons = Array.from({ length: 13 }, (_, i) => {
+      const a = -165 + i * 12.5, [x1, y1] = pol(100, 104, 74, a), [x2, y2] = pol(100, 104, i % 2 ? 84 : 90, a);
+      return `<path pathLength="1" class="tr" ${D(.9 + i * .04, .4)} d="M${x1} ${y1}L${x2} ${y2}"/>`;
+    }).join('');
+    const feuilles = [1, -1].map((cote) => Array.from({ length: 5 }, (_, i) => {
+      const a = cote === 1 ? 74 - i * 13 : 106 + i * 13, [x, y] = pol(100, 104, 79 + (i % 2) * 5, a);
+      return `<g transform="translate(${x} ${y}) rotate(${cote === 1 ? a - 125 : a + 125})"><path class="pp plein" ${D(1.3 + i * .1)} d="M-9 0C-4-5 4-5 10 0C4 5-4 5-9 0z"/></g>`;
+    }).join('')).join('');
+    return `<circle cx="100" cy="104" r="66" pathLength="1" class="tr gras" ${D(.1, 1)} transform="rotate(-90 100 104)"/>
+      <circle cx="100" cy="104" r="59" class="fd fin pointille" ${D(.7)}/>
+      ${rayons}${feuilles}
+      <g transform="translate(100 30)"><g class="pp pulse" ${D(.8)}><circle r="19" class="past"/><g transform="translate(-15.6 -15.6) scale(1.3)" class="ic plein-ic">${I.etoile}</g></g></g>`;
+  },
+
+  vice: () => `
+    <path pathLength="1" class="tr gras" ${D(.1, 1)} d="M100 38A66 66 0 0 0 100 170"/>
+    <path pathLength="1" class="tr gras" ${D(.1, 1)} d="M100 38A66 66 0 0 1 100 170"/>
+    <circle cx="100" cy="104" r="59" class="fd fin pointille" ${D(.8)}/>
+    <g transform="translate(100 174)"><g class="pp pulse" ${D(1)}><circle r="19" class="past"/><g transform="translate(-15.6 -15.6) scale(1.3)" class="ic">${I.mains}</g></g></g>
+    ${pastille('etoile', 34, 44, 1.4)}${pastille('etoile', 166, 44, 1.55)}
+    ${[-150, -130, -50, -30].map((a, i) => { const [x1, y1] = pol(100, 104, 74, a), [x2, y2] = pol(100, 104, 88, a); return `<path pathLength="1" class="tr" ${D(1.2 + i * .06, .4)} d="M${x1} ${y1}L${x2} ${y2}"/>`; }).join('')}`,
+
+  organisation: () => `
+    <g transform="translate(36 42)"><g class="pp" ${D(.1)}><circle r="19" class="past"/><path d="M0-13v2M0 11v2M-13 0h2M11 0h2" /><path class="aig" d="M0 0V-10"/><path class="aig lente" d="M0 0V-6.5"/><circle r="1.6" class="plein"/></g></g>
+    <path pathLength="1" class="tr fin pointille2" ${D(.4, .9)} d="M56 50C110 50 150 80 150 140"/>
+    <g class="gl" ${D(.5)}>
+      <rect x="104" y="140" width="86" height="70" rx="5" class="past"/>
+      ${[0, 1, 2].map((i) => `<rect x="113" y="${150 + i * 19}" width="10" height="10" rx="2"/><path class="fin" d="M130 ${155 + i * 19}h${[48, 38, 44][i]}"/>
+        <path pathLength="1" class="tr gras coche" ${D(1.2 + i * .45, .3)} d="M115 ${155 + i * 19}l2.6 2.8 4.6-5.6"/>`).join('')}
+    </g>
+    ${pastille('calendrier', 164, 44, 2.3)}`,
+
+  technique: () => {
+    const [bx, by] = pol(100, 104, 58, -42);
+    return `<g class="fd fin axe" ${D(.1)}><path d="M14 104h172M100 22v170"/></g>
+      <circle cx="100" cy="104" r="58" pathLength="1" class="tr gras" ${D(.3, 1.1)} transform="rotate(-42 100 104)"/>
+      <path pathLength="1" class="tr" ${D(1.2, .4)} d="M100 104L${bx} ${by}"/><path class="pp plein" ${D(1.5)} d="M${bx} ${by}l-9.2 2.4 5.6 6.2z"/>
+      <text x="${bx + 6}" y="${by - 5}" class="txt fd" ${D(1.6)}>R 58</text>
+      <path pathLength="1" class="tr fin" ${D(1.5, .4)} d="M42 110v88"/><path pathLength="1" class="tr fin" ${D(1.5, .4)} d="M158 110v88"/>
+      <path pathLength="1" class="tr" ${D(1.8, .5)} d="M42 192h116"/>
+      <path class="pp plein" ${D(2.2)} d="M42 192l8-3.4v6.8z"/><path class="pp plein" ${D(2.2)} d="M158 192l-8-3.4v6.8z"/>
+      <text x="100" y="187" text-anchor="middle" class="txt fd" ${D(2.3)}>Ø 116</text>
+      <circle cx="100" cy="104" r="2.2" class="pp plein" ${D(.3)}/>`;
+  },
+
+  secretariat: () => `
+    <g class="gl" ${D(.1)}><path d="M140 22h28l12 12v44h-40z" class="past"/><path d="M168 22v12h12" class="fin"/>
+      ${[0, 1, 2].map((i) => `<path pathLength="1" class="tr fin" ${D(.6 + i * .2, .4)} d="M147 ${46 + i * 9}h${[26, 26, 16][i]}"/>`).join('')}</g>
+    <path class="fd fin pointille2" ${D(.6)} d="M26 204h148"/>
+    <path pathLength="1" class="tr gras signe" ${D(.9, 1.5)} d="M30 198c6-24 16-26 14-6s8 14 16-4 10-12 14 2 12 10 20-8 12 8 22 4 22-6 44-4"/>
+    <g transform="translate(26 178)"><g class="stylo-ecrit" ${D(.9, 1.5)}><g transform="scale(1.1)" class="ic">${I.stylo}</g></g></g>
+    <g transform="translate(40 46)"><g class="vol" ${D(2.3)}><circle r="17" class="past"/><g transform="translate(-12 -12)" class="ic">${I.enveloppe}</g></g></g>`,
+
+  parascolaire: () => `
+    <path pathLength="1" class="tr fin pointille2" ${D(.1, .8)} d="M10 192h180"/>
+    <g class="balle-x" ${D(.3)}><g class="balle-y" ${D(.3)}><g transform="translate(22 178)"><g class="balle-r" ${D(.3)}><circle r="13" class="past"/><g transform="translate(-10.8 -10.8) scale(.9)" class="ic">${I.ballon}</g></g></g></g></g>
+    ${[[40, .9, 1.1], [158, 1.3, 1.3], [128, 1.9, .9], [70, 2.3, 1]].map(([x, t, k]) =>
+      `<g transform="translate(${x} 140) scale(${k})"><g class="up" ${D(t, 1.8)}><g transform="translate(-12 -12)" class="ic">${I.musique}</g></g></g>`).join('')}
+    ${pastille('trophee', 164, 44, 2.2)}${pastille('etoile', 36, 44, 2.5)}`,
+
+  inscription: () => `
+    <g class="gl" ${D(.15)}>
+      <rect x="32" y="138" width="136" height="62" rx="7" class="past"/>
+      <text x="44" y="152" class="txt petit">CARTE DE MEMBRE</text>
+      <circle cx="58" cy="172" r="8"/><path d="M44 194a14 14 0 0 1 28 0"/>
+      <path class="fin" d="M84 166h56M84 177h40M84 188h48"/>
+    </g>
+    <circle cx="150" cy="180" r="17" class="onde-tampon"/>
+    <g transform="translate(150 180) rotate(-12)"><g class="tampon"><circle r="17" class="past plein-tampon"/><path class="gras" d="M-8 0l5.5 6 10.5-12" /></g></g>
+    ${pastille('ajout', 38, 44, 2.1)}${pastille('coche', 164, 44, 2.35)}`,
+};
+
+const CLES: [RegExp, string][] = [
+  [/r[ée]seaux|social/i, 'reseaux'],
+  [/design|graphi/i, 'design'],
+  [/communication/i, 'communication'],
+  [/m[ée]dia|photo|vid[ée]o/i, 'media'],
+  [/vice/i, 'vice'],
+  [/pr[ée]sid/i, 'president'],
+  [/organisation|logistique/i, 'organisation'],
+  [/atelier|technique|formation/i, 'technique'],
+  [/secr[ée]tariat|secr[ée]taire/i, 'secretariat'],
+  [/parascolaire|sport|culture|activit[ée]s/i, 'parascolaire'],
+  [/inscription|adh[ée]sion|membres/i, 'inscription'],
 ];
 
-/** Icônes (SVG) correspondant à un rôle, en texte HTML sûr (aucune donnée du rôle n'y est insérée). */
-export function iconesDuRole(role: string): string[] {
-  const noms = ROLES.find(([re]) => re.test(role))?.[1] ?? ['etoile', 'ampoule', 'mains', 'coche'];
-  return noms.map((n) =>
-    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${I[n]}</svg>`);
+/** Scène SVG (contenu interne, sûr : aucune donnée du rôle n'y est insérée) et sa clé. */
+export function sceneDuRole(role: string): { cle: string; svg: string } {
+  const cle = CLES.find(([re]) => re.test(role))?.[1] ?? 'defaut';
+  const svg = SCENES[cle]?.() ?? orbite(['etoile', 'ampoule', 'mains', 'coche']);
+  return { cle, svg };
 }
