@@ -43,7 +43,7 @@ export const CONTACT = {
   /** Numéro WhatsApp au format international sans + ni espaces, ex. '212600000000' */
   whatsapp: null as string | null,
   lieu: 'Faculté des Sciences Aïn Chock',
-  lieuDetail: '[Salle / local du club à préciser]',
+  lieuDetail: '',
   adresse: 'Km 8 Route d’El Jadida, B.P. 5366 Maârif, 20100 Casablanca',
   /** Lien Google Maps vers la faculté */
   carte: 'https://www.google.com/maps/search/?api=1&query=Facult%C3%A9+des+Sciences+A%C3%AFn+Chock+Casablanca',

@@ -18,7 +18,7 @@ const insta = CONTACT.instagram;
 // Espace insécable avant « ? » (typographie française)
 for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
 ---
-<Base titre="Contact" description="Contacter le Club 2AMECA : e-mail, Instagram, local à la Faculté des Sciences Aïn Chock, et réponses aux questions fréquentes.">
+<Base titre="Contact" description="Contacter le Club 2AMECA : e-mail, Instagram, à la Faculté des Sciences Aïn Chock, et réponses aux questions fréquentes.">
   <EnTetePage surtitre="Contact" titre="Nous écrire" chapo="Une question sur le club, un projet, un partenariat ? Écrivez-nous ou passez nous voir à la faculté." />
 
   <section class="section" aria-labelledby="coordonnees">
@@ -66,7 +66,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
         <hr class="trait" />
         <address>
           <strong>{FSAC.nom}</strong><br />
-          <span data-c="local">{CONTACT.lieuDetail.startsWith('[') ? <span class="a-fournir">{CONTACT.lieuDetail}</span> : CONTACT.lieuDetail}</span><br />
+          <span data-c="local">{CONTACT.lieuDetail}</span>{CONTACT.lieuDetail && <br />}
           {CONTACT.adresse}
         </address>
         <div class="boutons">

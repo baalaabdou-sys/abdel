@@ -57,6 +57,6 @@ export const FAQ_DEFAUT: QuestionFaq[] = [
   { q: 'Faut-il avoir de l’expérience en mécanique pour rejoindre le club ?', r: 'Non. Le club est ouvert aux débutants : les ateliers et les projets en équipe sont justement là pour apprendre. La motivation compte plus que le niveau.' },
   { q: 'Je ne suis pas en filière physique ou mécanique, puis-je m’inscrire ?', r: 'Oui. Tous les étudiants de la FSAC sont les bienvenus, quelle que soit leur filière. Les projets ont aussi besoin de profils en informatique, en communication ou en organisation.' },
   { q: 'Comment s’inscrire ?', r: 'Créez votre compte sur le site (bouton « Rejoindre »), puis inscrivez-vous aux activités depuis votre espace membre.' },
-  { q: 'L’adhésion est-elle payante ?', r: '[Réponse à fournir : gratuité ou montant de la cotisation annuelle.]' },
-  { q: 'Combien de temps faut-il consacrer au club ?', r: '[Réponse à fournir : fréquence des réunions et des ateliers.] Chacun participe selon ses disponibilités, en fonction de son emploi du temps.' },
+  { q: 'L’adhésion est-elle payante ?', r: 'Non. L’inscription au club est gratuite, tout comme la participation aux activités, aux formations et aux attestations.' },
+  { q: 'Combien de temps faut-il consacrer au club ?', r: 'Autant que vous le souhaitez. Il n’y a aucune obligation de présence : chacun participe quand il veut, selon son emploi du temps et ses envies.' },
 ];
