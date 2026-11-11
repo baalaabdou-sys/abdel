@@ -14,6 +14,18 @@ const chemin = Astro.url.pathname;
       <img class="logo-club" src={u('/logos/2ameca-white-560.png')} width="560" height="120" alt="" />
     </a>
 
+    <div class="cloche-zone" id="cloche-zone" hidden>
+      <button type="button" class="cloche" id="cloche" aria-expanded="false" aria-controls="cloche-panneau" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>
+        <span class="cloche-nb" id="cloche-nb" hidden></span>
+      </button>
+      <div class="cloche-panneau" id="cloche-panneau" hidden>
+        <div class="cp-tete"><strong>Notifications</strong><button type="button" class="cp-fermer" id="cp-fermer" aria-label="Fermer">×</button></div>
+        <ul class="cp-liste" id="cp-liste" role="list"><li class="cp-vide">Chargement…</li></ul>
+        <a class="cp-tout" id="cp-tout" href="#">Tout voir dans Mon espace →</a>
+      </div>
+    </div>
+
     <nav class="nav" aria-label="Navigation principale">
       <button class="bouton-menu" type="button" aria-expanded="false" aria-controls="menu-principal">
         <span class="bouton-menu-texte">Menu</span>
@@ -126,6 +138,45 @@ const chemin = Astro.url.pathname;
 </style>
 
 <style is:global>
+  /* Cloche des notifications (membres connectés) */
+  .cloche-zone { position: relative; margin-left: auto; z-index: 3; }
+  .cloche-zone[hidden] { display: none; }
+  .cloche { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--blanc-25); background: transparent; color: var(--blanc); cursor: pointer; transition: background .2s, color .2s; }
+  .cloche svg { width: 21px; height: 21px; }
+  .cloche:hover, .cloche[aria-expanded='true'] { background: var(--blanc); color: var(--marine); }
+  .cloche:focus-visible { outline: 3px solid var(--ciel); outline-offset: 2px; }
+  .cloche-nb { position: absolute; top: -3px; right: -3px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--ciel); color: var(--marine); font: 600 11px/19px var(--f-texte); text-align: center; box-shadow: 0 0 0 2px var(--marine); }
+  .cloche-nb[hidden] { display: none; }
+  .cloche.vibre svg { animation: cl-vibre .9s ease 2; transform-origin: 50% 15%; }
+  @keyframes cl-vibre { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-5deg); } }
+  .cloche-panneau {
+    position: absolute; right: 0; top: calc(100% + 10px); width: min(360px, calc(100vw - 2 * var(--gouttiere)));
+    background: var(--blanc); color: var(--encre); border-radius: var(--rayon); box-shadow: 0 18px 50px -14px rgb(4 34 58 / .55); overflow: hidden;
+  }
+  .cloche-panneau[hidden] { display: none; }
+  .cp-tete { display: flex; align-items: center; justify-content: space-between; padding: .8rem 1rem; border-bottom: 1px solid var(--bleu-12); }
+  .cp-tete strong { font-family: var(--f-label); letter-spacing: .14em; text-transform: uppercase; color: var(--marine); font-size: .85rem; }
+  .cp-fermer { width: 34px; height: 34px; border: 0; background: none; font-size: 1.5rem; line-height: 1; color: var(--encre-70); cursor: pointer; border-radius: 50%; }
+  .cp-fermer:hover { background: var(--bleu-06); }
+  .cp-liste { list-style: none; margin: 0; padding: 0; max-height: min(60vh, 420px); overflow-y: auto; }
+  .cp-liste li { border-bottom: 1px solid var(--bleu-12); }
+  .cp-liste a, .cp-liste .cp-item { display: grid; gap: .2rem; padding: .75rem 1rem; text-decoration: none; color: inherit; }
+  .cp-liste a:hover { background: var(--bleu-06); }
+  .cp-liste .non-lue { background: rgb(159 208 245 / .18); }
+  .cp-liste .non-lue strong::before { content: ''; display: inline-block; width: .5em; height: .5em; border-radius: 50%; background: var(--bleu); margin-right: .45em; vertical-align: middle; }
+  .cp-liste strong { font-family: var(--f-label); font-weight: 500; color: var(--marine); line-height: 1.3; }
+  .cp-liste .cp-msg { font-size: .88rem; color: var(--encre-70); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cp-liste time { font-size: .75rem; color: var(--encre-70); }
+  .cp-vide { padding: 1.2rem 1rem; color: var(--encre-70); font-size: .92rem; }
+  .cp-tout { display: block; padding: .8rem 1rem; text-align: center; font-family: var(--f-label); letter-spacing: .1em; text-transform: uppercase; font-size: .8rem; color: var(--bleu); text-decoration: none; background: var(--bleu-06); }
+  .cp-tout:hover { background: var(--ciel); color: var(--marine); }
+  @media (max-width: 1039px) {
+    .cloche-zone { margin-right: .5rem; }
+    .cloche-panneau { position: fixed; left: var(--gouttiere); right: var(--gouttiere); top: calc(var(--header-h) + 8px); width: auto; }
+  }
+  @media (min-width: 1040px) { .cloche-zone { order: 3; margin-left: 1rem; } .barre .nav { margin-left: auto; } }
+  @media (prefers-reduced-motion: reduce) { .cloche.vibre svg { animation: none; } }
+
   /* Bouton de déconnexion (ajouté par le script quand on est connecté) */
   .deconnexion {
     display: inline-flex; align-items: center; justify-content: center; gap: .55em; align-self: flex-start;
@@ -194,6 +245,54 @@ const chemin = Astro.url.pathname;
         });
         l.replaceWith(bouton);
       }
+      cloche(base);
     }
   } catch { /* stockage indisponible : on garde « Rejoindre » */ }
+
+  /** Cloche : dernières notifications du membre, à portée de main sur toutes les pages. */
+  async function cloche(base: string) {
+    const zone = document.getElementById('cloche-zone')!, btn = document.getElementById('cloche') as HTMLButtonElement;
+    const panneau = document.getElementById('cloche-panneau')!, liste = document.getElementById('cp-liste')!, nb = document.getElementById('cloche-nb')!;
+    if (location.pathname.startsWith(`${base}/bureau/scanner`)) return;
+    (document.getElementById('cp-tout') as HTMLAnchorElement).href = `${base}/espace/#notifications`;
+    zone.hidden = false;
+    const { sb } = await import('../lib/supabase');
+    const { data: u } = await sb.auth.getUser();
+    if (!u.user) { zone.hidden = true; return; }
+    const moi = u.user.id;
+    const depuis = new Date(Date.now() - 60 * 864e5).toISOString();
+    const [nRes, lRes] = await Promise.all([
+      sb.from('notifications').select('id, titre, message, lien, created_at').or(`membre_id.is.null,membre_id.eq.${moi}`).gte('created_at', depuis).order('created_at', { ascending: false }).limit(8),
+      sb.from('notifications_lues').select('notification_id'),
+    ]);
+    const notifs = (nRes.data ?? []) as { id: string; titre: string; message: string; lien: string | null; created_at: string }[];
+    const lues = new Set((lRes.data ?? []).map((l) => l.notification_id));
+    let nonLues = notifs.filter((n) => !lues.has(n.id)).map((n) => n.id);
+    const majNb = () => { nb.hidden = !nonLues.length; nb.textContent = nonLues.length > 9 ? '9+' : String(nonLues.length); btn.setAttribute('aria-label', nonLues.length ? `Notifications, ${nonLues.length} non lue(s)` : 'Notifications'); };
+    majNb();
+    if (nonLues.length) btn.classList.add('vibre');
+    const quand = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Casablanca' });
+    liste.replaceChildren(...(notifs.length ? notifs.map((n) => {
+      const li = document.createElement('li');
+      const el = document.createElement(n.lien ? 'a' : 'div');
+      el.className = `cp-item${lues.has(n.id) ? '' : ' non-lue'}`;
+      if (n.lien) (el as HTMLAnchorElement).href = base + n.lien;
+      const t = document.createElement('strong'); t.textContent = n.titre;
+      const m = document.createElement('span'); m.className = 'cp-msg'; m.textContent = n.message ?? '';
+      const d = document.createElement('time'); d.dateTime = n.created_at; d.textContent = quand.format(new Date(n.created_at));
+      el.append(t, m, d); li.append(el); return li;
+    }) : [Object.assign(document.createElement('li'), { className: 'cp-vide', textContent: 'Aucune notification pour le moment.' })]));
+    const fermer = () => { panneau.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', async () => {
+      const ouvrir = panneau.hidden;
+      panneau.hidden = !ouvrir; btn.setAttribute('aria-expanded', String(ouvrir)); btn.classList.remove('vibre');
+      if (ouvrir && nonLues.length) {
+        const ids = nonLues; nonLues = []; majNb();
+        await sb.from('notifications_lues').upsert(ids.map((id) => ({ notification_id: id, membre_id: moi })), { ignoreDuplicates: true });
+      }
+    });
+    document.getElementById('cp-fermer')!.addEventListener('click', fermer);
+    document.addEventListener('click', (e) => { if (!zone.contains(e.target as Node)) fermer(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !panneau.hidden) { fermer(); btn.focus(); } });
+  }
 </script>
