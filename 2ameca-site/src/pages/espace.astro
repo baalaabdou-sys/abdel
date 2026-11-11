@@ -219,11 +219,13 @@ import { FILIERES, ANNEES } from '../config';
   let nonLues: string[] = [];
   async function chargerNotifications() {
     const depuis = new Date(Date.now() - 60 * 864e5).toISOString();
-    const [nRes, lRes] = await Promise.all([
+    const [nRes, lRes, mRes] = await Promise.all([
       sb.from('notifications').select('*').or(`membre_id.is.null,membre_id.eq.${profil.id}`).gte('created_at', depuis).order('created_at', { ascending: false }).limit(50),
       sb.from('notifications_lues').select('notification_id'),
+      sb.from('notifications_masquees').select('notification_id'),
     ]);
-    const notifs = (nRes.data ?? []) as Notif[];
+    const masquees = new Set((mRes.data ?? []).map((m) => m.notification_id));
+    const notifs = ((nRes.data ?? []) as Notif[]).filter((n) => !masquees.has(n.id));
     const lues = new Set((lRes.data ?? []).map((l) => l.notification_id));
     nonLues = notifs.filter((n) => !lues.has(n.id)).map((n) => n.id);
     const badge = $('nb-notifs');

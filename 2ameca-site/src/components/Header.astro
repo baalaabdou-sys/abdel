@@ -160,9 +160,22 @@ const chemin = Astro.url.pathname;
   .cp-fermer:hover { background: var(--bleu-06); }
   .cp-liste { list-style: none; margin: 0; padding: 0; max-height: min(60vh, 420px); overflow-y: auto; }
   .cp-liste li { border-bottom: 1px solid var(--bleu-12); }
-  .cp-liste a, .cp-liste .cp-item { display: grid; gap: .2rem; padding: .75rem 1rem; text-decoration: none; color: inherit; }
-  .cp-liste a:hover { background: var(--bleu-06); }
-  .cp-liste .non-lue { background: rgb(159 208 245 / .18); }
+  .cp-ligne { position: relative; overflow: hidden; background: var(--marine); }
+  .cp-fond { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; gap: .5rem; padding: 0 1.2rem; color: var(--ciel); font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; transition: color .15s; }
+  .cp-fond svg { width: 20px; height: 20px; }
+  .cp-fond.pret { color: var(--blanc); }
+  .cp-liste a, .cp-liste .cp-item { position: relative; display: grid; gap: .2rem; padding: .75rem 2.6rem .75rem 1rem; text-decoration: none; color: inherit; background: var(--blanc); transition: transform .22s ease, opacity .22s ease; user-select: none; -webkit-user-drag: none; }
+  .cp-liste a:hover { background: #f4f8fb; }
+  .cp-liste .non-lue { background: #eaf4fc; }
+  .cp-liste a.non-lue:hover { background: #e1eff9; }
+  .cp-suppr { position: absolute; top: .55rem; right: .45rem; width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--encre-70); cursor: pointer; opacity: .55; z-index: 1; transition: opacity .15s, background .15s; }
+  .cp-suppr svg { width: 16px; height: 16px; }
+  .cp-ligne:hover .cp-suppr, .cp-suppr:focus-visible { opacity: 1; }
+  .cp-suppr:hover { background: var(--bleu-06); color: var(--marine); }
+  .cp-ligne.glisse .cp-suppr, .cp-ligne.part .cp-suppr { opacity: 0; }
+  .cp-annule { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .65rem 1rem; background: var(--marine); color: var(--blanc); font-size: .9rem; }
+  .cp-annule[hidden] { display: none; }
+  .cp-annule button { border: 0; background: none; color: var(--ciel); font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; font-size: .8rem; cursor: pointer; min-height: 36px; }
   .cp-liste .non-lue strong::before { content: ''; display: inline-block; width: .5em; height: .5em; border-radius: 50%; background: var(--bleu); margin-right: .45em; vertical-align: middle; }
   .cp-liste strong { font-family: var(--f-label); font-weight: 500; color: var(--marine); line-height: 1.3; }
   .cp-liste .cp-msg { font-size: .88rem; color: var(--encre-70); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -261,27 +274,100 @@ const chemin = Astro.url.pathname;
     if (!u.user) { zone.hidden = true; return; }
     const moi = u.user.id;
     const depuis = new Date(Date.now() - 60 * 864e5).toISOString();
-    const [nRes, lRes] = await Promise.all([
-      sb.from('notifications').select('id, titre, message, lien, created_at').or(`membre_id.is.null,membre_id.eq.${moi}`).gte('created_at', depuis).order('created_at', { ascending: false }).limit(8),
+    const [nRes, lRes, mRes] = await Promise.all([
+      sb.from('notifications').select('id, titre, message, lien, created_at').or(`membre_id.is.null,membre_id.eq.${moi}`).gte('created_at', depuis).order('created_at', { ascending: false }).limit(30),
       sb.from('notifications_lues').select('notification_id'),
+      sb.from('notifications_masquees').select('notification_id'),
     ]);
-    const notifs = (nRes.data ?? []) as { id: string; titre: string; message: string; lien: string | null; created_at: string }[];
+    const masquees = new Set((mRes.data ?? []).map((m) => m.notification_id));
+    const notifs = ((nRes.data ?? []) as { id: string; titre: string; message: string; lien: string | null; created_at: string }[])
+      .filter((n) => !masquees.has(n.id)).slice(0, 8);
     const lues = new Set((lRes.data ?? []).map((l) => l.notification_id));
     let nonLues = notifs.filter((n) => !lues.has(n.id)).map((n) => n.id);
     const majNb = () => { nb.hidden = !nonLues.length; nb.textContent = nonLues.length > 9 ? '9+' : String(nonLues.length); btn.setAttribute('aria-label', nonLues.length ? `Notifications, ${nonLues.length} non lue(s)` : 'Notifications'); };
     majNb();
     if (nonLues.length) btn.classList.add('vibre');
     const quand = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Casablanca' });
-    liste.replaceChildren(...(notifs.length ? notifs.map((n) => {
-      const li = document.createElement('li');
-      const el = document.createElement(n.lien ? 'a' : 'div');
+    const vide = () => Object.assign(document.createElement('li'), { className: 'cp-vide', textContent: 'Aucune notification pour le moment.' });
+    const annule = document.createElement('div'); annule.className = 'cp-annule'; annule.hidden = true;
+    annule.innerHTML = '<span>Notification supprimée</span>';
+    const bAnnule = document.createElement('button'); bAnnule.type = 'button'; bAnnule.textContent = 'Annuler'; annule.append(bAnnule);
+    panneau.insertBefore(annule, document.getElementById('cp-tout'));
+    let enAttente: { id: string; li: HTMLLIElement; apres: Element | null; minuteur: number } | null = null;
+
+    /** Supprime (masque) une notification pour ce membre, avec 4 s pour annuler. */
+    function supprimer(id: string, li: HTMLLIElement) {
+      if (enAttente) valider();
+      const apres = li.nextElementSibling;
+      li.remove();
+      if (!liste.querySelector('.cp-ligne')) liste.append(vide());
+      nonLues = nonLues.filter((x) => x !== id); majNb();
+      annule.hidden = false;
+      enAttente = { id, li, apres, minuteur: window.setTimeout(valider, 4000) };
+    }
+    async function valider() {
+      if (!enAttente) return;
+      const { id, li, apres } = enAttente; clearTimeout(enAttente.minuteur); enAttente = null; annule.hidden = true;
+      const { error } = await sb.from('notifications_masquees').upsert({ notification_id: id, membre_id: moi }, { ignoreDuplicates: true });
+      if (error) { liste.querySelector('.cp-vide')?.remove(); liste.insertBefore(li, apres && apres.isConnected ? apres : null); remettre(li); }
+    }
+    function remettre(li: HTMLLIElement) { const c = li.querySelector<HTMLElement>('.cp-item'); if (c) { c.style.transform = ''; c.style.opacity = ''; } li.classList.remove('part'); }
+    bAnnule.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!enAttente) return;
+      const { li, apres } = enAttente; clearTimeout(enAttente.minuteur); enAttente = null; annule.hidden = true;
+      liste.querySelector('.cp-vide')?.remove();
+      liste.insertBefore(li, apres && apres.isConnected ? apres : null); remettre(li);
+    });
+
+    function ligne(n: (typeof notifs)[number]) {
+      const li = document.createElement('li'); li.className = 'cp-ligne';
+      const fond = document.createElement('span'); fond.className = 'cp-fond'; fond.setAttribute('aria-hidden', 'true');
+      fond.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></svg>Supprimer';
+      const el: HTMLElement = document.createElement(n.lien ? 'a' : 'div');
       el.className = `cp-item${lues.has(n.id) ? '' : ' non-lue'}`;
       if (n.lien) (el as HTMLAnchorElement).href = base + n.lien;
       const t = document.createElement('strong'); t.textContent = n.titre;
       const m = document.createElement('span'); m.className = 'cp-msg'; m.textContent = n.message ?? '';
       const d = document.createElement('time'); d.dateTime = n.created_at; d.textContent = quand.format(new Date(n.created_at));
-      el.append(t, m, d); li.append(el); return li;
-    }) : [Object.assign(document.createElement('li'), { className: 'cp-vide', textContent: 'Aucune notification pour le moment.' })]));
+      el.append(t, m, d);
+      const x = document.createElement('button'); x.type = 'button'; x.className = 'cp-suppr'; x.setAttribute('aria-label', `Supprimer : ${n.titre}`);
+      x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>';
+      x.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); partir(-1); });
+      li.append(fond, el, x);
+
+      // Glisser du doigt (ou de la souris) vers la gauche ou la droite pour supprimer
+      let x0 = 0, y0 = 0, dx = 0, actif = false, horizontal: boolean | null = null, deplace = false;
+      const partir = (sens: number) => {
+        li.classList.add('part');
+        el.style.transform = `translateX(${sens * 110}%)`; el.style.opacity = '0';
+        setTimeout(() => supprimer(n.id, li), 220);
+      };
+      el.addEventListener('pointerdown', (e) => { if (e.button) return; actif = true; horizontal = null; deplace = false; x0 = e.clientX; y0 = e.clientY; dx = 0; });
+      el.addEventListener('pointermove', (e) => {
+        if (!actif) return;
+        const mx = e.clientX - x0, my = e.clientY - y0;
+        if (horizontal === null && Math.hypot(mx, my) > 8) { horizontal = Math.abs(mx) > Math.abs(my); if (horizontal) el.setPointerCapture(e.pointerId); }
+        if (!horizontal) return;
+        deplace = true; dx = mx;
+        li.classList.toggle('glisse', true);
+        el.style.transition = 'none'; el.style.transform = `translateX(${dx}px)`;
+        fond.style.justifyContent = dx < 0 ? 'flex-end' : 'flex-start';
+        fond.classList.toggle('pret', Math.abs(dx) > el.offsetWidth * .35);
+      });
+      const fin = () => {
+        if (!actif) return; actif = false;
+        el.style.transition = '';
+        li.classList.remove('glisse');
+        if (horizontal && Math.abs(dx) > el.offsetWidth * .35) partir(Math.sign(dx));
+        else { el.style.transform = ''; fond.classList.remove('pret'); }
+      };
+      el.addEventListener('pointerup', fin); el.addEventListener('pointercancel', fin);
+      el.addEventListener('click', (e) => { if (deplace) { e.preventDefault(); deplace = false; } });
+      el.style.touchAction = 'pan-y';
+      return li;
+    }
+    liste.replaceChildren(...(notifs.length ? notifs.map(ligne) : [vide()]));
     const fermer = () => { panneau.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
     btn.addEventListener('click', async () => {
       const ouvrir = panneau.hidden;
