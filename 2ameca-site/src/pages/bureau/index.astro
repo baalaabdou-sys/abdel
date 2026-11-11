@@ -14,12 +14,22 @@ import '../../styles/app.css';
             <h1 class="titre-2">Tableau de bord</h1>
           </div>
           <div class="actions">
+            <a class="btn btn-scan" id="scanner" href="#">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg>
+              Scanner les entrées
+            </a>
             <a class="btn btn-petit" id="nouvelle" href="#">Nouvelle activité</a>
             <a class="btn btn-petit" id="contenus" href="#">Contenus du site</a>
             <a class="btn btn-contour btn-petit" id="guide" href="#">Guide vidéo</a>
             <a class="btn btn-contour btn-petit" id="mon-espace" href="#">Mon espace</a>
           </div>
         </div>
+
+        <a class="bandeau-jour" id="bandeau-jour" href="#" hidden>
+          <span class="bj-label">Aujourd’hui</span>
+          <strong id="bj-titre"></strong>
+          <span class="bj-action">Scanner les entrées <span aria-hidden="true">→</span></span>
+        </a>
 
         <div class="chiffres" id="chiffres"></div>
 
@@ -84,6 +94,7 @@ import '../../styles/app.css';
     moi = p;
     $('role').textContent = `Bureau · ${ROLES[p.role]}`;
     ($('nouvelle') as HTMLAnchorElement).href = `${base}/bureau/activite/`;
+    ($('scanner') as HTMLAnchorElement).href = `${base}/bureau/scanner/`;
     ($('mon-espace') as HTMLAnchorElement).href = `${base}/espace/`;
     ($('guide') as HTMLAnchorElement).href = `${base}/video/guide-bureau.mp4`;
     ($('contenus') as HTMLAnchorElement).href = `${base}/bureau/contenus/`;
@@ -142,6 +153,13 @@ import '../../styles/app.css';
     const ul = $('activites');
     if (!formations.length) return vider(ul, h('li', { class: 'vide' }, 'Aucune activité pour l’instant. Créez la première avec « Nouvelle activité ».'));
     const today = aujourdhui();
+    // Bandeau « Aujourd'hui » : l'activité du jour, scanner en un geste
+    const duJour = formations.find((f) => f.date === today && f.publiee && !f.annulee);
+    if (duJour) {
+      $('bj-titre').textContent = duJour.titre;
+      ($('bandeau-jour') as HTMLAnchorElement).href = `${base}/bureau/scanner/?id=${duJour.id}`;
+      $('bandeau-jour').hidden = false;
+    }
     vider(ul, formations.map((f) => {
       const c = compte.get(f.id) ?? { inscrits: 0, presents: 0 };
       const etat = f.annulee ? h('span', { class: 'pastille-etat annulee' }, 'Annulée')
@@ -151,7 +169,9 @@ import '../../styles/app.css';
         h('div', { class: 'infos' },
           h('strong', {}, f.titre),
           h('span', {}, `${TYPES[f.type]} · ${dateCourte(f.date)} · ${c.inscrits} inscrit(s) · ${c.presents} présent(s)`)),
-        h('div', { class: 'actions' }, etat, h('a', { class: 'btn btn-contour btn-petit', href: `${base}/bureau/activite/?id=${f.id}` }, 'Gérer')),
+        h('div', { class: 'actions' }, etat,
+          f.publiee && !f.annulee && f.date >= today ? h('a', { class: 'btn btn-petit', href: `${base}/bureau/scanner/?id=${f.id}` }, 'Scanner') : null,
+          h('a', { class: 'btn btn-contour btn-petit', href: `${base}/bureau/activite/?id=${f.id}` }, 'Gérer')),
       );
     }));
   }

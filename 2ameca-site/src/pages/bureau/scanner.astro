@@ -1,0 +1,242 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/app.css';
+---
+<Base prive titre="Scanner les entrées" description="Accueil des participants : scanner les QR codes des membres à l’entrée d’une activité.">
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement…</p>
+
+      <!-- Choix de l'activité -->
+      <div id="choix" hidden>
+        <div class="app-tete">
+          <div>
+            <a class="lien-fleche" id="retour-choix" href="#"><span aria-hidden="true">←</span> Tableau de bord</a>
+            <h1 class="titre-2">Scanner les entrées</h1>
+          </div>
+        </div>
+        <p class="aide">Choisissez l’activité, puis visez le QR code de chaque participant (dans son e-mail ou dans « Mon espace »).</p>
+        <ul class="liste-app carte" id="liste-choix" role="list"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Scanner plein écran -->
+  <div class="accueil" id="accueil" hidden>
+    <header class="ac-tete">
+      <div class="ac-titre">
+        <span class="ac-label">Accueil · scanner</span>
+        <strong id="ac-activite"></strong>
+      </div>
+      <a class="ac-fermer" id="ac-fermer" href="#">Terminer</a>
+    </header>
+
+    <div class="ac-compteur" aria-live="polite">
+      <span class="ac-nb" id="ac-presents">0</span>
+      <span class="ac-sur">présent(s) sur <span id="ac-inscrits">0</span> inscrit(s)</span>
+      <span class="ac-barre"><span id="ac-progres"></span></span>
+    </div>
+
+    <div class="ac-camera">
+      <video id="video" playsinline muted></video>
+      <div class="ac-viseur" aria-hidden="true"><i></i><i></i><i></i><i></i><span class="ac-ligne"></span></div>
+      <p class="ac-consigne" id="ac-consigne">Visez le QR code du participant</p>
+      <!-- Résultat du scan -->
+      <div class="ac-resultat" id="ac-resultat" hidden>
+        <span class="ac-icone" id="ac-icone" aria-hidden="true"></span>
+        <strong id="ac-nom"></strong>
+        <span id="ac-detail"></span>
+      </div>
+      <div class="ac-erreur-camera" id="ac-erreur-camera" hidden>
+        <p>La caméra n’est pas disponible. Autorisez l’accès à la caméra dans le navigateur, puis réessayez.</p>
+        <button class="btn btn-clair" type="button" id="ac-reessayer">Réessayer</button>
+      </div>
+    </div>
+
+    <footer class="ac-pied">
+      <p class="ac-dernier" id="ac-dernier">Aucun scan pour l’instant.</p>
+      <a class="ac-manuel" id="ac-manuel" href="#">Valider à la main (liste des inscrits)</a>
+    </footer>
+  </div>
+</Base>
+
+<style is:global>
+  .accueil {
+    position: fixed; inset: 0; z-index: 100; display: grid; grid-template-rows: auto auto 1fr auto;
+    background: var(--marine); color: var(--blanc); overscroll-behavior: contain;
+  }
+  .accueil[hidden] { display: none; }
+  .ac-tete { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: max(.9rem, env(safe-area-inset-top)) var(--gouttiere) .6rem; }
+  .ac-titre { display: grid; gap: .15rem; min-width: 0; }
+  .ac-label { font-family: var(--f-label); font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ciel); }
+  .ac-titre strong { font-family: var(--f-label); font-size: 1.05rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ac-fermer { flex-shrink: 0; min-height: 44px; display: inline-flex; align-items: center; padding: 0 1.1em; border-radius: 999px; border: 1px solid var(--blanc-25); color: var(--blanc); text-decoration: none; font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; font-size: .85rem; }
+  .ac-compteur { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: .2rem .7rem; padding: .2rem var(--gouttiere) .8rem; }
+  .ac-nb { font-family: var(--f-titre); font-size: 2.6rem; line-height: 1; color: var(--blanc); }
+  .ac-sur { font-family: var(--f-label); letter-spacing: .08em; color: var(--ciel); }
+  .ac-barre { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: rgb(159 208 245 / .2); overflow: hidden; }
+  .ac-barre span { display: block; height: 100%; width: 0; background: var(--ciel); transition: width .4s; }
+  .ac-camera { position: relative; overflow: hidden; background: #000; }
+  .ac-camera video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ac-viseur { position: absolute; left: 50%; top: 46%; width: min(68vw, 320px); aspect-ratio: 1; translate: -50% -50%; box-shadow: 0 0 0 100vmax rgb(4 34 58 / .45); border-radius: 18px; }
+  .ac-viseur i { position: absolute; width: 22%; height: 22%; border: 4px solid var(--ciel); }
+  .ac-viseur i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 18px; }
+  .ac-viseur i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 18px; }
+  .ac-viseur i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 18px; }
+  .ac-viseur i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 18px; }
+  .ac-ligne { position: absolute; left: 8%; right: 8%; height: 2px; background: var(--ciel); box-shadow: 0 0 12px var(--ciel); animation: ac-balaye 2.2s ease-in-out infinite alternate; }
+  @keyframes ac-balaye { from { top: 10%; } to { top: 90%; } }
+  .ac-consigne { position: absolute; left: 0; right: 0; bottom: 1.2rem; text-align: center; margin: 0; padding: 0 1rem; font-family: var(--f-label); letter-spacing: .1em; text-transform: uppercase; font-size: .9rem; }
+  .ac-resultat {
+    position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .5rem; text-align: center; padding: 1.5rem;
+    animation: ac-arrive .25s ease-out;
+  }
+  .ac-resultat[hidden] { display: none; }
+  .ac-resultat.ok { background: rgb(10 74 122 / .94); }
+  .ac-resultat.deja { background: rgb(4 34 58 / .94); }
+  .ac-resultat.ko { background: rgb(45 45 45 / .94); }
+  .ac-icone { width: 92px; height: 92px; border-radius: 50%; display: grid; place-items: center; border: 3px solid currentColor; }
+  .ac-icone svg { width: 54%; height: 54%; }
+  .ok .ac-icone { color: var(--ciel); } .deja .ac-icone { color: var(--ciel); } .ko .ac-icone { color: var(--blanc); }
+  .ac-resultat strong { font-family: var(--f-titre); font-weight: 400; font-size: clamp(1.8rem, 8vw, 2.6rem); line-height: 1.05; text-transform: uppercase; }
+  .ac-resultat span:last-child { font-family: var(--f-label); letter-spacing: .1em; color: var(--ciel); text-transform: uppercase; }
+  @keyframes ac-arrive { from { opacity: 0; transform: scale(1.04); } }
+  .ac-erreur-camera { position: absolute; inset: 0; display: grid; place-content: center; gap: 1rem; padding: 1.5rem; text-align: center; background: var(--marine); }
+  .ac-erreur-camera[hidden] { display: none; }
+  .ac-pied { display: grid; gap: .4rem; padding: .8rem var(--gouttiere) max(1rem, env(safe-area-inset-bottom)); }
+  .ac-dernier { margin: 0; font-size: .95rem; color: var(--blanc); }
+  .ac-manuel { color: var(--ciel); font-size: .9rem; }
+  @media (prefers-reduced-motion: reduce) { .ac-ligne { animation: none; top: 50%; } .ac-resultat { animation: none; } }
+</style>
+
+<script>
+  import jsQR from 'jsqr';
+  import { sb, monProfil, estBureau, messageErreur, TYPES, type Formation } from '../../lib/supabase';
+  import { h, vider, dateCourte, aujourdhui } from '../../lib/dom';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  const id = new URLSearchParams(location.search).get('id');
+  const ICONES = {
+    ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    deja: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5l4.5 4.5L16.5 7.5M10 16.5l.5.5L20 7.5"/></svg>',
+    ko: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M7 7l10 10M17 7L7 17"/></svg>',
+  };
+
+  let formation: Formation;
+  const presents = new Set<string>();
+  let nbInscrits = 0;
+
+  async function demarrer() {
+    const p = await monProfil();
+    if (!p) { location.href = `${base}/connexion/?suite=${encodeURIComponent('/bureau/scanner/' + location.search)}`; return; }
+    if (!estBureau(p)) { vider($('chargement'), 'Cette page est réservée aux membres du bureau.'); return; }
+    if (!id) return choisir();
+    const { data, error } = await sb.from('formations').select('*').eq('id', id).maybeSingle();
+    if (error || !data) { $('chargement').textContent = error ? messageErreur(error) : 'Activité introuvable.'; return; }
+    formation = data as Formation;
+    $('ac-activite').textContent = formation.titre;
+    ($('ac-fermer') as HTMLAnchorElement).href = `${base}/bureau/activite/?id=${formation.id}`;
+    ($('ac-manuel') as HTMLAnchorElement).href = `${base}/bureau/activite/?id=${formation.id}#presences`;
+    await compter();
+    $('chargement').hidden = true; $('accueil').hidden = false;
+    demarrerCamera();
+  }
+
+  /** Liste des activités : celles d'aujourd'hui d'abord, puis les prochaines. */
+  async function choisir() {
+    ($('retour-choix') as HTMLAnchorElement).href = `${base}/bureau/`;
+    const avant = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    const { data } = await sb.from('formations').select('*').eq('annulee', false).gte('date', avant).order('date');
+    const liste = (data ?? []) as Formation[];
+    const today = aujourdhui();
+    vider($('liste-choix'), liste.length ? liste.map((f) => h('li', {},
+      h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${f.date === today ? 'Aujourd’hui' : dateCourte(f.date)} · ${TYPES[f.type]}`)),
+      h('a', { class: f.date === today ? 'btn btn-petit' : 'btn btn-contour btn-petit', href: `${base}/bureau/scanner/?id=${f.id}` }, 'Scanner')))
+      : h('li', { class: 'vide' }, 'Aucune activité récente ou à venir.'));
+    $('chargement').hidden = true; $('choix').hidden = false;
+  }
+
+  async function compter() {
+    const { data } = await sb.from('inscriptions').select('membre_id, present').eq('formation_id', formation.id);
+    nbInscrits = data?.length ?? 0;
+    presents.clear(); for (const i of data ?? []) if (i.present) presents.add(i.membre_id);
+    majCompteur();
+  }
+  function majCompteur() {
+    $('ac-presents').textContent = String(presents.size);
+    $('ac-inscrits').textContent = String(nbInscrits);
+    ($('ac-progres') as HTMLElement).style.width = nbInscrits ? `${Math.min(100, (presents.size / nbInscrits) * 100)}%` : '0';
+  }
+
+  // Petit son de confirmation (aucun fichier : généré par le navigateur)
+  let audio: AudioContext | null = null;
+  function bip(type: 'ok' | 'deja' | 'ko') {
+    try {
+      audio ??= new AudioContext();
+      const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+      o.frequency.value = type === 'ok' ? 880 : type === 'deja' ? 660 : 220;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02); g.gain.exponentialRampToValueAtTime(.0001, t + (type === 'ko' ? .35 : .18));
+      o.connect(g).connect(audio.destination); o.start(t); o.stop(t + .4);
+      if (type === 'ok') { const o2 = audio.createOscillator(), g2 = audio.createGain(); o2.frequency.value = 1320; g2.gain.setValueAtTime(.0001, t + .1); g2.gain.exponentialRampToValueAtTime(.2, t + .12); g2.gain.exponentialRampToValueAtTime(.0001, t + .3); o2.connect(g2).connect(audio.destination); o2.start(t + .1); o2.stop(t + .4); }
+    } catch { /* pas de son */ }
+    try { navigator.vibrate?.(type === 'ko' ? [60, 60, 60] : 90); } catch { /* pas de vibration */ }
+  }
+
+  let masque: number | undefined;
+  function resultat(type: 'ok' | 'deja' | 'ko', nom: string, detail: string) {
+    const r = $('ac-resultat');
+    r.className = `ac-resultat ${type}`; r.hidden = false;
+    $('ac-icone').innerHTML = ICONES[type];
+    $('ac-nom').textContent = nom; $('ac-detail').textContent = detail;
+    bip(type);
+    clearTimeout(masque); masque = window.setTimeout(() => { r.hidden = true; }, type === 'ko' ? 1800 : 1500);
+  }
+
+  let flux: MediaStream | null = null;
+  let boucle = 0, occupe = false, dernier = '', dernierT = 0;
+  async function demarrerCamera() {
+    $('ac-erreur-camera').hidden = true;
+    try {
+      flux = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    } catch { $('ac-erreur-camera').hidden = false; return; }
+    const video = $('video') as HTMLVideoElement;
+    video.srcObject = flux; await video.play();
+    const toile = document.createElement('canvas'); const ctx = toile.getContext('2d', { willReadFrequently: true })!;
+    const lire = async () => {
+      boucle = requestAnimationFrame(lire);
+      if (occupe || video.readyState < 2) return;
+      const w = 520, hgt = Math.round((video.videoHeight / video.videoWidth) * w) || w;
+      toile.width = w; toile.height = hgt; ctx.drawImage(video, 0, 0, w, hgt);
+      const code = jsQR(ctx.getImageData(0, 0, w, hgt).data, w, hgt, { inversionAttempts: 'dontInvert' });
+      if (!code) return;
+      const now = Date.now();
+      if (code.data === dernier && now - dernierT < 3500) return;   // même code encore devant la caméra
+      dernier = code.data; dernierT = now;
+      const m = code.data.match(/^2AMECA:([0-9a-f-]{36})$/i);
+      if (!m) return resultat('ko', 'Code non reconnu', 'Ce n’est pas un QR code membre 2AMECA');
+      const membre = m[1].toLowerCase();
+      occupe = true;
+      try {
+        const deja = presents.has(membre);
+        const { data, error } = await sb.rpc('marquer_presence', { p_formation: formation.id, p_membre: membre, p_present: true });
+        if (error) { resultat('ko', 'Échec', messageErreur(error)); return; }
+        const nom = (data as string) || 'Membre';
+        if (deja) resultat('deja', nom, 'Déjà enregistré(e)');
+        else {
+          const etaitInscrit = await sb.from('inscriptions').select('membre_id', { count: 'exact', head: true }).eq('formation_id', formation.id);
+          presents.add(membre); nbInscrits = Math.max(nbInscrits, etaitInscrit.count ?? nbInscrits); majCompteur();
+          resultat('ok', nom, 'Présence validée');
+        }
+        $('ac-dernier').textContent = `Dernier : ${nom} · ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+      } finally { occupe = false; }
+    };
+    lire();
+  }
+  function arreter() { cancelAnimationFrame(boucle); flux?.getTracks().forEach((t) => t.stop()); flux = null; }
+  $('ac-reessayer').addEventListener('click', demarrerCamera);
+  addEventListener('pagehide', arreter);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) arreter(); else if (!flux && formation) demarrerCamera(); });
+
+  demarrer();
+</script>

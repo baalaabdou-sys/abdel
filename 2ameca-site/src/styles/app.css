@@ -151,3 +151,18 @@ fieldset.champ { border: 0; padding: 0; margin: 0; }
 
 .pastille-etat.annulee { border-color: var(--encre); color: var(--encre); background: var(--bleu-06); text-decoration: line-through; text-decoration-thickness: 1px; }
 .erreur-form.annulee::before { content: ''; }
+
+/* Bouton « Scanner les entrées » (tableau de bord et activité) */
+.btn-scan { --fond: var(--marine); --txt: var(--blanc); --bord: var(--marine); min-height: 48px; padding: .6em 1.3em; }
+.btn-scan svg { width: 22px; height: 22px; }
+.btn-scan:hover { --fond: var(--bleu); --bord: var(--bleu); }
+.bandeau-jour {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .2rem 1rem; margin: 0 0 1.25rem;
+  padding: 1rem 1.2rem; border-radius: var(--rayon); background: var(--marine); color: var(--blanc); text-decoration: none;
+  background-image: repeating-linear-gradient(90deg, rgb(159 208 245 / .08) 0 1px, transparent 1px 18px);
+}
+.bandeau-jour[hidden] { display: none; }
+.bj-label { grid-column: 1; font-family: var(--f-label); font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--ciel); }
+.bandeau-jour strong { grid-column: 1; font-family: var(--f-label); font-weight: 500; font-size: 1.15rem; }
+.bj-action { grid-column: 2; grid-row: 1 / span 2; font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; font-size: .85rem; padding: .6em 1em; border-radius: 999px; background: var(--blanc); color: var(--marine); }
+.bandeau-jour:hover .bj-action { background: var(--ciel); }

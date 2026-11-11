@@ -13,6 +13,10 @@ import '../../styles/app.css';
             <a class="lien-fleche" id="retour" href="#"><span aria-hidden="true">←</span> Tableau de bord</a>
             <h1 class="titre-2" id="titre-page">Nouvelle activité</h1>
           </div>
+          <a class="btn btn-scan" id="btn-scan-haut" href="#" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg>
+            Scanner les entrées
+          </a>
         </div>
 
         <div class="colonnes">
@@ -60,11 +64,12 @@ import '../../styles/app.css';
 
           <div id="gestion" hidden>
             <!-- Présences -->
-            <div class="carte">
+            <div class="carte" id="presences">
               <h2>Inscrits et présences</h2>
               <p class="aide" id="compteurs"></p>
               <div class="actions" style="margin:.75rem 0 1rem">
-                <button class="btn btn-petit" type="button" id="btn-scanner">Scanner les QR codes</button>
+                <a class="btn btn-petit" id="btn-scan-plein" href="#">Scanner (plein écran)</a>
+                <button class="btn btn-contour btn-petit" type="button" id="btn-scanner">Scanner ici</button>
                 <button class="btn btn-contour btn-petit" type="button" id="btn-export">Exporter (Excel)</button>
               </div>
               <div id="zone-scanner" hidden>
@@ -141,6 +146,9 @@ import '../../styles/app.css';
   function remplirFiche() {
     if (!formation) return;
     $('titre-page').textContent = formation.titre;
+    const scan = `${base}/bureau/scanner/?id=${formation.id}`;
+    ($('btn-scan-haut') as HTMLAnchorElement).href = scan; $('btn-scan-haut').hidden = !!formation.annulee;
+    ($('btn-scan-plein') as HTMLAnchorElement).href = scan;
     for (const k of ['titre', 'type', 'date', 'lieu', 'description', 'compte_rendu'] as const) champ(k).value = (formation as Formation & { compte_rendu?: string })[k] ?? '';
     champ('heure_debut').value = formation.heure_debut?.slice(0, 5) ?? '';
     champ('heure_fin').value = formation.heure_fin?.slice(0, 5) ?? '';
