@@ -1,0 +1,178 @@
+---
+import Base from '../../layouts/Base.astro';
+import Lignes from '../../components/Lignes.astro';
+import AppelRejoindre from '../../components/AppelRejoindre.astro';
+import { u } from '../../lib/url';
+---
+<Base titre="Événement" description="Un événement du Club 2AMECA à la Faculté des Sciences Aïn Chock : détails, programme et photos.">
+  <section class="tete sombre">
+    <Lignes variante="haut-droite" />
+    <div class="conteneur mise">
+      <div class="infos">
+        <a class="retour lien-fleche" href={u('/evenements/')}><span aria-hidden="true">←</span> Tous les événements</a>
+        <span class="surtitre" id="ev-surtitre">Événement</span>
+        <h1 class="titre-1" id="ev-titre">Chargement…</h1>
+        <p class="dates" id="ev-dates"></p>
+        <p class="heure" id="ev-heure"></p>
+        <p class="ev-annule" id="ev-annule" hidden></p>
+        <div class="boutons ev-actions" id="ev-actions" hidden>
+          <a class="btn btn-clair" id="ev-inscrire" href="#">S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
+          <button class="btn btn-contour" type="button" id="ev-agenda">Ajouter à mon agenda</button>
+        </div>
+      </div>
+      <div class="affiche" id="ev-affiche-zone" hidden><button type="button" class="vignette-affiche" id="ev-affiche-btn" aria-label="Agrandir l’affiche"><img id="ev-affiche" alt="" /></button></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="conteneur">
+      <div class="cartouche clair" id="ev-cartouche" hidden>
+        <div><span class="label">Dates</span><strong id="c-dates"></strong><small id="c-heures"></small></div>
+        <div><span class="label">Lieu</span><strong id="c-lieu"></strong><small id="c-lieu-detail"></small></div>
+        <div id="c-prog-zone" hidden><span class="label">Au programme</span><strong id="c-prog"></strong></div>
+      </div>
+
+      <div class="texte corps" id="ev-texte"></div>
+
+      <div class="bloc-photos" id="bloc-photos" hidden>
+        <h2 class="titre-3 titre-photos">En images</h2>
+        <ul class="photos" id="photos" role="list"></ul>
+      </div>
+    </div>
+  </section>
+
+  <dialog class="grande-photo" id="grande-photo" aria-label="Photo agrandie">
+    <button type="button" class="gp-fermer" id="gp-fermer">Fermer</button>
+    <button type="button" class="gp-nav gp-prec" id="gp-prec" aria-label="Photo précédente"><span aria-hidden="true">←</span></button>
+    <img id="gp-img" alt="" />
+    <button type="button" class="gp-nav gp-suiv" id="gp-suiv" aria-label="Photo suivante"><span aria-hidden="true">→</span></button>
+    <p class="gp-compteur" id="gp-compteur" aria-live="polite"></p>
+  </dialog>
+
+  <AppelRejoindre />
+</Base>
+
+<style is:global>
+  .tete { position: relative; overflow: hidden; padding-block: clamp(2rem, 6vw, 4.5rem); }
+  .tete > .conteneur { position: relative; z-index: 1; }
+  .mise { display: grid; gap: 2.5rem; align-items: center; }
+  @media (min-width: 980px) { .mise { grid-template-columns: minmax(0, 1fr) 420px; gap: 4rem; } }
+  .retour { margin-bottom: 1.25rem; color: var(--ciel) !important; }
+  .tete .titre-1 { overflow-wrap: anywhere; hyphens: auto; }
+  .tete .dates { font-family: var(--f-titre); text-transform: uppercase; font-size: clamp(1.6rem, 6vw, 2.6rem); line-height: 1.05; margin: 1.25rem 0 .3rem; }
+  .tete .heure { font-family: var(--f-label); font-weight: 500; text-transform: uppercase; letter-spacing: .04em; font-size: 1.1rem; margin: 0; color: var(--ciel); }
+  .ev-annule { margin: 1.2rem 0 0; display: inline-block; padding: .4em .9em; border-radius: 999px; background: var(--blanc); color: var(--marine); font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; font-size: .85rem; }
+  .ev-actions { margin-top: 1.8rem; }
+  .affiche { max-width: 420px; width: 100%; margin-inline: auto; }
+  .vignette-affiche { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+  .affiche img { width: 100%; border-radius: 10px; box-shadow: 0 24px 50px -24px rgb(4 34 58 / .8); display: block; }
+  .corps { margin-top: 2.5rem; }
+  .bloc-photos { margin-top: clamp(2.5rem, 6vw, 4rem); }
+  .titre-photos { color: var(--marine); margin-bottom: 1rem; }
+  .photos { list-style: none; padding: 0; display: grid; gap: .6rem; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 720px) { .photos { grid-template-columns: repeat(3, 1fr); gap: .8rem; } }
+  .photos .vignette { display: block; width: 100%; padding: 0; border: 0; border-radius: 10px; overflow: hidden; cursor: zoom-in; background: var(--bleu-06); }
+  .photos .vignette img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; transition: transform .35s; }
+  .photos .vignette:hover img { transform: scale(1.04); }
+  .grande-photo { width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--marine); color: var(--blanc); }
+  .grande-photo[open] { display: grid; place-items: center; }
+  .grande-photo::backdrop { background: var(--marine); }
+  .grande-photo img { max-width: 94vw; max-height: 82dvh; object-fit: contain; border-radius: 6px; }
+  .gp-fermer { position: absolute; top: 1rem; right: 1rem; min-height: 44px; padding: .3em 1.1em; border-radius: 999px; border: 1px solid var(--blanc-25); background: transparent; color: var(--blanc); font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+  .gp-nav { position: absolute; top: 50%; translate: 0 -50%; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--blanc-25); background: rgb(4 34 58 / .6); color: var(--blanc); font-size: 1.2rem; cursor: pointer; }
+  .gp-prec { left: .75rem; } .gp-suiv { right: .75rem; }
+  .gp-compteur { position: absolute; bottom: 1rem; left: 0; right: 0; text-align: center; margin: 0; font-family: var(--f-label); letter-spacing: .2em; color: var(--ciel); }
+</style>
+
+<script>
+  import { sb, TYPES, messageErreur } from '../../lib/supabase';
+  import { h, vider } from '../../lib/dom';
+  import { urlMedia } from '../../lib/images';
+  import { plage, heureFr, termine, miseEnForme, type Evenement } from '../../lib/evenements';
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  const id = new URLSearchParams(location.search).get('id');
+  let images: { src: string; alt: string }[] = [];
+
+  async function demarrer() {
+    if (!id) { location.replace(`${base}/evenements/`); return; }
+    const { data, error } = await sb.from('formations').select('*').eq('id', id).eq('publiee', true).maybeSingle();
+    if (error || !data) { $('ev-titre').textContent = error ? messageErreur(error) : 'Événement introuvable'; $('ev-surtitre').textContent = 'Événements'; return; }
+    const e = data as Evenement;
+    const fini = termine(e);
+    document.title = `${e.titre} — Club 2AMECA`;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', e.resume || `${e.titre} — Club 2AMECA, FSAC.`);
+    $('ev-surtitre').textContent = `${fini ? 'Événement passé' : 'À venir'} · ${TYPES[e.type]}`;
+    $('ev-titre').textContent = e.titre;
+    $('ev-dates').textContent = plage(e);
+    $('ev-heure').textContent = [e.heure_debut && `À partir de ${heureFr(e.heure_debut)}`, e.lieu].filter(Boolean).join(' · ');
+    if (e.annulee) { $('ev-annule').hidden = false; $('ev-annule').textContent = `Annulé${e.motif_annulation ? ` — ${e.motif_annulation}` : ''}`; }
+    if (!fini && !e.annulee) {
+      $('ev-actions').hidden = false;
+      ($('ev-inscrire') as HTMLAnchorElement).href = `${base}/espace/?inscrire=${e.id}`;
+      $('ev-agenda').addEventListener('click', () => agenda(e));
+    }
+    if (e.affiche) {
+      $('ev-affiche-zone').hidden = false;
+      ($('ev-affiche') as HTMLImageElement).src = urlMedia(e.affiche);
+      ($('ev-affiche') as HTMLImageElement).alt = `Affiche : ${e.titre}`;
+      images.push({ src: urlMedia(e.affiche), alt: `Affiche : ${e.titre}` });
+      $('ev-affiche-btn').addEventListener('click', () => ouvrir(0));
+    }
+    // Cartouche
+    $('ev-cartouche').hidden = false;
+    $('c-dates').textContent = plage(e);
+    $('c-heures').textContent = e.heure_debut ? `À partir de ${heureFr(e.heure_debut)}${e.heure_fin ? ` jusqu’à ${heureFr(e.heure_fin)}` : ''}` : '';
+    $('c-lieu').textContent = e.lieu || 'À préciser';
+    $('c-lieu-detail').textContent = e.lieu_detail;
+    const prog = e.programme.split('\n').map((l) => l.trim()).filter(Boolean);
+    if (prog.length) { $('c-prog-zone').hidden = false; $('c-prog').textContent = prog.join(' · '); }
+    // Texte : description, puis compte-rendu
+    vider($('ev-texte'), [...miseEnForme(e.description), ...(e.compte_rendu ? [h('h2', {}, 'Compte-rendu'), ...miseEnForme(e.compte_rendu)] : [])]);
+    // Photos liées
+    const { data: ph } = await sb.from('photos').select('chemin, legende, created_at').eq('formation_id', e.id).order('created_at');
+    const photos = (ph ?? []).filter((p) => p.chemin !== e.affiche);
+    if (photos.length) {
+      $('bloc-photos').hidden = false;
+      const debut = images.length;
+      images.push(...photos.map((p) => ({ src: urlMedia(p.chemin), alt: p.legende || e.titre })));
+      vider($('photos'), photos.map((p, k) => h('li', {}, h('button', { type: 'button', class: 'vignette', 'aria-label': 'Agrandir la photo', onclick: () => ouvrir(debut + k) },
+        h('img', { src: urlMedia(p.chemin), alt: p.legende || e.titre, loading: 'lazy' })))));
+    }
+  }
+
+  // Ajouter à l'agenda (fichier .ics généré dans le navigateur)
+  function agenda(e: Evenement) {
+    const j = (s: string) => s.replace(/-/g, '');
+    const debut = e.heure_debut ? `DTSTART;TZID=Africa/Casablanca:${j(e.date)}T${e.heure_debut.slice(0, 5).replace(':', '')}00` : `DTSTART;VALUE=DATE:${j(e.date)}`;
+    const finJ = new Date(`${e.date_fin ?? e.date}T12:00:00Z`); finJ.setUTCDate(finJ.getUTCDate() + 1);
+    const fin = e.heure_fin ? `DTEND;TZID=Africa/Casablanca:${j(e.date_fin ?? e.date)}T${e.heure_fin.slice(0, 5).replace(':', '')}00` : (e.heure_debut ? '' : `DTEND;VALUE=DATE:${finJ.toISOString().slice(0, 10).replace(/-/g, '')}`);
+    const esc = (t: string) => t.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
+    const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Club 2AMECA//FR', 'BEGIN:VEVENT', `UID:${e.id}@2ameca`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').slice(0, 15)}Z`,
+      debut, fin, `SUMMARY:${esc(e.titre)}`, `LOCATION:${esc([e.lieu, e.lieu_detail].filter(Boolean).join(', '))}`, `URL:${location.href}`, 'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n');
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })), download: 'evenement-2ameca.ics' });
+    document.body.append(a); a.click(); a.remove();
+  }
+
+  // Visionneuse
+  const dlg = $('grande-photo') as HTMLDialogElement, img = $('gp-img') as HTMLImageElement;
+  let i = 0;
+  function montrer(n: number) {
+    i = (n + images.length) % images.length;
+    img.src = images[i].src; img.alt = images[i].alt;
+    $('gp-compteur').textContent = `${i + 1} / ${images.length}`;
+    $('gp-prec').hidden = images.length < 2; $('gp-suiv').hidden = images.length < 2;
+  }
+  function ouvrir(n: number) { montrer(n); dlg.showModal(); }
+  $('gp-prec').addEventListener('click', () => montrer(i - 1));
+  $('gp-suiv').addEventListener('click', () => montrer(i + 1));
+  $('gp-fermer').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', (ev) => { if (ev.target === dlg) dlg.close(); });
+  dlg.addEventListener('keydown', (ev) => { if (ev.key === 'ArrowRight') montrer(i + 1); if (ev.key === 'ArrowLeft') montrer(i - 1); });
+  let x0: number | null = null;
+  dlg.addEventListener('touchstart', (ev) => { x0 = ev.touches[0].clientX; }, { passive: true });
+  dlg.addEventListener('touchend', (ev) => { if (x0 === null) return; const dx = ev.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) montrer(dx < 0 ? i + 1 : i - 1); });
+
+  demarrer();
+</script>

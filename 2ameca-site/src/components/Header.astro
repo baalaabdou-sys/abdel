@@ -190,6 +190,16 @@ const chemin = Astro.url.pathname;
   @media (min-width: 1040px) { .cloche-zone { order: 3; margin-left: 1rem; } .barre .nav { margin-left: auto; } }
   @media (prefers-reduced-motion: reduce) { .cloche.vibre svg { animation: none; } }
 
+  /* Boutons « Modifier » du bureau (bas de l'écran) */
+  .zone-modifier { position: fixed; right: max(1rem, env(safe-area-inset-right)); bottom: max(1rem, env(safe-area-inset-bottom)); z-index: 60; display: flex; gap: .5rem; align-items: center; }
+  .bouton-modifier { display: inline-flex; align-items: center; gap: .55em; min-height: 46px; padding: 0 1.15em; border-radius: 999px; background: var(--marine); color: var(--blanc); text-decoration: none; font-family: var(--f-label); font-size: .85rem; letter-spacing: .1em; text-transform: uppercase; box-shadow: 0 10px 30px -8px rgb(4 34 58 / .55); border: 1px solid rgb(159 208 245 / .35); transition: background .2s, transform .2s; }
+  .bouton-modifier svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .bouton-modifier:hover { background: var(--bleu); transform: translateY(-2px); }
+  .bouton-modifier:focus-visible { outline: 3px solid var(--ciel); outline-offset: 2px; }
+  .bouton-modifier.secondaire { background: var(--blanc); color: var(--marine); border-color: var(--bleu-12); }
+  .bouton-modifier.secondaire:hover { background: var(--ciel); }
+  @media (max-width: 520px) { .bouton-modifier.secondaire span { display: none; } .bouton-modifier.secondaire { padding: 0; width: 46px; justify-content: center; } }
+
   /* Bouton de déconnexion (ajouté par le script quand on est connecté) */
   .deconnexion {
     display: inline-flex; align-items: center; justify-content: center; gap: .55em; align-self: flex-start;
@@ -262,6 +272,34 @@ const chemin = Astro.url.pathname;
     }
   } catch { /* stockage indisponible : on garde « Rejoindre » */ }
 
+  /** Bouton « Modifier » : pour le bureau, ouvre la bonne page du tableau de bord. */
+  async function boutonModifier(sb: typeof import('../lib/supabase').sb, moi: string, base: string) {
+    const chemin = location.pathname.slice(base.length) || '/';
+    if (/^\/(bureau|espace|connexion)\//.test(chemin)) return;
+    const { data } = await sb.from('profiles').select('role').eq('id', moi).maybeSingle();
+    if (!data || !['responsable', 'admin'].includes(data.role)) return;
+    const id = new URLSearchParams(location.search).get('id');
+    const [lien, texte] =
+      chemin.startsWith('/evenements/voir/') && id ? [`/bureau/activite/?id=${id}`, 'Modifier cet événement']
+      : chemin.startsWith('/evenements/') || chemin.startsWith('/formations/') ? ['/bureau/', 'Gérer les événements']
+      : chemin.startsWith('/le-club/') ? ['/bureau/contenus/#club', 'Modifier cette page']
+      : chemin.startsWith('/galerie/') ? ['/bureau/contenus/#galerie', 'Gérer la galerie']
+      : chemin.startsWith('/contact/') ? ['/bureau/contenus/#contact', 'Modifier contact et FAQ']
+      : chemin.startsWith('/ressources/') ? ['/bureau/contenus/#ressources', 'Gérer les ressources']
+      : chemin === '/' ? ['/bureau/contenus/#club', 'Modifier cette page']
+      : ['/bureau/contenus/', 'Modifier le site'];
+    const a = document.createElement('a');
+    a.className = 'bouton-modifier'; a.href = base + lien;
+    a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4.2-1 11-11-3.2-3.2-11 11z"/><path d="M14 6.8l3.2 3.2"/></svg>';
+    a.append(Object.assign(document.createElement('span'), { textContent: texte }));
+    const sec = document.createElement('a');
+    sec.className = 'bouton-modifier secondaire'; sec.href = `${base}/bureau/contenus/#sections`; sec.title = 'Afficher ou masquer des sections';
+    sec.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
+    sec.append(Object.assign(document.createElement('span'), { textContent: 'Sections' }));
+    const zone = document.createElement('div'); zone.className = 'zone-modifier'; zone.append(sec, a);
+    document.body.append(zone);
+  }
+
   /** Cloche : dernières notifications du membre, à portée de main sur toutes les pages. */
   async function cloche(base: string) {
     const zone = document.getElementById('cloche-zone')!, btn = document.getElementById('cloche') as HTMLButtonElement;
@@ -273,6 +311,7 @@ const chemin = Astro.url.pathname;
     const { data: u } = await sb.auth.getUser();
     if (!u.user) { zone.hidden = true; return; }
     const moi = u.user.id;
+    boutonModifier(sb, moi, base);
     const depuis = new Date(Date.now() - 60 * 864e5).toISOString();
     const [nRes, lRes, mRes] = await Promise.all([
       sb.from('notifications').select('id, titre, message, lien, created_at').or(`membre_id.is.null,membre_id.eq.${moi}`).gte('created_at', depuis).order('created_at', { ascending: false }).limit(30),

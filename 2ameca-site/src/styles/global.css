@@ -272,3 +272,6 @@ ul, ol { margin: 0; }
   .js .reveal.visible { opacity: 1; transform: none; }
 }
 main:focus { outline: none; }
+
+/* Section masquée par le bureau (Contenus du site → Sections) */
+[data-masquee] { display: none !important; }

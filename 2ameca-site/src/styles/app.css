@@ -166,3 +166,22 @@ fieldset.champ { border: 0; padding: 0; margin: 0; }
 .bandeau-jour strong { grid-column: 1; font-family: var(--f-label); font-weight: 500; font-size: 1.15rem; }
 .bj-action { grid-column: 2; grid-row: 1 / span 2; font-family: var(--f-label); letter-spacing: .12em; text-transform: uppercase; font-size: .85rem; padding: .6em 1em; border-radius: 999px; background: var(--blanc); color: var(--marine); }
 .bandeau-jour:hover .bj-action { background: var(--ciel); }
+
+/* Affiche dans la fiche d'une activité */
+.affiche-ed { display: flex; align-items: center; gap: 1rem; margin-bottom: .6rem; }
+.affiche-ed[hidden] { display: none; }
+.affiche-ed img { width: 84px; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 8px; border: 1px solid var(--bleu-12); }
+
+/* Onglet « Sections » */
+.groupe-sections { border: 1px solid var(--bleu-12); border-radius: 10px; padding: .8rem 1rem 1rem; margin: 0 0 1rem; display: grid; gap: .6rem; }
+.groupe-sections legend { font-family: var(--f-label); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--marine); padding: 0 .4rem; }
+.groupe-sections legend .btn-lien { font-family: var(--f-texte); font-weight: 400; letter-spacing: 0; text-transform: none; font-size: .85rem; margin-left: .4rem; }
+
+.liste-sections { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.liste-sections .sec { border: 1px solid var(--bleu-12); border-radius: 10px; padding: .7rem .8rem; background: var(--blanc); display: grid; gap: .5rem; }
+.liste-sections .sec.masquee { background: var(--bleu-06); opacity: .75; }
+.sec-tete { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+.sec-ordre { display: flex; gap: .3rem; flex-shrink: 0; }
+.sec-ordre button { width: 38px; height: 38px; border-radius: 8px; border: 1px solid var(--bleu-12); background: var(--blanc); color: var(--marine); font-size: 1.05rem; cursor: pointer; }
+.sec-ordre button:hover { border-color: var(--bleu); background: var(--bleu-06); }
+.sec-titre label { font-size: .8rem; color: var(--encre-70); }

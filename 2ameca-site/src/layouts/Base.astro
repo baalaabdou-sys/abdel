@@ -73,5 +73,12 @@ const ogImage = new URL(image ?? u('/og.jpg'), Astro.site);
         els.forEach((el) => el.classList.add('visible'));
       }
     </script>
+    <script>
+      // Sections masquées par le bureau (Contenus du site → Sections)
+      if (document.querySelector('[data-section]')) {
+        Promise.all([import('../lib/contenu'), import('../lib/sections')]).then(([{ chargerContenus }, { appliquerSections }]) =>
+          chargerContenus().then((c) => appliquerSections(c.sections)));
+      }
+    </script>
   </body>
 </html>

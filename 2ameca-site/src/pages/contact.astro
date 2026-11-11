@@ -3,14 +3,8 @@ import Base from '../layouts/Base.astro';
 import EnTetePage from '../components/EnTetePage.astro';
 import Lignes from '../components/Lignes.astro';
 import { CONTACT, FSAC } from '../config';
-import { u } from '../lib/url';
 import { FAQ_DEFAUT } from '../data/contenus';
 import '../styles/app.css';
-import { getEvenementsParPeriode } from '../lib/collections';
-import { plageDates, heureFr } from '../lib/dates';
-
-const { aVenir } = await getEvenementsParPeriode();
-const prochain = aVenir[0];
 
 const faq = FAQ_DEFAUT.map((f) => ({ ...f }));
 
@@ -73,15 +67,13 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
           <a class="btn btn-clair" href={CONTACT.carte} rel="noopener" target="_blank">Ouvrir dans Maps <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
         </div>
       </div>
-      {prochain && (
-        <div class="cartouche">
-          <div>
-            <span class="label">Prochain rendez-vous</span>
-            <strong><a class="lien-evt" href={u(`/evenements/${prochain.id}/`)}>{prochain.data.titre}</a></strong>
-            <small>{prochain.data.lieu}{prochain.data.lieuDetail && `, ${prochain.data.lieuDetail}`} — {plageDates(prochain.data.dateDebut, prochain.data.dateFin)}{prochain.data.heure && `, dès ${heureFr(prochain.data.heure)}`}</small>
-          </div>
+      <div class="cartouche" id="prochain" hidden>
+        <div>
+          <span class="label">Prochain rendez-vous</span>
+          <strong><a class="lien-evt" id="prochain-lien" href="#"></a></strong>
+          <small id="prochain-detail"></small>
         </div>
-      )}
+      </div>
     </div>
   </section>
 
@@ -213,5 +205,15 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
       if (error) return dire(messageErreur(error), false);
       form.reset(); dire('Merci, votre message a bien été envoyé. Le bureau vous répondra par e-mail.', true);
     });
+  });
+
+  // Prochain rendez-vous : le prochain événement publié (base de données)
+  import('../lib/evenements').then(async ({ chargerEvenements, termine, plage, heureFr, lienEvenement }) => {
+    const e = (await chargerEvenements().catch(() => [])).filter((x) => !termine(x) && !x.annulee).at(-1);
+    if (!e) return;
+    const lien = document.getElementById('prochain-lien') as HTMLAnchorElement;
+    lien.href = lienEvenement(e.id); lien.textContent = e.titre;
+    document.getElementById('prochain-detail')!.textContent = [e.lieu, e.lieu_detail].filter(Boolean).join(', ') + ` — ${plage(e)}${e.heure_debut ? `, dès ${heureFr(e.heure_debut)}` : ''}`;
+    document.getElementById('prochain')!.hidden = false;
   });
 </script>

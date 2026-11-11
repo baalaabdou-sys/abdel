@@ -17,6 +17,7 @@ import '../../styles/app.css';
 
         <div class="onglets" role="tablist" aria-label="Contenus">
           <button type="button" role="tab" aria-selected="true" data-onglet="club">Le club</button>
+          <button type="button" role="tab" aria-selected="false" data-onglet="sections">Sections</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="bureau-equipe">Bureau</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="contact">Contact & FAQ</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="galerie">Galerie</button>
@@ -24,6 +25,16 @@ import '../../styles/app.css';
           <button type="button" role="tab" aria-selected="false" data-onglet="ressources">Ressources</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="annonces">Annonces</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="emails">E-mails</button>
+        </div>
+
+        <!-- Sections affichées -->
+        <div data-panneau="sections" role="tabpanel" hidden>
+          <form class="carte form" id="form-sections" novalidate>
+            <h2>Sections affichées</h2>
+            <p class="aide">Pour chaque section : cochez pour l’afficher, décochez pour la masquer, changez son titre, et sur la page « Le club » utilisez ↑ ↓ pour changer l’ordre. Rien n’est supprimé : les textes et photos restent enregistrés. Laissez un titre vide pour garder le titre d’origine.</p>
+            <div id="liste-sections"></div>
+            <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
+          </form>
         </div>
 
         <!-- Le club -->
@@ -34,7 +45,7 @@ import '../../styles/app.css';
             <div class="champ"><label for="cl-intro">Présentation (page d’accueil)</label><textarea id="cl-intro" name="intro"></textarea></div>
             <div class="champ"><label for="cl-histoire">Histoire du club (page « Le club »)</label><textarea id="cl-histoire" name="histoire" style="min-height:10rem"></textarea></div>
             <div class="champ"><label for="cl-mission">Mission</label><textarea id="cl-mission" name="mission"></textarea></div>
-            <fieldset class="champ"><legend class="lbl">Dates clés (frise de l’histoire)</legend><div class="lignes-ed" id="ed-etapes"></div>
+            <fieldset class="champ" hidden><legend class="lbl">Dates clés (frise de l’histoire)</legend><div class="lignes-ed" id="ed-etapes"></div>
               <button type="button" class="btn-lien" id="ajout-etape">+ Ajouter une date</button></fieldset>
             <fieldset class="champ"><legend class="lbl">Valeurs</legend><div class="lignes-ed" id="ed-valeurs"></div>
               <button type="button" class="btn-lien" id="ajout-valeur">+ Ajouter une valeur</button></fieldset>
@@ -137,8 +148,8 @@ import '../../styles/app.css';
         <div data-panneau="emails" role="tabpanel" hidden>
           <div class="carte">
             <h2>E-mails automatiques (Brevo)</h2>
-            <p>Les membres reçoivent un e-mail quand une activité à laquelle ils sont inscrits est <strong>annulée</strong>, <strong>rétablie</strong> ou <strong>modifiée</strong> (date, heure, lieu), quand leur <strong>attestation</strong> est disponible et quand un <strong>support</strong> est ajouté. Chacun peut les désactiver dans « Mon profil ».</p>
-            <p class="aide">Les annonces à tous et les nouvelles activités restent dans les notifications du site, pour rester dans la limite gratuite de Brevo (300 e-mails par jour).</p>
+            <p>Les membres reçoivent un e-mail quand une <strong>nouvelle activité</strong> est publiée (avec un bouton « Je m’inscris »), quand ils <strong>s’inscrivent</strong> (avec leur QR code d’entrée), quand une activité à laquelle ils sont inscrits est <strong>annulée</strong>, <strong>rétablie</strong> ou <strong>modifiée</strong>, quand leur <strong>attestation</strong> est disponible et quand un <strong>support</strong> est ajouté. Chacun peut les désactiver dans « Mon profil ».</p>
+            <p class="aide">Les annonces du tableau de bord restent dans les notifications du site (cloche), pour rester dans la limite gratuite de Brevo (300 e-mails par jour).</p>
             <div class="actions" style="margin-top:1rem"><button class="btn" type="button" id="btn-test-email">M’envoyer un e-mail de test</button></div>
             <div id="resultat-email" style="margin-top:1rem"></div>
           </div>
@@ -168,6 +179,7 @@ import '../../styles/app.css';
   import { nomFichier } from '../../lib/attestation';
   import { CLUB_DEFAUT, CONTACT_DEFAUT, FAQ_DEFAUT, type Club, type Contact, type QuestionFaq } from '../../data/contenus';
   import { oublierCache } from '../../lib/contenu';
+  import { SECTIONS, lire, type ReglageSections } from '../../lib/sections';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;
@@ -226,13 +238,51 @@ import '../../styles/app.css';
     };
   }
 
-  async function enregistrer(cle: 'club' | 'contact' | 'faq', valeur: unknown, btn: HTMLButtonElement | null) {
+  async function enregistrer(cle: 'club' | 'contact' | 'faq' | 'sections', valeur: unknown, btn: HTMLButtonElement | null) {
     await pendant(btn, 'Enregistrement…', async () => {
       const { error } = await sb.from('parametres').upsert({ cle, valeur, updated_at: new Date().toISOString() });
       if (error) return toast(messageErreur(error), 'erreur');
       oublierCache(); toast('Enregistré : visible sur le site.');
     });
   }
+
+  // ── Sections : afficher / masquer, déplacer, renommer
+  function afficherSections(reglage: ReglageSections) {
+    const ordre = reglage.__ordre ?? [];
+    vider($('liste-sections'), SECTIONS.map((g) => {
+      const items = g.deplacable ? [...g.items].sort((x, y) => (ordre.includes(x.cle) ? ordre.indexOf(x.cle) : 99) - (ordre.includes(y.cle) ? ordre.indexOf(y.cle) : 99)) : g.items;
+      const ul = h('ol', { class: 'liste-sections', 'data-groupe': g.page }, items.map((it) => {
+        const { visible, titre } = lire(reglage, it.cle);
+        const li = h('li', { class: `sec${visible ? '' : ' masquee'}`, 'data-cle': it.cle },
+          h('div', { class: 'sec-tete' },
+            h('label', { class: 'case sec-afficher', for: `sec-${it.cle}` },
+              h('input', { type: 'checkbox', id: `sec-${it.cle}`, class: 'sec-visible', checked: visible }),
+              h('span', {}, h('strong', {}, it.nom), it.aide ? h('span', { class: 'aide' }, ` — ${it.aide}`) : null)),
+            g.deplacable ? h('span', { class: 'sec-ordre' },
+              h('button', { type: 'button', class: 'sec-monter', 'aria-label': `Monter : ${it.nom}` }, '↑'),
+              h('button', { type: 'button', class: 'sec-descendre', 'aria-label': `Descendre : ${it.nom}` }, '↓')) : null),
+          it.titre ? h('div', { class: 'mini-champ sec-titre' },
+            h('label', { for: `sec-t-${it.cle}` }, 'Titre affiché'),
+            h('input', { id: `sec-t-${it.cle}`, class: 'sec-titre-champ', maxlength: 120, value: titre, placeholder: it.titre })) : null);
+        li.querySelector<HTMLInputElement>('.sec-visible')!.addEventListener('change', (e) => li.classList.toggle('masquee', !(e.target as HTMLInputElement).checked));
+        li.querySelector('.sec-monter')?.addEventListener('click', () => { const p = li.previousElementSibling; if (p) li.parentElement!.insertBefore(li, p); });
+        li.querySelector('.sec-descendre')?.addEventListener('click', () => { const n = li.nextElementSibling; if (n) li.parentElement!.insertBefore(n, li); });
+        return li;
+      }));
+      return h('fieldset', { class: 'groupe-sections' },
+        h('legend', {}, g.page, ' ', h('a', { href: base + g.lien, target: '_blank', rel: 'noopener', class: 'btn-lien' }, 'voir la page')), ul);
+    }));
+  }
+  $('form-sections').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const lis = [...document.querySelectorAll<HTMLLIElement>('#liste-sections li[data-cle]')];
+    const valeur: ReglageSections = Object.fromEntries(lis.map((li) => [li.dataset.cle!, {
+      visible: li.querySelector<HTMLInputElement>('.sec-visible')!.checked,
+      titre: li.querySelector<HTMLInputElement>('.sec-titre-champ')?.value.trim() ?? '',
+    }]));
+    valeur.__ordre = lis.map((li) => li.dataset.cle!);
+    enregistrer('sections', valeur, (e.currentTarget as HTMLFormElement).querySelector('button[type=submit]'));
+  });
 
   // ── Textes du club, coordonnées, FAQ
   async function chargerTextes() {
@@ -241,6 +291,7 @@ import '../../styles/app.css';
     const club: Club = { ...CLUB_DEFAUT, ...(v.club ?? {}) };
     const contact: Contact = { ...CONTACT_DEFAUT, ...(v.contact ?? {}) };
     const faq: QuestionFaq[] = v.faq ?? FAQ_DEFAUT;
+    afficherSections((v.sections ?? {}) as ReglageSections);
 
     const fc = $('form-club') as HTMLFormElement;
     for (const k of ['intro', 'histoire', 'mission'] as const) (fc.elements.namedItem(k) as HTMLTextAreaElement).value = club[k];

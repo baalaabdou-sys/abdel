@@ -36,7 +36,7 @@ const piliers = [
   </section>
 
   <!-- ── Le club en bref ──────────────────────────────── -->
-  <section class="section intro" aria-labelledby="intro-titre">
+  <section class="section intro" aria-labelledby="intro-titre" data-section="accueil-club">
     <Lignes variante="haut-droite" />
     <div class="conteneur grille-intro">
       <div class="reveal">
@@ -47,7 +47,7 @@ const piliers = [
           {CLUB_DEFAUT.intro.split(/\n\s*\n/).map((t) => <p class="chapo">{t}</p>)}
         </div>
         <a class="lien-fleche" href={u('/le-club/')}>Découvrir le club <span aria-hidden="true">→</span></a>
-        <ol class="piliers" role="list">
+        <ol class="piliers" role="list" data-section="accueil-piliers">
           {piliers.map((p) => (
             <li class="reveal">
               <span class="num" aria-hidden="true">{p.n}</span>
@@ -59,7 +59,7 @@ const piliers = [
           ))}
         </ol>
       </div>
-      <figure class="video-club reveal">
+      <figure class="video-club reveal" data-section="accueil-video">
         <video id="video-club" muted loop playsinline preload="none" width="720" height="1280"
           poster={u('/video/2ameca-intro.jpg')} aria-label="Animation du logo 2AMECA : des engrenages s’ouvrent sur le logo, avec la devise « Esprit citoyen au centre »">
           <source src={u('/video/2ameca-intro.mp4')} type="video/mp4" />

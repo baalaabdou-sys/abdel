@@ -22,7 +22,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </EnTetePage>
 
   <!-- Présentation -->
-  <section class="section serree" aria-labelledby="presentation">
+  <section class="section serree" aria-labelledby="presentation" data-section="club-presentation">
     <div class="conteneur presentation reveal">
       <span class="surtitre">Le club</span>
       <h2 id="presentation" class="titre-2">Atelier d’Application Mécanique et Esprit au Citoyen</h2>
@@ -34,7 +34,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </section>
 
   <!-- Histoire -->
-  <section class="section" aria-labelledby="histoire">
+  <section class="section" aria-labelledby="histoire" data-section="club-histoire">
     <Lignes variante="haut-droite" />
     <div class="conteneur histoire-col">
       <div class="reveal">
@@ -49,7 +49,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </section>
 
   <!-- Mission -->
-  <section class="section tres-sombre" aria-labelledby="mission">
+  <section class="section tres-sombre" aria-labelledby="mission" data-section="club-mission">
     <Lignes variante="bas-gauche" />
     <div class="conteneur mission reveal">
       <span class="surtitre">Mission</span>
@@ -61,7 +61,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </section>
 
   <!-- Valeurs -->
-  <section class="section" aria-labelledby="valeurs">
+  <section class="section" aria-labelledby="valeurs" data-section="club-valeurs">
     <div class="conteneur">
       <div class="entete-section reveal">
         <div>
@@ -82,7 +82,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </section>
 
   <!-- Bureau -->
-  <section class="section teinte" aria-labelledby="bureau">
+  <section class="section teinte" aria-labelledby="bureau" data-section="club-equipe">
     <div class="conteneur">
       <div class="entete-section reveal">
         <div>
@@ -110,7 +110,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </section>
 
   <!-- Partenaires (gérés depuis le tableau de bord) -->
-  <section class="section teinte serree" aria-labelledby="partenaires" id="bloc-partenaires" hidden>
+  <section class="section teinte serree" aria-labelledby="partenaires" id="bloc-partenaires" hidden data-section="club-partenaires">
     <div class="conteneur">
       <span class="surtitre">Ils nous soutiennent</span>
       <h2 id="partenaires" class="titre-2">Nos partenaires</h2>
@@ -120,7 +120,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   </section>
 
   <!-- FSAC -->
-  <section class="section serree" aria-labelledby="fsac">
+  <section class="section serree" aria-labelledby="fsac" data-section="club-faculte">
     <div class="conteneur fsac reveal">
       <div>
         <span class="surtitre">Notre faculté</span>

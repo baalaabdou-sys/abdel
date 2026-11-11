@@ -30,6 +30,7 @@ import '../../styles/app.css';
                 <select id="f-type" name="type"><option value="formation">Formation</option><option value="atelier">Atelier</option><option value="evenement">Événement</option></select></div>
               <div class="champ"><label for="f-date">Date</label><input id="f-date" name="date" type="date" required /></div>
             </div>
+            <div class="champ"><label for="f-date-fin">Date de fin (si l’événement dure plusieurs jours)</label><input id="f-date-fin" name="date_fin" type="date" /></div>
             <div class="ligne-2">
               <div class="champ"><label for="f-debut">Heure de début</label><input id="f-debut" name="heure_debut" type="time" /></div>
               <div class="champ"><label for="f-fin">Heure de fin</label><input id="f-fin" name="heure_fin" type="time" /></div>
@@ -38,12 +39,19 @@ import '../../styles/app.css';
               <div class="champ"><label for="f-lieu">Lieu</label><input id="f-lieu" name="lieu" placeholder="FSAC — Amphithéâtre" /></div>
               <div class="champ"><label for="f-places">Places (facultatif)</label><input id="f-places" name="places" type="number" min="1" inputmode="numeric" /></div>
             </div>
-            <div class="champ"><label for="f-desc">Description</label><textarea id="f-desc" name="description"></textarea></div>
+            <div class="champ"><label for="f-lieu-detail">Précision sur le lieu (facultatif)</label><input id="f-lieu-detail" name="lieu_detail" placeholder="Ex. : juste à côté de la buvette" /></div>
+            <div class="champ"><label for="f-resume">Résumé (une ou deux phrases, affichées sur la carte de l’événement)</label><textarea id="f-resume" name="resume" rows="2" maxlength="300"></textarea></div>
+            <div class="champ"><label for="f-desc">Description</label><textarea id="f-desc" name="description" rows="8" aria-describedby="f-desc-aide"></textarea>
+              <span class="aide" id="f-desc-aide">Laissez une ligne vide entre deux paragraphes. « ## Titre » pour un intertitre, « - » en début de ligne pour une liste, **texte** pour du gras.</span></div>
+            <div class="champ"><label for="f-programme">Au programme (un point par ligne, facultatif)</label><textarea id="f-programme" name="programme" rows="3" placeholder="Conférence d’ouverture&#10;Ateliers en groupes&#10;Remise des attestations"></textarea></div>
+            <div class="champ"><label for="f-affiche">Affiche (image, facultatif)</label>
+              <div class="affiche-ed" id="affiche-ed" hidden><img id="affiche-apercu" alt="Affiche actuelle" /><label class="case" for="f-affiche-retirer"><input type="checkbox" id="f-affiche-retirer" /><span>Retirer l’affiche</span></label></div>
+              <input id="f-affiche" name="affiche" type="file" accept="image/*" /></div>
             <div class="champ"><label for="f-cr">Compte-rendu (après l’activité)</label>
               <textarea id="f-cr" name="compte_rendu" aria-describedby="f-cr-aide"></textarea>
-              <span class="aide" id="f-cr-aide">Une fois l’activité passée, elle apparaît sur la page publique « Activités » avec ce texte et ses photos.</span></div>
+              <span class="aide" id="f-cr-aide">Une fois l’activité passée, ce texte s’affiche sur sa page publique (Événements), avec ses photos.</span></div>
             <label class="case" for="f-publiee"><input type="checkbox" id="f-publiee" name="publiee" />
-              <span><strong>Publiée</strong> : visible par les membres, qui peuvent s’y inscrire. Décochez pour la garder en brouillon.</span></label>
+              <span><strong>Publiée</strong> : visible sur la page « Événements » ; si elle est à venir, les membres peuvent s’y inscrire. Décochez pour la garder en brouillon.</span></label>
             <div class="actions">
               <button class="btn" type="submit">Enregistrer</button>
               <button class="btn btn-contour" type="button" id="supprimer" hidden>Supprimer</button>
@@ -116,6 +124,7 @@ import '../../styles/app.css';
   import { h, vider, toast, dateCourte, taille, pendant, nomComplet } from '../../lib/dom';
   import { exporterExcel } from '../../lib/excel';
   import { nomFichier } from '../../lib/attestation';
+  import { urlMedia, reduireImage } from '../../lib/images';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;
@@ -149,7 +158,10 @@ import '../../styles/app.css';
     const scan = `${base}/bureau/scanner/?id=${formation.id}`;
     ($('btn-scan-haut') as HTMLAnchorElement).href = scan; $('btn-scan-haut').hidden = !!formation.annulee;
     ($('btn-scan-plein') as HTMLAnchorElement).href = scan;
-    for (const k of ['titre', 'type', 'date', 'lieu', 'description', 'compte_rendu'] as const) champ(k).value = (formation as Formation & { compte_rendu?: string })[k] ?? '';
+    for (const k of ['titre', 'type', 'date', 'lieu', 'description', 'compte_rendu', 'resume', 'programme', 'lieu_detail', 'date_fin'] as const) champ(k).value = (formation as unknown as Record<string, string | null>)[k] ?? '';
+    const aff = (formation as Formation & { affiche?: string | null }).affiche;
+    $('affiche-ed').hidden = !aff; if (aff) ($('affiche-apercu') as HTMLImageElement).src = urlMedia(aff);
+    ($('f-affiche-retirer') as HTMLInputElement).checked = false; ($('f-affiche') as HTMLInputElement).value = '';
     champ('heure_debut').value = formation.heure_debut?.slice(0, 5) ?? '';
     champ('heure_fin').value = formation.heure_fin?.slice(0, 5) ?? '';
     champ('places').value = formation.places ? String(formation.places) : '';
@@ -167,14 +179,27 @@ import '../../styles/app.css';
       heure_debut: champ('heure_debut').value || null, heure_fin: champ('heure_fin').value || null,
       lieu: champ('lieu').value.trim(), places: champ('places').value ? Number(champ('places').value) : null,
       description: champ('description').value.trim(), compte_rendu: champ('compte_rendu').value.trim(), publiee: champ('publiee').checked,
-    };
+      resume: champ('resume').value.trim(), programme: champ('programme').value.trim(), lieu_detail: champ('lieu_detail').value.trim(),
+      date_fin: champ('date_fin').value && champ('date_fin').value > champ('date').value ? champ('date_fin').value : null,
+    } as Record<string, unknown>;
     await pendant(fiche.querySelector('button[type=submit]'), 'Enregistrement…', async () => {
+      // Affiche : nouvelle image envoyée, ou retirée
+      const fichier = ($('f-affiche') as HTMLInputElement).files?.[0];
+      const ancienne = (formation as (Formation & { affiche?: string | null }) | null)?.affiche ?? null;
+      if (fichier) {
+        const { blob, ext, type } = await reduireImage(fichier, 1600);
+        const chemin = `affiches/${Date.now()}-${Math.random().toString(36).slice(2, 7)}${ext}`;
+        const { error: eu } = await sb.storage.from('medias').upload(chemin, blob, { contentType: type });
+        if (eu) return toast(messageErreur(eu), 'erreur');
+        donnees.affiche = chemin;
+      } else if (($('f-affiche-retirer') as HTMLInputElement).checked) donnees.affiche = null;
       const req = id ? sb.from('formations').update(donnees).eq('id', id).select().single()
         : sb.from('formations').insert({ ...donnees, created_by: (await sb.auth.getUser()).data.user?.id }).select().single();
       const { data, error } = await req;
       if (error) return toast(messageErreur(error), 'erreur');
       const nouvelle = !id;
       formation = data as Formation; id = formation.id;
+      if ('affiche' in donnees && ancienne && ancienne !== donnees.affiche) sb.storage.from('medias').remove([ancienne]);
       if (nouvelle) { history.replaceState(null, '', `?id=${id}`); await Promise.all([chargerInscrits(), chargerSupports(), chargerMembres(), chargerResume()]); }
       remplirFiche();
       toast(nouvelle ? 'Activité créée.' : 'Modifications enregistrées.');
