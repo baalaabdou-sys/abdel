@@ -125,6 +125,26 @@ const chemin = Astro.url.pathname;
   }
 </style>
 
+<style is:global>
+  /* Bouton de déconnexion (ajouté par le script quand on est connecté) */
+  .deconnexion {
+    display: inline-flex; align-items: center; justify-content: center; gap: .55em; align-self: flex-start;
+    min-height: 44px; padding: 0 1.1em; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--blanc); border: 1px solid var(--blanc-25);
+    font-family: var(--f-label); font-size: .85rem; letter-spacing: .14em; text-transform: uppercase;
+    transition: background .2s, border-color .2s, color .2s;
+  }
+  .deconnexion svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .deconnexion:hover { background: var(--blanc); color: var(--marine); border-color: var(--blanc); }
+  .deconnexion:focus-visible { outline: 3px solid var(--ciel); outline-offset: 2px; }
+  .deconnexion:disabled { opacity: .6; cursor: default; }
+  /* Sur ordinateur : un simple cercle avec l'icône, à côté de « Mon espace » */
+  @media (min-width: 1040px) {
+    .deconnexion { width: 42px; min-height: 42px; padding: 0; align-self: center; margin-left: -1.2rem; }
+    .deconnexion span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  }
+</style>
+
 <script>
   const nav = document.querySelector<HTMLElement>('.nav');
   const bouton = nav?.querySelector<HTMLButtonElement>('.bouton-menu');
@@ -164,9 +184,11 @@ const chemin = Astro.url.pathname;
       // « Connexion » devient « Déconnexion »
       if (l) {
         const bouton = document.createElement('button');
-        bouton.type = 'button'; bouton.className = l.className; bouton.id = 'bouton-deconnexion'; bouton.textContent = 'Déconnexion';
+        bouton.type = 'button'; bouton.className = 'deconnexion'; bouton.id = 'bouton-deconnexion';
+        bouton.setAttribute('aria-label', 'Se déconnecter'); bouton.title = 'Se déconnecter';
+        bouton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 16l4-4-4-4M19 12H9"/></svg><span>Déconnexion</span>';
         bouton.addEventListener('click', async () => {
-          bouton.disabled = true; bouton.textContent = 'Déconnexion…';
+          bouton.disabled = true; bouton.querySelector('span')!.textContent = 'Déconnexion…';
           try { const { sb } = await import('../lib/supabase'); await sb.auth.signOut(); }
           finally { try { localStorage.removeItem(cle); } catch { /* ignore */ } location.href = `${base}/`; }
         });
