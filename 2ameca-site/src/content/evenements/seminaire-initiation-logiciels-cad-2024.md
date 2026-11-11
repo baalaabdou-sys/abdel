@@ -1,12 +1,16 @@
 ---
 titre: "Séminaire de formation — Initiation aux logiciels CAD"
-type: "Formation"
 resume: "Une journée pour découvrir la conception assistée par ordinateur : bases de la modélisation 2D/3D avec AutoCAD, SolidWorks et CATIA, animée par Mohammed Amine El Hariri et Zouhair Baslam."
-date: 2024-12-14
-statut: "Terminé"
-membres: []
-couverture: ./images/cad-groupe.jpg
-couvertureAlt: "Les participants du séminaire CAD réunis en salle avec les deux formateurs, à la FSAC."
+dateDebut: 2024-12-14
+heure: "09:30"
+lieu: "Faculté des Sciences Aïn Chock"
+programme:
+  - "Bases de la modélisation 2D et 3D"
+  - "AutoCAD, SolidWorks et CATIA"
+  - "Bonnes pratiques de conception"
+anneeUniversitaire: "2024–2025"
+affiche: ./images/cad-groupe.jpg
+afficheAlt: "Les participants du séminaire CAD réunis en salle avec les deux formateurs, à la FSAC."
 photos:
   - src: ./images/cad-salle.jpg
     alt: "Un formateur présente un modèle 3D projeté devant les étudiants."
@@ -14,8 +18,8 @@ photos:
     alt: "Un formateur commente un dessin technique projeté au tableau."
   - src: ./images/cad-atelier.jpg
     alt: "Les étudiants suivent la séance, ordinateurs ouverts."
-enAvant: true
 ---
+
 
 Le samedi **14 décembre 2024**, à partir de 9h30, le Club 2AMECA a organisé à la **Faculté des Sciences Aïn Chock** un séminaire de formation consacré aux logiciels de **conception assistée par ordinateur (CAD)**.
 

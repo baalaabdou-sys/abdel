@@ -1,27 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import Lignes from '../components/Lignes.astro';
-import CompteARebours from '../components/CompteARebours.astro';
-import CarteProjet from '../components/CarteProjet.astro';
-import CarteEvenement from '../components/CarteEvenement.astro';
 import AppelRejoindre from '../components/AppelRejoindre.astro';
-import { getEvenementsParPeriode, getProjets } from '../lib/collections';
-import { plageDates, plageJours, heureFr, ymd } from '../lib/dates';
 import { u } from '../lib/url';
-import { SITE, INSCRIPTION_PATH } from '../config';
+import { SITE } from '../config';
 import { CLUB_DEFAUT } from '../data/contenus';
-
-const { aVenir } = await getEvenementsParPeriode();
-const vedette = aVenir[0];
-const autres = aVenir.slice(1, 4);
-const projets = await getProjets();
-const enAvant = [...projets.filter((p) => p.data.enAvant), ...projets.filter((p) => !p.data.enAvant)].slice(0, 3);
-
-const nbJours = vedette
-  ? Math.round((Date.parse(ymd(vedette.data.dateFin ?? vedette.data.dateDebut)) - Date.parse(ymd(vedette.data.dateDebut))) / 864e5) + 1
-  : 0;
-const inscription = vedette?.data.inscription ?? u(INSCRIPTION_PATH);
-const externe = /^https?:/.test(inscription);
 
 const piliers = [
   { n: '01', titre: 'Projets', texte: 'Concevoir, modéliser et fabriquer en équipe : de l’idée sur papier à la pièce qui fonctionne.' },
@@ -39,55 +22,6 @@ const piliers = [
         <span class="label sous">{SITE.sousTitre}</span>
       </p>
 
-      {vedette ? (
-        <>
-          <div class="bloc-titre">
-            <span class="script bienvenue" aria-hidden="true">Bienvenue</span>
-            <h1 id="hero-titre" class="titre-hero">
-              <span class="sr-only">Bienvenue — </span>{vedette.data.titre}
-            </h1>
-            {nbJours > 1 && (
-              <span class="pastille" aria-hidden="true"><b>{nbJours}</b><span>jours</span></span>
-            )}
-          </div>
-
-          <p class="dates">{plageDates(vedette.data.dateDebut, vedette.data.dateFin)}</p>
-          <p class="heure">
-            <span class="jours">{plageJours(vedette.data.dateDebut, vedette.data.dateFin)}</span>{vedette.data.heure && <>{' · '}À partir de {heureFr(vedette.data.heure)}</>}
-          </p>
-
-          {vedette.data.programme.length > 0 && (
-            <div class="programme">
-              <span class="label">Au programme</span>
-              <p>{vedette.data.programme.join(', ').replace(/, ([^,]*)$/, ' & $1')}</p>
-            </div>
-          )}
-
-          <div class="action">
-            <CompteARebours debut={vedette.debut} fin={vedette.fin} />
-            <div class="boutons">
-              <a class="btn btn-clair" href={inscription} target={externe ? '_blank' : undefined} rel={externe ? 'noopener' : undefined}>S’inscrire <span class="fleche" aria-hidden="true">→</span></a>
-              <a class="btn btn-contour" href={u(`/evenements/${vedette.id}/`)}>Voir le programme</a>
-            </div>
-          </div>
-
-          <div class="cartouche">
-            <div><strong class="rejoignez">Rejoignez-nous</strong></div>
-            <div>
-              <span class="label">Lieu</span>
-              <strong>{vedette.data.lieu}</strong>
-              {vedette.data.lieuDetail && <small>{vedette.data.lieuDetail}</small>}
-            </div>
-            {vedette.data.anneeUniversitaire && (
-              <div>
-                <span class="label">Année universitaire</span>
-                <strong>{vedette.data.anneeUniversitaire.replace('–', ' — ')}</strong>
-              </div>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
           <div class="bloc-titre">
             <span class="script bienvenue" aria-hidden="true">Bienvenue</span>
             <h1 id="hero-titre" class="titre-hero"><span class="sr-only">Bienvenue au </span>Club 2AMECA</h1>
@@ -96,10 +30,8 @@ const piliers = [
           <p class="chapo">L’atelier d’applications mécanique de la Faculté des Sciences Aïn Chock.</p>
           <div class="boutons action">
             <a class="btn btn-clair" href={u('/rejoindre/')}>Rejoindre le club <span class="fleche" aria-hidden="true">→</span></a>
-            <a class="btn btn-contour" href={u('/activites/')}>Nos activités</a>
+            <a class="btn btn-contour" href={u('/evenements/')}>Nos événements</a>
           </div>
-        </>
-      )}
     </div>
   </section>
 
@@ -138,45 +70,6 @@ const piliers = [
           <button type="button" class="video-btn" id="video-son" aria-pressed="false">Activer le son</button>
         </div>
       </figure>
-    </div>
-  </section>
-
-  <!-- ── Projets ──────────────────────────────────────── -->
-  {enAvant.length > 0 && (
-    <section class="section teinte" aria-labelledby="projets-titre">
-      <div class="conteneur">
-        <div class="entete-section reveal">
-          <div>
-            <span class="surtitre">Activités</span>
-            <h2 id="projets-titre" class="titre-2">Projets à la une</h2>
-          </div>
-          <a class="btn btn-contour" href={u('/activites/')}>Toutes les activités</a>
-        </div>
-        <div class:list={['grille', enAvant.length >= 3 ? 'grille-3' : 'grille-2']}>
-          {enAvant.map((p) => <CarteProjet projet={p} />)}
-        </div>
-      </div>
-    </section>
-  )}
-
-  <!-- ── Événements à venir ───────────────────────────── -->
-  <section class="section" aria-labelledby="evt-titre">
-    <Lignes variante="bas-gauche" />
-    <div class="conteneur">
-      <div class="entete-section reveal">
-        <div>
-          <span class="surtitre">Agenda</span>
-          <h2 id="evt-titre" class="titre-2">Événements à venir</h2>
-        </div>
-        <a class="btn btn-contour" href={u('/evenements/')}>Tout l’agenda</a>
-      </div>
-      {aVenir.length > 0 ? (
-        <div class="grille grille-2">
-          {[vedette, ...autres].map((e) => <CarteEvenement evenement={e} />)}
-        </div>
-      ) : (
-        <p class="vide">Aucun événement annoncé pour le moment. Suivez-nous sur nos réseaux pour ne rien manquer.</p>
-      )}
     </div>
   </section>
 

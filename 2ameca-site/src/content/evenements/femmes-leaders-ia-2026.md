@@ -11,6 +11,7 @@ programme:
 anneeUniversitaire: "2025–2026"
 affiche: ./images/femmes-leaders-ia-2026.jpg
 afficheAlt: "L'amphithéâtre de la FSAC rempli pendant la conférence, avec les invitées sur scène."
+album: "Conférence « Femmes Leaders à l’ère de l’IA » — mars 2026"
 ---
 
 À l'occasion de la **Journée internationale des droits des femmes**, la Faculté des Sciences Aïn Chock a accueilli la conférence **« Femmes Leaders à l'ère de l'Intelligence Artificielle : Inspirer, Innover, Transformer »**, organisée par le **Club Santé FSAC** avec plusieurs clubs de la faculté, dont **2AMECA**.

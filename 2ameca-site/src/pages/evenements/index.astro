@@ -8,7 +8,7 @@ import { getEvenementsParPeriode } from '../../lib/collections';
 const { aVenir, passes } = await getEvenementsParPeriode();
 ---
 <Base titre="Événements" description="L’agenda du Club 2AMECA : événements à venir et passés à la Faculté des Sciences Aïn Chock.">
-  <EnTetePage surtitre="Agenda" titre="Événements" chapo="Portes ouvertes, rencontres, ateliers ouverts : retrouvez ici tous les rendez-vous du club." />
+  <EnTetePage surtitre="Agenda" titre="Événements" chapo="Formations, ateliers, conférences et rencontres : touchez un événement pour voir ses détails et ses photos." />
 
   <section class="section" aria-labelledby="a-venir">
     <div class="conteneur">
@@ -34,10 +34,52 @@ const { aVenir, passes } = await getEvenementsParPeriode();
     </div>
   </section>
 
+  <!-- Activités passées publiées depuis le tableau de bord (avec compte-rendu) -->
+  <section class="section serree" aria-labelledby="realisees" id="bloc-realisees" hidden>
+    <div class="conteneur">
+      <h2 id="realisees" class="titre-2">Activités réalisées</h2>
+      <hr class="trait" />
+      <ul class="grille grille-3 liste" id="liste-realisees" role="list"></ul>
+    </div>
+  </section>
+
   <AppelRejoindre />
 </Base>
 
+<script>
+  import { sb, TYPES, type Formation } from '../../lib/supabase';
+  import { h, vider, dateLongue, aujourdhui } from '../../lib/dom';
+  import { urlMedia } from '../../lib/images';
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  (async () => {
+    const [fRes, pRes] = await Promise.all([
+      sb.from('formations').select('*').eq('publiee', true).eq('annulee', false).lt('date', aujourdhui()).order('date', { ascending: false }).limit(12),
+      sb.from('photos').select('chemin, formation_id').not('formation_id', 'is', null).order('created_at'),
+    ]);
+    const liste = (fRes.data ?? []) as Formation[];
+    if (!liste.length) return;
+    const couverture = new Map<string, string>();
+    for (const p of pRes.data ?? []) if (!couverture.has(p.formation_id!)) couverture.set(p.formation_id!, p.chemin);
+    document.getElementById('bloc-realisees')!.hidden = false;
+    vider(document.getElementById('liste-realisees')!, liste.map((f) => h('li', {}, h('article', { class: 'carte-real' },
+      couverture.has(f.id) ? h('img', { src: urlMedia(couverture.get(f.id)!), alt: '', loading: 'lazy' }) : h('div', { class: 'sans-photo' }, h('span', {}, TYPES[f.type])),
+      h('div', { class: 'corps' },
+        h('span', { class: 'etiquette' }, TYPES[f.type]),
+        h('h3', { class: 'titre-3' }, h('a', { href: `${base}/activites/realisation/?id=${f.id}` }, f.titre)),
+        h('p', { class: 'aide' }, dateLongue(f.date)))))));
+  })();
+</script>
+
 <style>
+  .carte-real { position: relative; background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon); overflow: hidden; height: 100%; }
+  .carte-real:hover { border-color: var(--bleu); }
+  .carte-real img, .carte-real .sans-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: grid; place-items: center; background: var(--bleu-06); }
+  .carte-real .sans-photo span { font-family: var(--f-label); font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--bleu); background: var(--blanc); padding: .3em .7em; border-radius: 4px; }
+  .carte-real .corps { padding: 1rem 1.2rem 1.2rem; }
+  .carte-real .titre-3 { color: var(--marine); font-size: 1.25rem; margin: .6rem 0 .3rem; }
+  .carte-real .titre-3 a { color: inherit; text-decoration: none; }
+  .carte-real .titre-3 a::after { content: ''; position: absolute; inset: 0; }
+  .carte-real .etiquette { font-family: var(--f-label); font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--bleu); }
   .liste { list-style: none; padding: 0; }
   .liste > li { display: grid; }
   .vide { color: var(--encre-70); font-size: 1.1rem; }

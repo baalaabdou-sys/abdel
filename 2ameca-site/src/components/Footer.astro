@@ -1,5 +1,4 @@
 ---
-import Fsac from './Fsac.astro';
 import Lignes from './Lignes.astro';
 import { u } from '../lib/url';
 import { SITE, CONTACT } from '../config';
@@ -18,7 +17,6 @@ const reseaux = [
     <div class="bloc-marque">
       <div class="logos">
         <img src={u('/logos/2ameca-white-560.png')} width="560" height="120" alt="Club 2AMECA" loading="lazy" decoding="async" />
-        <Fsac taille="moyenne" lien />
       </div>
       <p class="sous-titre label">{SITE.sousTitre}</p>
       <p class="slogan">{SITE.slogan}</p>
@@ -28,7 +26,6 @@ const reseaux = [
       <h2 class="label titre-col">Le site</h2>
       <ul role="list">
         <li><a href={u('/le-club/')}>Le club</a></li>
-        <li><a href={u('/activites/')}>Activités</a></li>
         <li><a href={u('/formations/')}>Formations</a></li>
         <li><a href={u('/evenements/')}>Événements</a></li>
         <li><a href={u('/galerie/')}>Galerie</a></li>

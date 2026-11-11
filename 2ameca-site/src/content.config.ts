@@ -21,6 +21,10 @@ const evenements = defineCollection({
       anneeUniversitaire: z.string().optional(),
       affiche: image().optional(),
       afficheAlt: z.string().optional(),
+      /** Photos de l'événement, affichées sur sa page. */
+      photos: z.array(z.object({ src: image(), alt: z.string() })).default([]),
+      /** Légende de l'album de la galerie (ajouté depuis le tableau de bord) dont les photos s'affichent aussi. */
+      album: z.string().optional(),
       /** Lien d'inscription externe ; par défaut, la page « Rejoindre ». */
       inscription: z.string().optional(),
       aVerifier: z.boolean().default(false),
@@ -28,23 +32,4 @@ const evenements = defineCollection({
     }),
 });
 
-const projets = defineCollection({
-  loader: glob({ pattern: '**/[^_]*.md', base: './src/content/projets' }),
-  schema: ({ image }) =>
-    z.object({
-      titre: z.string(),
-      type: z.enum(['Projet', 'Atelier', 'Formation', 'Compétition']),
-      resume: z.string(),
-      date: jour,
-      statut: z.enum(['En cours', 'Terminé', 'À venir']).default('En cours'),
-      membres: z.array(z.string()).default([]),
-      couverture: image().optional(),
-      couvertureAlt: z.string().optional(),
-      photos: z.array(z.object({ src: image(), alt: z.string() })).default([]),
-      enAvant: z.boolean().default(false).describe('Afficher sur la page d’accueil'),
-      aVerifier: z.boolean().default(false),
-      brouillon: z.boolean().default(false),
-    }),
-});
-
-export const collections = { evenements, projets };
+export const collections = { evenements };

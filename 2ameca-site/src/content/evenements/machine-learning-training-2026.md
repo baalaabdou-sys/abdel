@@ -1,13 +1,14 @@
 ---
 titre: "Machine Learning Training — NEXTGEN AI"
-type: "Formation"
 resume: "Deux séances intensives de machine learning en salle digitale de la FSAC, animées par El Mehdi Lghaouch, dans la série « NEXTGEN AI: Morocco Tech Series » avec l'AI & DEV Community et la FSBM."
-date: 2026-04-23
-statut: "Terminé"
-membres: []
-couverture: ./images/ml-training-2026.jpg
-couvertureAlt: "Affiche du Machine Learning Training avec El Mehdi Lghaouch, les 23 et 25 avril en salle digitale de la FSAC."
+dateDebut: 2026-04-23
+dateFin: 2026-04-25
+lieu: "FSAC — Salle digitale"
+anneeUniversitaire: "2025–2026"
+affiche: ./images/ml-training-2026.jpg
+afficheAlt: "Affiche du Machine Learning Training avec El Mehdi Lghaouch, les 23 et 25 avril en salle digitale de la FSAC."
 ---
+
 
 Étape de la série **NEXTGEN AI: Morocco Tech Series** — *Building the future of AI in Morocco* —, le **Machine Learning Training** a réuni les participants les **23 et 25 avril** en **salle digitale de la FSAC** pour une formation intensive.
 

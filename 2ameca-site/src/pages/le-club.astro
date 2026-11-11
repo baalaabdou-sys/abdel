@@ -2,7 +2,6 @@
 import Base from '../layouts/Base.astro';
 import EnTetePage from '../components/EnTetePage.astro';
 import Emplacement from '../components/Emplacement.astro';
-import Fsac from '../components/Fsac.astro';
 import Lignes from '../components/Lignes.astro';
 import AppelRejoindre from '../components/AppelRejoindre.astro';
 import bureau from '../data/bureau.json';
@@ -10,7 +9,7 @@ import { FSAC } from '../config';
 import { CLUB_DEFAUT } from '../data/contenus';
 import { u } from '../lib/url';
 
-const { etapes: historique, valeurs, histoire, mission, intro } = CLUB_DEFAUT;
+const { valeurs, histoire, mission, intro } = CLUB_DEFAUT;
 const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 ---
 <Base titre="Le club" description="2AMECA, Atelier d’Application Mécanique et Esprit au Citoyen : club estudiantin de la FSAC. Histoire, mission, valeurs et bureau.">
@@ -37,7 +36,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   <!-- Histoire -->
   <section class="section" aria-labelledby="histoire">
     <Lignes variante="haut-droite" />
-    <div class="conteneur deux-col">
+    <div class="conteneur histoire-col">
       <div class="reveal">
         <span class="surtitre">Histoire</span>
         <h2 id="histoire" class="titre-2">D’où vient 2AMECA</h2>
@@ -46,15 +45,6 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
           {histoire.split(/\n\s*\n/).map((t) => <p>{crochets(t) ? <span class="a-fournir">{t}</span> : t}</p>)}
         </div>
       </div>
-      <ol class="frise" role="list" data-c="etapes">
-        {historique.map((h) => (
-          <li class="reveal">
-            <span class="label quand">{h.quand.startsWith('[') ? <span class="a-fournir">{h.quand}</span> : h.quand}</span>
-            <p class="quoi">{h.quoi}</p>
-            <p class="detail">{h.detail.startsWith('[') ? <span class="a-fournir">{h.detail}</span> : h.detail}</p>
-          </li>
-        ))}
-      </ol>
     </div>
   </section>
 
@@ -132,7 +122,6 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   <!-- FSAC -->
   <section class="section serree" aria-labelledby="fsac">
     <div class="conteneur fsac reveal">
-      <Fsac taille="grande" lien />
       <div>
         <span class="surtitre">Notre faculté</span>
         <h2 id="fsac" class="titre-3">{FSAC.nom}</h2>
@@ -153,6 +142,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   .presentation .titre-2 { max-width: 22ch; }
   .presentation-texte { display: grid; gap: 0 3rem; margin-top: 1.5rem; }
   @media (min-width: 900px) { .presentation-texte { grid-template-columns: 1fr 1fr; } }
+  .histoire-col { max-width: 72ch; }
   .deux-col { display: grid; gap: 2.5rem 4rem; }
   @media (min-width: 900px) { .deux-col { grid-template-columns: 1fr 1fr; } }
 
@@ -190,7 +180,6 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   .role { color: var(--bleu); margin: 0; font-size: .7rem; letter-spacing: .1em; }
 
   .fsac { display: grid; gap: 1.5rem 3rem; align-items: center; }
-  @media (min-width: 720px) { .fsac { grid-template-columns: auto 1fr; } }
   .fsac .titre-3 { color: var(--marine); margin-bottom: .6rem; }
 </style>
 
@@ -297,7 +286,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 </style>
 
 <script>
-  import { chargerContenus, chargerBureau, remplir, texte, paragraphes } from '../lib/contenu';
+  import { chargerContenus, chargerBureau, remplir, paragraphes } from '../lib/contenu';
   import { urlMedia as media } from '../lib/images';
   import { h as el } from '../lib/dom';
   import { sceneDuRole } from '../lib/roles';
@@ -330,8 +319,6 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
       if (club.intro?.trim()) remplir(zone('intro')!, paragraphes(club.intro, 'chapo'));
       if (club.histoire?.trim()) remplir(zone('histoire')!, paragraphes(club.histoire));
       if (club.mission?.trim()) remplir(zone('mission')!, paragraphes(club.mission, 'chapo'));
-      if (club.etapes?.length) remplir(zone('etapes')!, club.etapes.map((e) => el('li', {},
-        el('span', { class: 'label quand' }, texte(e.quand)), el('p', { class: 'quoi' }, e.quoi), e.detail ? el('p', { class: 'detail' }, texte(e.detail)) : null)));
       if (club.valeurs?.length) remplir(zone('valeurs')!, club.valeurs.map((v, i) => el('li', {},
         el('span', { class: 'num', 'aria-hidden': 'true' }, String(i + 1).padStart(2, '0')), el('h3', { class: 'titre-3' }, v.titre), el('p', {}, v.texte))));
     }

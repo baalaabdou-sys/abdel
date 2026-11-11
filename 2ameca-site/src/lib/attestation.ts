@@ -34,15 +34,14 @@ export async function genererAttestation(d: DonneesAttestation): Promise<Uint8Ar
   pdf.setTitle(`Attestation — ${d.prenom} ${d.nom} — ${d.titre}`);
   pdf.setAuthor('Club 2AMECA — FSAC');
 
-  const [anton, barlow, barlowB, logoClub, logoFsac] = await Promise.all([
+  const [anton, barlow, barlowB, logoClub] = await Promise.all([
     charger('/fonts/Anton-Regular.ttf'), charger('/fonts/Barlow-Regular.ttf'), charger('/fonts/Barlow-SemiBold.ttf'),
-    charger('/logos/2ameca-640.png'), charger('/logos/fsac-355.jpg'),
+    charger('/logos/2ameca-640.png'),
   ]);
   const fTitre = await pdf.embedFont(anton, { subset: true });
   const fTexte = await pdf.embedFont(barlow, { subset: true });
   const fGras = await pdf.embedFont(barlowB, { subset: true });
   const imgClub = await pdf.embedPng(logoClub);
-  const imgFsac = await pdf.embedJpg(logoFsac);
 
   const W = 841.89, H = 595.28;           // A4 paysage
   const page = pdf.addPage([W, H]);
@@ -62,10 +61,9 @@ export async function genererAttestation(d: DonneesAttestation): Promise<Uint8Ar
     page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: .6, color: CIEL });
 
   // Logos
-  const hClub = 52, hFsac = 50;
-  page.drawImage(imgFsac, { x: 70, y: H - 70 - hFsac, width: (imgFsac.width / imgFsac.height) * hFsac, height: hFsac });
+  const hClub = 56;
   const wClub = (imgClub.width / imgClub.height) * hClub;
-  page.drawImage(imgClub, { x: W - 70 - wClub, y: H - 70 - hClub, width: wClub, height: hClub });
+  page.drawImage(imgClub, { x: (W - wClub) / 2, y: H - 62 - hClub, width: wClub, height: hClub });
 
   // Texte
   centre('ATTESTATION DE PARTICIPATION', fTitre, 40, H - 190, BLEU);

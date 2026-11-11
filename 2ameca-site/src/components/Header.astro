@@ -1,22 +1,16 @@
 ---
-import Fsac from './Fsac.astro';
 import { u, estActif } from '../lib/url';
 
 const liens = [
   { href: '/', label: 'Accueil' },
   { href: '/le-club/', label: 'Le club' },
-  { href: '/activites/', label: 'Activités' },
-  { href: '/formations/', label: 'Formations' },
   { href: '/evenements/', label: 'Événements' },
-  { href: '/contact/', label: 'Contact' },
 ];
 const chemin = Astro.url.pathname;
 ---
 <header class="entete">
   <div class="conteneur barre">
     <a class="marques" href={u('/')} aria-label="Club 2AMECA — accueil">
-      <Fsac taille="petite" />
-      <span class="separateur" aria-hidden="true"></span>
       <img class="logo-club" src={u('/logos/2ameca-white-560.png')} width="560" height="120" alt="" />
     </a>
 

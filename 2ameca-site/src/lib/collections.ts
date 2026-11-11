@@ -25,8 +25,3 @@ export async function getEvenementsParPeriode() {
     passes: all.filter((e) => e.fin.getTime() < now).reverse(),
   };
 }
-
-export async function getProjets() {
-  const all = await getCollection('projets', ({ data }) => !data.brouillon);
-  return all.sort((a, b) => ymd(b.data.date).localeCompare(ymd(a.data.date)));
-}
