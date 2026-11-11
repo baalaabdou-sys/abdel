@@ -10,3 +10,7 @@
   # Le site n'utilise pas Next.js : on désactive le plugin Next.js
   # que Netlify a ajouté automatiquement en détectant le site du café.
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
+
+# Fonctions (dossier relatif à « base ») : image du QR code des e-mails.
+[functions]
+  directory = "netlify/functions"
