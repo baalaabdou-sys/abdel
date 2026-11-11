@@ -365,9 +365,9 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 </script>
 <style>
   .partenaires { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 1rem; }
-  .partenaires li > * { display: grid; gap: .5rem; justify-items: center; text-align: center; height: 100%; padding: 1.1rem; background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon); text-decoration: none; color: var(--encre); }
-  .partenaires a:hover { border-color: var(--bleu); }
-  .partenaires img { max-height: 64px; width: auto; max-width: 100%; object-fit: contain; }
-  .partenaires .nom { font-family: var(--f-label); font-weight: 600; text-transform: uppercase; color: var(--marine); }
-  .partenaires .desc { font-size: .9rem; color: var(--encre-70); }
+  .partenaires :global(li > *) { display: grid; gap: .6rem; justify-items: center; align-content: start; text-align: center; height: 100%; padding: 1.2rem 1rem; background: var(--blanc); border: 1px solid var(--bleu-12); border-radius: var(--rayon); text-decoration: none; color: var(--encre); transition: border-color .2s, transform .2s; }
+  .partenaires :global(a:hover) { border-color: var(--bleu); transform: translateY(-2px); }
+  .partenaires :global(img) { height: 64px; width: auto; max-width: 100%; object-fit: contain; }
+  .partenaires :global(.nom) { font-family: var(--f-label); font-weight: 600; text-transform: uppercase; color: var(--marine); }
+  .partenaires :global(.desc) { font-size: .88rem; line-height: 1.45; color: var(--encre-70); }
 </style>
