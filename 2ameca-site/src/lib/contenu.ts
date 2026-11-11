@@ -8,7 +8,7 @@ import { h } from './dom';
 import type { Club, Contact, QuestionFaq } from '../data/contenus';
 
 export interface MembreBureau { id: string; nom: string; role: string; photo: string | null; ordre: number }
-export interface Contenus { club?: Club; contact?: Contact; faq?: QuestionFaq[]; sections?: import('./sections').ReglageSections }
+export interface Contenus { club?: Club; contact?: Contact; faq?: QuestionFaq[] }
 
 const CLE_CACHE = '2ameca-contenus';
 let enCours: Promise<Contenus> | null = null;

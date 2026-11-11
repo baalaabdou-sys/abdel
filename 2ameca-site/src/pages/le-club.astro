@@ -27,7 +27,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
       <span class="surtitre">Le club</span>
       <h2 id="presentation" class="titre-2">Atelier d’Application Mécanique et Esprit au Citoyen</h2>
       <hr class="trait" />
-      <div class="presentation-texte" data-c="intro">
+      <div class="presentation-texte">
         {intro.split(/\n\s*\n/).map((t) => <p class="chapo">{t}</p>)}
       </div>
     </div>
@@ -41,7 +41,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
         <span class="surtitre">Histoire</span>
         <h2 id="histoire" class="titre-2">D’où vient 2AMECA</h2>
         <hr class="trait" />
-        <div class="histoire-texte" data-c="histoire">
+        <div class="histoire-texte">
           {histoire.split(/\n\s*\n/).map((t) => <p>{crochets(t) ? <span class="a-fournir">{t}</span> : t}</p>)}
         </div>
       </div>
@@ -54,7 +54,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
     <div class="conteneur mission reveal">
       <span class="surtitre">Mission</span>
       <h2 id="mission" class="titre-1">Relier la théorie, la pratique et le monde professionnel</h2>
-      <div class="mission-texte" data-c="mission">
+      <div class="mission-texte">
         {mission.split(/\n\s*\n/).map((t) => <p class="chapo">{crochets(t) ? <span class="a-fournir">{t}</span> : t}</p>)}
       </div>
     </div>
@@ -69,7 +69,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
           <h2 id="valeurs" class="titre-2">Ce qui nous guide</h2>
         </div>
       </div>
-      <ul class="valeurs grille" role="list" data-c="valeurs">
+      <ul class="valeurs grille" role="list">
         {valeurs.map((v, i) => (
           <li class="reveal">
             <span class="num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
@@ -91,7 +91,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
         </div>
         <p class="note">Les membres du bureau organisent les activités du club et accueillent les nouveaux.</p>
       </div>
-      <ul class="equipe" role="list" data-c="bureau">
+      <ul class="equipe" role="list" data-c="bureau" data-e-ignore data-e-bd="equipe">
         {bureau.map((m) => (
           <li class="membre reveal">
             {m.photo ? (
@@ -115,7 +115,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
       <span class="surtitre">Ils nous soutiennent</span>
       <h2 id="partenaires" class="titre-2">Nos partenaires</h2>
       <hr class="trait" />
-      <ul class="partenaires" id="liste-partenaires" role="list"></ul>
+      <ul class="partenaires" id="liste-partenaires" role="list" data-e-ignore data-e-bd="partenaires"></ul>
     </div>
   </section>
 
@@ -286,7 +286,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 </style>
 
 <script>
-  import { chargerContenus, chargerBureau, remplir, paragraphes } from '../lib/contenu';
+  import { chargerBureau, remplir } from '../lib/contenu';
   import { urlMedia as media } from '../lib/images';
   import { h as el } from '../lib/dom';
   import { sceneDuRole } from '../lib/roles';
@@ -313,18 +313,11 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
   }
 
   (async () => {
-    const [{ club }, bureau] = await Promise.all([chargerContenus(), chargerBureau()]);
+    const bureau = await chargerBureau();
     const zone = (c: string) => document.querySelector(`[data-c="${c}"]`);
-    if (club) {
-      if (club.intro?.trim()) remplir(zone('intro')!, paragraphes(club.intro, 'chapo'));
-      if (club.histoire?.trim()) remplir(zone('histoire')!, paragraphes(club.histoire));
-      if (club.mission?.trim()) remplir(zone('mission')!, paragraphes(club.mission, 'chapo'));
-      if (club.valeurs?.length) remplir(zone('valeurs')!, club.valeurs.map((v, i) => el('li', {},
-        el('span', { class: 'num', 'aria-hidden': 'true' }, String(i + 1).padStart(2, '0')), el('h3', { class: 'titre-3' }, v.titre), el('p', {}, v.texte))));
-    }
     if (bureau.length) {
       const modele = document.querySelector('[data-c="bureau"] .emplacement');
-      remplir(zone('bureau')!, bureau.map((m) => el('li', { class: 'membre' },
+      remplir(zone('bureau')!, bureau.map((m) => el('li', { class: 'membre', 'data-id': m.id },
         photoAnimee(m, m.photo ? el('img', { src: media(m.photo), alt: `Portrait de ${m.nom}`, width: 480, height: 600, loading: 'lazy' })
           : (modele?.cloneNode(true) as Element) ?? el('div', { class: 'emplacement' })),
         el('div', { class: 'membre-texte' }, el('p', { class: 'nom' }, m.nom), el('p', { class: 'role label' }, m.role)))));
@@ -357,7 +350,7 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
         p.logo ? h('span', { class: 'sr-only' }, p.nom) : null,
         p.description ? h('span', { class: 'desc' }, p.description) : null,
       ];
-      return h('li', {}, p.site && /^https?:/.test(p.site)
+      return h('li', { 'data-id': p.id }, p.site && /^https?:/.test(p.site)
         ? h('a', { href: p.site, target: '_blank', rel: 'noopener' }, ...contenu, h('span', { class: 'sr-only' }, ' (nouvel onglet)'))
         : h('div', {}, ...contenu));
     }));

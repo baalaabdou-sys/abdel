@@ -5,7 +5,7 @@ import AppelRejoindre from '../../components/AppelRejoindre.astro';
 import { u } from '../../lib/url';
 ---
 <Base titre="Événement" description="Un événement du Club 2AMECA à la Faculté des Sciences Aïn Chock : détails, programme et photos.">
-  <section class="tete sombre">
+  <section class="tete sombre" data-e-ignore>
     <Lignes variante="haut-droite" />
     <div class="conteneur mise">
       <div class="infos">
@@ -24,7 +24,7 @@ import { u } from '../../lib/url';
     </div>
   </section>
 
-  <section class="section">
+  <section class="section" data-e-ignore>
     <div class="conteneur">
       <div class="cartouche clair" id="ev-cartouche" hidden>
         <div><span class="label">Dates</span><strong id="c-dates"></strong><small id="c-heures"></small></div>

@@ -1,7 +1,6 @@
 /**
- * Textes par défaut du site. Le bureau les remplace depuis le tableau de bord
- * (Contenus du site → Le club / Contact & FAQ / Bureau) : la version enregistrée
- * dans la base s'affiche alors à la place de celle-ci.
+ * Textes d'origine du site. Les administrateurs les modifient directement sur la page,
+ * avec le Mode édition (src/lib/edition) : la version publiée s'affiche par-dessus.
  * Un texte entre crochets [ … ] s'affiche comme « à compléter ».
  */
 import { CONTACT } from '../config';

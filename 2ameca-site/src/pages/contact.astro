@@ -18,7 +18,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
   <section class="section" aria-labelledby="coordonnees">
     <div class="conteneur">
       <h2 id="coordonnees" class="sr-only">Coordonnées</h2>
-      <ul class="coord grille" role="list" data-c="coordonnees">
+      <ul class="coord grille" role="list">
         <li class="reveal">
           <span class="label">E-mail</span>
           {CONTACT.email ? (
@@ -60,14 +60,14 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
         <hr class="trait" />
         <address>
           <strong>{FSAC.nom}</strong><br />
-          <span data-c="local">{CONTACT.lieuDetail}</span>{CONTACT.lieuDetail && <br />}
+          <span>{CONTACT.lieuDetail}</span>{CONTACT.lieuDetail && <br />}
           {CONTACT.adresse}
         </address>
         <div class="boutons">
           <a class="btn btn-clair" href={CONTACT.carte} rel="noopener" target="_blank">Ouvrir dans Maps <span class="fleche" aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span></a>
         </div>
       </div>
-      <div class="cartouche" id="prochain" hidden>
+      <div class="cartouche" id="prochain" data-e-ignore hidden>
         <div>
           <span class="label">Prochain rendez-vous</span>
           <strong><a class="lien-evt" id="prochain-lien" href="#"></a></strong>
@@ -111,7 +111,7 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
         <hr class="trait" />
         <p>Vous ne trouvez pas votre réponse ? Écrivez-nous sur Instagram ou passez nous voir à la faculté.</p>
       </div>
-      <div class="faq" data-c="faq">
+      <div class="faq" data-e-liste-libre>
         {faq.map((f, i) => (
           <details class="reveal" open={i === 0}>
             <summary><span>{f.q}</span><span class="signe" aria-hidden="true"></span></summary>
@@ -159,33 +159,6 @@ for (const f of faq) f.q = f.q.replace(/ \?/g, '\u00A0?');
   details[open] .signe::after { transform: rotate(0); }
   details p { margin: 0 0 1.2rem; color: var(--encre-70); max-width: 40em; }
 </style>
-
-<script>
-  import { chargerContenus, remplir, texte } from '../lib/contenu';
-  import { h as el } from '../lib/dom';
-  (async () => {
-    const { contact, faq } = await chargerContenus();
-    const zone = (c: string) => document.querySelector(`[data-c="${c}"]`)!;
-    if (contact) {
-      const lien = (href: string, t: string) => el('a', { class: 'valeur', href, ...(href.startsWith('http') ? { rel: 'noopener', target: '_blank' } : {}) }, t);
-      const vide = (t: string) => el('p', { class: 'valeur' }, el('span', { class: 'a-fournir' }, t));
-      const insta = contact.instagram?.replace(/^@/, '').trim();
-      const blocs = [
-        el('li', {}, el('span', { class: 'label' }, 'E-mail'), contact.email ? lien(`mailto:${contact.email}`, contact.email) : vide('[Adresse e-mail à fournir]'), el('p', { class: 'aide' }, 'Réponse sous quelques jours.')),
-        el('li', {}, el('span', { class: 'label' }, 'Instagram'), insta ? lien(`https://instagram.com/${insta}`, `@${insta}`) : vide('[Compte Instagram à fournir]'), el('p', { class: 'aide' }, 'Actualités, photos et annonces d’événements.')),
-        contact.whatsapp && el('li', {}, el('span', { class: 'label' }, 'WhatsApp'), lien(`https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`, 'Écrire sur WhatsApp'), el('p', { class: 'aide' }, 'Pour une question rapide.')),
-        contact.linkedin && el('li', {}, el('span', { class: 'label' }, 'LinkedIn'), lien(contact.linkedin, 'Page LinkedIn'), el('p', { class: 'aide' }, 'Événements professionnels et partenariats.')),
-      ].filter(Boolean) as HTMLElement[];
-      remplir(zone('coordonnees'), blocs);
-      if (contact.local?.trim()) remplir(zone('local'), [texte(contact.local)]);
-    }
-    if (faq?.length) {
-      remplir(zone('faq'), faq.map((f, i) => el('details', { open: i === 0 },
-        el('summary', {}, el('span', {}, f.q.replace(/ \?/g, '\u00A0?')), el('span', { class: 'signe', 'aria-hidden': 'true' })),
-        el('p', {}, texte(f.r)))));
-    }
-  })();
-</script>
 
 <script>
   import { sb, messageErreur } from '../lib/supabase';

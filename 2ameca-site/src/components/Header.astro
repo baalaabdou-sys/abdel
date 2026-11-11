@@ -40,10 +40,10 @@ const chemin = Astro.url.pathname;
             </li>
           ))}
         </ul>
-        <a class="btn btn-clair rejoindre" id="bouton-compte" href={u('/rejoindre/')} aria-current={estActif(chemin, '/rejoindre/') ? 'page' : undefined}>
+        <a class="btn btn-clair rejoindre" id="bouton-compte" data-e-ignore href={u('/rejoindre/')} aria-current={estActif(chemin, '/rejoindre/') ? 'page' : undefined}>
           Rejoindre
         </a>
-        <a class="lien-connexion" id="lien-connexion" href={u('/connexion/')}>Connexion</a>
+        <a class="lien-connexion" id="lien-connexion" data-e-ignore href={u('/connexion/')}>Connexion</a>
         <p class="panneau-pied label" aria-hidden="true">Esprit citoyen au centre</p>
       </div>
     </nav>
@@ -199,6 +199,10 @@ const chemin = Astro.url.pathname;
   .bouton-modifier.secondaire { background: var(--blanc); color: var(--marine); border-color: var(--bleu-12); }
   .bouton-modifier.secondaire:hover { background: var(--ciel); }
   @media (max-width: 520px) { .bouton-modifier.secondaire span { display: none; } .bouton-modifier.secondaire { padding: 0; width: 46px; justify-content: center; } }
+  .bouton-modifier.edition { cursor: pointer; background: var(--ciel); color: var(--marine); border-color: transparent; }
+  .bouton-modifier.edition:hover { background: var(--blanc); }
+  /* Sur téléphone, quand le mode édition est proposé, les autres boutons deviennent des icônes. */
+  @media (max-width: 520px) { .zone-modifier:has(.edition) .bouton-modifier:not(.edition) span { display: none; } .zone-modifier:has(.edition) .bouton-modifier:not(.edition) { padding: 0; width: 46px; justify-content: center; } }
 
   /* Bouton de déconnexion (ajouté par le script quand on est connecté) */
   .deconnexion {
@@ -282,21 +286,29 @@ const chemin = Astro.url.pathname;
     const [lien, texte] =
       chemin.startsWith('/evenements/voir/') && id ? [`/bureau/activite/?id=${id}`, 'Modifier cet événement']
       : chemin.startsWith('/evenements/') || chemin.startsWith('/formations/') ? ['/bureau/', 'Gérer les événements']
-      : chemin.startsWith('/le-club/') ? ['/bureau/contenus/#club', 'Modifier cette page']
+      : chemin.startsWith('/le-club/') ? ['/bureau/contenus/#bureau-equipe', 'Gérer le bureau et les partenaires']
       : chemin.startsWith('/galerie/') ? ['/bureau/contenus/#galerie', 'Gérer la galerie']
-      : chemin.startsWith('/contact/') ? ['/bureau/contenus/#contact', 'Modifier contact et FAQ']
       : chemin.startsWith('/ressources/') ? ['/bureau/contenus/#ressources', 'Gérer les ressources']
-      : chemin === '/' ? ['/bureau/contenus/#club', 'Modifier cette page']
-      : ['/bureau/contenus/', 'Modifier le site'];
+      : ['/bureau/contenus/', 'Contenus du site'];
+    // Les textes et sections se modifient sur la page même (Mode édition, administrateurs) :
+    // pour un administrateur, le lien vers le tableau de bord devient secondaire (icône).
     const a = document.createElement('a');
     a.className = 'bouton-modifier'; a.href = base + lien;
     a.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4.2-1 11-11-3.2-3.2-11 11z"/><path d="M14 6.8l3.2 3.2"/></svg>';
     a.append(Object.assign(document.createElement('span'), { textContent: texte }));
-    const sec = document.createElement('a');
-    sec.className = 'bouton-modifier secondaire'; sec.href = `${base}/bureau/contenus/#sections`; sec.title = 'Afficher ou masquer des sections';
-    sec.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
-    sec.append(Object.assign(document.createElement('span'), { textContent: 'Sections' }));
-    const zone = document.createElement('div'); zone.className = 'zone-modifier'; zone.append(sec, a);
+    const zone = document.createElement('div'); zone.className = 'zone-modifier'; zone.append(a);
+    if (data.role === 'admin') { a.classList.add('secondaire'); a.title = texte; }
+    // Mode édition visuel : réservé aux administrateurs, sur les pages publiques.
+    if (data.role === 'admin' && !document.documentElement.hasAttribute('data-prive')) {
+      const ed = document.createElement('button');
+      ed.type = 'button'; ed.className = 'bouton-modifier edition';
+      ed.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 15l2.5-.6 5.8-5.8-1.9-1.9-5.8 5.8z"/></svg>';
+      ed.append(Object.assign(document.createElement('span'), { textContent: 'Mode édition' }));
+      const lancer = () => import('../lib/edition/editeur').then((m) => m.demarrer());
+      ed.addEventListener('click', lancer);
+      zone.prepend(ed);
+      import('../lib/edition/editeur').then((m) => { if (m.reprendreSiActif()) lancer(); });
+    }
     document.body.append(zone);
   }
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <rect width="1200" height="900" fill="#E6EFF6"/>
+  <g fill="none" stroke="#0A4A7A" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity=".55">
+    <path d="M470 360h48l28-44h108l28 44h48a28 28 0 0 1 28 28v172a28 28 0 0 1-28 28H470a28 28 0 0 1-28-28V388a28 28 0 0 1 28-28z"/>
+    <circle cx="600" cy="472" r="66"/>
+  </g>
+  <text x="600" y="680" text-anchor="middle" font-family="Barlow, Arial, sans-serif" font-size="40" letter-spacing="5" fill="#0A4A7A" opacity=".7">PHOTO À CHOISIR</text>
+</svg>

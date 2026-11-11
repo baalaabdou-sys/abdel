@@ -7,10 +7,10 @@ import '../styles/app.css';
   <EnTetePage surtitre="Attestations" titre="Vérifier une attestation" chapo="Chaque attestation du Club 2AMECA porte un code. Saisissez-le pour vérifier qu’elle est authentique." />
   <section class="app">
     <div class="conteneur auth">
-      <div id="resultat" aria-live="polite"></div>
+      <div id="resultat" aria-live="polite" data-e-ignore></div>
 
       <!-- Carte affichée quand le code est authentique -->
-      <article class="certificat" id="certificat" hidden aria-labelledby="c-nom">
+      <article class="certificat" id="certificat" data-e-ignore hidden aria-labelledby="c-nom">
         <header class="c-bandeau">
           <img src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/logos/2ameca-white-560.png`} width="560" height="120" alt="Club 2AMECA" />
           <span class="c-fsac">FSAC · Université Hassan II de Casablanca</span>

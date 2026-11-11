@@ -41,9 +41,9 @@ const piliers = [
     <div class="conteneur grille-intro">
       <div class="reveal">
         <span class="surtitre">Le club</span>
-        <h2 id="intro-titre" class="titre-2">De l’amphi<br />à l’atelier</h2>
+        <h2 id="intro-titre" class="titre-2">2AMECA</h2>
         <hr class="trait" />
-        <div data-c="intro">
+        <div class="intro-texte">
           {CLUB_DEFAUT.intro.split(/\n\s*\n/).map((t) => <p class="chapo">{t}</p>)}
         </div>
         <a class="lien-fleche" href={u('/le-club/')}>Découvrir le club <span aria-hidden="true">→</span></a>
@@ -186,10 +186,3 @@ const piliers = [
   }
 </script>
 
-<script>
-  import { chargerContenus, remplir, paragraphes } from '../lib/contenu';
-  chargerContenus().then(({ club }) => {
-    const zone = document.querySelector('[data-c="intro"]');
-    if (club?.intro?.trim() && zone) remplir(zone, paragraphes(club.intro, 'chapo'));
-  });
-</script>

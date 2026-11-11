@@ -7,13 +7,13 @@ import '../styles/app.css';
   <EnTetePage surtitre="Galerie" titre="En images" chapo="Ateliers, formations, événements : la vie du club en photos. Touchez un album pour revivre la journée." />
   <section class="app">
     <div class="conteneur">
-      <p class="chargement" id="chargement">Chargement des photos…</p>
-      <ul class="albums" id="albums" role="list"></ul>
+      <p class="chargement" id="chargement" data-e-ignore>Chargement des photos…</p>
+      <ul class="albums" id="albums" role="list" data-e-ignore></ul>
     </div>
   </section>
 
   <!-- Visionneuse plein écran : les photos d'une même journée -->
-  <dialog class="album" id="album" aria-labelledby="album-titre">
+  <dialog class="album" id="album" data-e-ignore aria-labelledby="album-titre">
     <svg class="album-lignes" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true" focusable="false">
       <g fill="none" stroke="currentColor" stroke-width="1" vector-effect="non-scaling-stroke">
         <line x1="0" y1="70" x2="90" y2="0" /><line x1="0" y1="100" x2="125" y2="0" />

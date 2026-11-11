@@ -38,7 +38,7 @@ const reseaux = [
 
     <div class="colonne">
       <h2 class="label titre-col">Nous suivre</h2>
-      <div data-c="reseaux">
+      <div class="reseaux">
       {reseaux.length ? (
         <ul role="list">
           {reseaux.map((r) => (
@@ -87,21 +87,3 @@ const reseaux = [
   .bas p { margin: 0; }
 </style>
 
-<script>
-  import { chargerContenus, remplir } from '../lib/contenu';
-  import { h } from '../lib/dom';
-  chargerContenus().then(({ contact }) => {
-    const zone = document.querySelector('[data-c="reseaux"]');
-    if (!contact || !zone) return;
-    const insta = contact.instagram?.replace(/^@/, '').trim();
-    const liens = [
-      insta && ['Instagram', `https://instagram.com/${insta}`, `@${insta}`],
-      contact.linkedin && ['LinkedIn', contact.linkedin, ''],
-      contact.whatsapp && ['WhatsApp', `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}`, ''],
-      contact.email && ['E-mail', `mailto:${contact.email}`, contact.email],
-    ].filter(Boolean) as string[][];
-    if (!liens.length) return;
-    remplir(zone, [h('ul', { role: 'list' }, liens.map(([label, href, detail]) => h('li', {},
-      h('a', { href, ...(href.startsWith('http') ? { rel: 'noopener', target: '_blank' } : {}) }, h('span', { class: 'reseau' }, label), detail ? ' ' : '', detail ? h('span', { class: 'detail' }, detail) : null))))]);
-  });
-</script>

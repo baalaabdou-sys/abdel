@@ -21,7 +21,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image ?? u('/og.jpg'), Astro.site);
 ---
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-prive={prive ? '' : undefined}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -74,10 +74,9 @@ const ogImage = new URL(image ?? u('/og.jpg'), Astro.site);
       }
     </script>
     <script>
-      // Sections masquées par le bureau (Contenus du site → Sections)
-      if (document.querySelector('[data-section]')) {
-        Promise.all([import('../lib/contenu'), import('../lib/sections')]).then(([{ chargerContenus }, { appliquerSections }]) =>
-          chargerContenus().then((c) => appliquerSections(c.sections)));
+      // Mode édition : la version publiée par un administrateur (textes, images, boutons, sections, listes).
+      if (!document.documentElement.hasAttribute('data-prive')) {
+        import('../lib/edition/appliquer').then((m) => m.demarrerVisiteur());
       }
     </script>
   </body>

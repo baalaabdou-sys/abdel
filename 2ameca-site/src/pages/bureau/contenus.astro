@@ -16,10 +16,7 @@ import '../../styles/app.css';
         </div>
 
         <div class="onglets" role="tablist" aria-label="Contenus">
-          <button type="button" role="tab" aria-selected="true" data-onglet="club">Le club</button>
-          <button type="button" role="tab" aria-selected="false" data-onglet="sections">Sections</button>
-          <button type="button" role="tab" aria-selected="false" data-onglet="bureau-equipe">Bureau</button>
-          <button type="button" role="tab" aria-selected="false" data-onglet="contact">Contact & FAQ</button>
+          <button type="button" role="tab" aria-selected="true" data-onglet="bureau-equipe">Bureau</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="galerie">Galerie</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="partenaires">Partenaires</button>
           <button type="button" role="tab" aria-selected="false" data-onglet="ressources">Ressources</button>
@@ -27,34 +24,15 @@ import '../../styles/app.css';
           <button type="button" role="tab" aria-selected="false" data-onglet="emails">E-mails</button>
         </div>
 
-        <!-- Sections affichées -->
-        <div data-panneau="sections" role="tabpanel" hidden>
-          <form class="carte form" id="form-sections" novalidate>
-            <h2>Sections affichées</h2>
-            <p class="aide">Pour chaque section : cochez pour l’afficher, décochez pour la masquer, changez son titre, et sur la page « Le club » utilisez ↑ ↓ pour changer l’ordre. Rien n’est supprimé : les textes et photos restent enregistrés. Laissez un titre vide pour garder le titre d’origine.</p>
-            <div id="liste-sections"></div>
-            <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
-          </form>
-        </div>
-
-        <!-- Le club -->
-        <div data-panneau="club" role="tabpanel">
-          <form class="carte form" id="form-club" novalidate>
-            <h2>Textes du club</h2>
-            <p class="aide">Laissez une ligne vide entre deux paragraphes. Un texte entre crochets [ … ] s’affiche comme « à compléter ».</p>
-            <div class="champ"><label for="cl-intro">Présentation (page d’accueil)</label><textarea id="cl-intro" name="intro"></textarea></div>
-            <div class="champ"><label for="cl-histoire">Histoire du club (page « Le club »)</label><textarea id="cl-histoire" name="histoire" style="min-height:10rem"></textarea></div>
-            <div class="champ"><label for="cl-mission">Mission</label><textarea id="cl-mission" name="mission"></textarea></div>
-            <fieldset class="champ" hidden><legend class="lbl">Dates clés (frise de l’histoire)</legend><div class="lignes-ed" id="ed-etapes"></div>
-              <button type="button" class="btn-lien" id="ajout-etape">+ Ajouter une date</button></fieldset>
-            <fieldset class="champ"><legend class="lbl">Valeurs</legend><div class="lignes-ed" id="ed-valeurs"></div>
-              <button type="button" class="btn-lien" id="ajout-valeur">+ Ajouter une valeur</button></fieldset>
-            <div class="actions"><button class="btn" type="submit">Enregistrer les textes</button></div>
-          </form>
+        <!-- Textes, sections et FAQ : désormais modifiés directement sur le site -->
+        <div class="carte info-edition">
+          <h2>Textes, sections et FAQ</h2>
+          <p>Les textes du site (présentation, histoire, mission, valeurs, coordonnées, FAQ…), l’ordre et l’affichage des sections se modifient maintenant <strong>directement sur la page</strong>, avec le <strong>Mode édition</strong> réservé aux administrateurs : ouvrez une page du site puis touchez « Mode édition » en bas de l’écran.</p>
+          <a class="btn-lien" href={import.meta.env.BASE_URL}>Ouvrir le site</a>
         </div>
 
         <!-- Bureau -->
-        <div data-panneau="bureau-equipe" role="tabpanel" hidden>
+        <div data-panneau="bureau-equipe" role="tabpanel">
           <form class="carte form" id="form-membre" novalidate>
             <h2>Ajouter un membre du bureau</h2>
             <div class="ligne-2">
@@ -66,29 +44,6 @@ import '../../styles/app.css';
             <div class="actions"><button class="btn" type="submit">Ajouter</button></div>
           </form>
           <div class="carte"><h2>Bureau affiché sur le site</h2><p class="aide" style="margin-bottom:.75rem">Tant que cette liste est vide, la page « Le club » affiche des emplacements à compléter.</p><ul class="liste-app" id="equipe"></ul></div>
-        </div>
-
-        <!-- Contact & FAQ -->
-        <div data-panneau="contact" role="tabpanel" hidden>
-          <form class="carte form" id="form-contact" novalidate>
-            <h2>Coordonnées du club</h2>
-            <div class="ligne-2">
-              <div class="champ"><label for="co-email">E-mail du club</label><input id="co-email" name="email" type="email" inputmode="email" /></div>
-              <div class="champ"><label for="co-wa">WhatsApp (format international, ex. 212600000000)</label><input id="co-wa" name="whatsapp" inputmode="tel" /></div>
-            </div>
-            <div class="ligne-2">
-              <div class="champ"><label for="co-insta">Instagram (sans @)</label><input id="co-insta" name="instagram" /></div>
-              <div class="champ"><label for="co-li">Page LinkedIn (adresse complète)</label><input id="co-li" name="linkedin" type="url" placeholder="https://www.linkedin.com/company/…" /></div>
-            </div>
-            <div class="champ"><label for="co-local">Local du club à la FSAC</label><input id="co-local" name="local" placeholder="Bâtiment, salle…" /></div>
-            <div class="actions"><button class="btn" type="submit">Enregistrer les coordonnées</button></div>
-          </form>
-          <form class="carte form" id="form-faq" novalidate>
-            <h2>Questions fréquentes (page Contact)</h2>
-            <div class="lignes-ed" id="ed-faq"></div>
-            <button type="button" class="btn-lien" id="ajout-faq">+ Ajouter une question</button>
-            <div class="actions"><button class="btn" type="submit">Enregistrer la FAQ</button></div>
-          </form>
         </div>
 
         <!-- Galerie -->
@@ -177,9 +132,6 @@ import '../../styles/app.css';
   import { h, vider, toast, dateCourte, taille, pendant } from '../../lib/dom';
   import { urlMedia, reduireImage } from '../../lib/images';
   import { nomFichier } from '../../lib/attestation';
-  import { CLUB_DEFAUT, CONTACT_DEFAUT, FAQ_DEFAUT, type Club, type Contact, type QuestionFaq } from '../../data/contenus';
-  import { oublierCache } from '../../lib/contenu';
-  import { SECTIONS, lire, type ReglageSections } from '../../lib/sections';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;
@@ -194,8 +146,6 @@ import '../../styles/app.css';
     const { data } = await sb.from('formations').select('*').order('date', { ascending: false });
     formations = (data ?? []) as Formation[];
     $('ph-activite').append(...formations.map((f) => h('option', { value: f.id }, `${f.titre} (${dateCourte(f.date)})`)));
-    // Les formulaires de textes ne s'affichent qu'une fois remplis, pour ne jamais écraser une saisie.
-    await chargerTextes();
     $('chargement').hidden = true; $('page').hidden = false;
     await Promise.all([chargerEquipe(), chargerPhotos(), chargerPartenaires(), chargerRessources(), chargerAnnonces()]);
   }
@@ -206,7 +156,7 @@ import '../../styles/app.css';
     document.querySelectorAll<HTMLElement>('[data-panneau]').forEach((p) => (p.hidden = p.dataset.panneau !== nom));
   }
   document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => ouvrir(b.dataset.onglet!)));
-  if (location.hash) ouvrir(location.hash.slice(1));
+  if (location.hash) ouvrir(location.hash.slice(1) === 'equipe' ? 'bureau-equipe' : location.hash.slice(1));
 
   /** Envoie une image dans « medias » et renvoie son chemin. */
   async function envoyerImage(fichier: File, dossier: string) {
@@ -215,109 +165,6 @@ import '../../styles/app.css';
     const { error } = await sb.storage.from('medias').upload(chemin, blob, { contentType: type });
     if (error) throw error;
     return chemin;
-  }
-
-  // ── Éditeur de lignes répétables (dates clés, valeurs, FAQ)
-  type Champ = { cle: string; label: string; long?: boolean };
-  function editeur(zone: HTMLElement, champs: Champ[], lignes: Record<string, string>[]) {
-    const ajouter = (v: Record<string, string> = {}) => {
-      const ligne = h('div', { class: 'ligne-ed' },
-        champs.map((c) => h('label', { class: 'mini-champ' }, h('span', {}, c.label),
-          c.long ? h('textarea', { 'data-cle': c.cle, rows: 2 }, v[c.cle] ?? '') : h('input', { 'data-cle': c.cle, value: v[c.cle] ?? '' }))),
-        h('div', { class: 'actions' },
-          h('button', { type: 'button', class: 'btn-lien', onclick: () => ligne.previousElementSibling?.before(ligne) }, 'Monter'),
-          h('button', { type: 'button', class: 'btn-lien', onclick: () => ligne.remove() }, 'Retirer')));
-      zone.append(ligne);
-    };
-    zone.replaceChildren();
-    lignes.forEach(ajouter);
-    return {
-      ajouter: () => { ajouter(); (zone.lastElementChild?.querySelector('input,textarea') as HTMLElement | null)?.focus(); },
-      valeurs: () => [...zone.querySelectorAll('.ligne-ed')].map((l) => Object.fromEntries(champs.map((c) => [c.cle, (l.querySelector(`[data-cle="${c.cle}"]`) as HTMLInputElement).value.trim()])))
-        .filter((o) => Object.values(o).some(Boolean)),
-    };
-  }
-
-  async function enregistrer(cle: 'club' | 'contact' | 'faq' | 'sections', valeur: unknown, btn: HTMLButtonElement | null) {
-    await pendant(btn, 'Enregistrement…', async () => {
-      const { error } = await sb.from('parametres').upsert({ cle, valeur, updated_at: new Date().toISOString() });
-      if (error) return toast(messageErreur(error), 'erreur');
-      oublierCache(); toast('Enregistré : visible sur le site.');
-    });
-  }
-
-  // ── Sections : afficher / masquer, déplacer, renommer
-  function afficherSections(reglage: ReglageSections) {
-    const ordre = reglage.__ordre ?? [];
-    vider($('liste-sections'), SECTIONS.map((g) => {
-      const items = g.deplacable ? [...g.items].sort((x, y) => (ordre.includes(x.cle) ? ordre.indexOf(x.cle) : 99) - (ordre.includes(y.cle) ? ordre.indexOf(y.cle) : 99)) : g.items;
-      const ul = h('ol', { class: 'liste-sections', 'data-groupe': g.page }, items.map((it) => {
-        const { visible, titre } = lire(reglage, it.cle);
-        const li = h('li', { class: `sec${visible ? '' : ' masquee'}`, 'data-cle': it.cle },
-          h('div', { class: 'sec-tete' },
-            h('label', { class: 'case sec-afficher', for: `sec-${it.cle}` },
-              h('input', { type: 'checkbox', id: `sec-${it.cle}`, class: 'sec-visible', checked: visible }),
-              h('span', {}, h('strong', {}, it.nom), it.aide ? h('span', { class: 'aide' }, ` — ${it.aide}`) : null)),
-            g.deplacable ? h('span', { class: 'sec-ordre' },
-              h('button', { type: 'button', class: 'sec-monter', 'aria-label': `Monter : ${it.nom}` }, '↑'),
-              h('button', { type: 'button', class: 'sec-descendre', 'aria-label': `Descendre : ${it.nom}` }, '↓')) : null),
-          it.titre ? h('div', { class: 'mini-champ sec-titre' },
-            h('label', { for: `sec-t-${it.cle}` }, 'Titre affiché'),
-            h('input', { id: `sec-t-${it.cle}`, class: 'sec-titre-champ', maxlength: 120, value: titre, placeholder: it.titre })) : null);
-        li.querySelector<HTMLInputElement>('.sec-visible')!.addEventListener('change', (e) => li.classList.toggle('masquee', !(e.target as HTMLInputElement).checked));
-        li.querySelector('.sec-monter')?.addEventListener('click', () => { const p = li.previousElementSibling; if (p) li.parentElement!.insertBefore(li, p); });
-        li.querySelector('.sec-descendre')?.addEventListener('click', () => { const n = li.nextElementSibling; if (n) li.parentElement!.insertBefore(n, li); });
-        return li;
-      }));
-      return h('fieldset', { class: 'groupe-sections' },
-        h('legend', {}, g.page, ' ', h('a', { href: base + g.lien, target: '_blank', rel: 'noopener', class: 'btn-lien' }, 'voir la page')), ul);
-    }));
-  }
-  $('form-sections').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const lis = [...document.querySelectorAll<HTMLLIElement>('#liste-sections li[data-cle]')];
-    const valeur: ReglageSections = Object.fromEntries(lis.map((li) => [li.dataset.cle!, {
-      visible: li.querySelector<HTMLInputElement>('.sec-visible')!.checked,
-      titre: li.querySelector<HTMLInputElement>('.sec-titre-champ')?.value.trim() ?? '',
-    }]));
-    valeur.__ordre = lis.map((li) => li.dataset.cle!);
-    enregistrer('sections', valeur, (e.currentTarget as HTMLFormElement).querySelector('button[type=submit]'));
-  });
-
-  // ── Textes du club, coordonnées, FAQ
-  async function chargerTextes() {
-    const { data } = await sb.from('parametres').select('cle, valeur');
-    const v = Object.fromEntries((data ?? []).map((x) => [x.cle, x.valeur]));
-    const club: Club = { ...CLUB_DEFAUT, ...(v.club ?? {}) };
-    const contact: Contact = { ...CONTACT_DEFAUT, ...(v.contact ?? {}) };
-    const faq: QuestionFaq[] = v.faq ?? FAQ_DEFAUT;
-    afficherSections((v.sections ?? {}) as ReglageSections);
-
-    const fc = $('form-club') as HTMLFormElement;
-    for (const k of ['intro', 'histoire', 'mission'] as const) (fc.elements.namedItem(k) as HTMLTextAreaElement).value = club[k];
-    const etapes = editeur($('ed-etapes'), [{ cle: 'quand', label: 'Quand' }, { cle: 'quoi', label: 'Quoi' }, { cle: 'detail', label: 'Détail', long: true }], club.etapes as unknown as Record<string, string>[]);
-    const valeurs = editeur($('ed-valeurs'), [{ cle: 'titre', label: 'Valeur' }, { cle: 'texte', label: 'Explication', long: true }], club.valeurs as unknown as Record<string, string>[]);
-    $('ajout-etape').onclick = etapes.ajouter; $('ajout-valeur').onclick = valeurs.ajouter;
-    fc.onsubmit = (e) => {
-      e.preventDefault();
-      const t = (k: string) => (fc.elements.namedItem(k) as HTMLTextAreaElement).value.trim();
-      enregistrer('club', { intro: t('intro'), histoire: t('histoire'), mission: t('mission'), etapes: etapes.valeurs(), valeurs: valeurs.valeurs() }, fc.querySelector('button[type=submit]'));
-    };
-
-    const fo = $('form-contact') as HTMLFormElement;
-    for (const k of ['email', 'whatsapp', 'instagram', 'linkedin', 'local'] as const) (fo.elements.namedItem(k) as HTMLInputElement).value = contact[k] ?? '';
-    fo.onsubmit = (e) => {
-      e.preventDefault();
-      const t = (k: string) => (fo.elements.namedItem(k) as HTMLInputElement).value.trim();
-      if (t('email') && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t('email'))) return toast('Adresse e-mail invalide.', 'erreur');
-      if (t('linkedin') && !/^https?:\/\//.test(t('linkedin'))) return toast('Le lien LinkedIn doit commencer par https://', 'erreur');
-      enregistrer('contact', { email: t('email'), whatsapp: t('whatsapp').replace(/\D/g, ''), instagram: t('instagram').replace(/^@/, ''), linkedin: t('linkedin'), local: t('local') }, fo.querySelector('button[type=submit]'));
-    };
-
-    const ff = $('form-faq') as HTMLFormElement;
-    const ed = editeur($('ed-faq'), [{ cle: 'q', label: 'Question' }, { cle: 'r', label: 'Réponse', long: true }], faq as unknown as Record<string, string>[]);
-    $('ajout-faq').onclick = ed.ajouter;
-    ff.onsubmit = (e) => { e.preventDefault(); enregistrer('faq', ed.valeurs(), ff.querySelector('button[type=submit]')); };
   }
 
   // ── Membres du bureau affichés sur le site

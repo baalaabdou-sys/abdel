@@ -8,11 +8,11 @@ import { u } from '../lib/url';
   <EnTetePage surtitre="Bibliothèque" titre="Ressources" chapo="Cours, guides, modèles et documents partagés par le club. Certaines ressources sont réservées aux membres." />
   <section class="app">
     <div class="conteneur">
-      <p class="aide" id="info-membres" hidden style="margin-bottom:1.25rem">
+      <p class="aide" id="info-membres" data-e-ignore hidden style="margin-bottom:1.25rem">
         Vous voyez les ressources publiques. <a href={u('/connexion/?suite=/ressources/')}>Connectez-vous</a> pour accéder aussi aux ressources réservées aux membres.
       </p>
-      <p class="chargement" id="chargement">Chargement…</p>
-      <div id="ressources"></div>
+      <p class="chargement" id="chargement" data-e-ignore>Chargement…</p>
+      <div id="ressources" data-e-ignore></div>
     </div>
   </section>
 </Base>
