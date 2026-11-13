@@ -130,6 +130,10 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
           Site de la FSAC <span aria-hidden="true">↗</span><span class="sr-only"> (nouvel onglet)</span>
         </a>
       </div>
+      <a class="fsac-logo" href={FSAC.url} rel="noopener" target="_blank">
+        <img src={u('/logos/fsac-blanc.png')} width="531" height="207" alt="Faculté des Sciences Aïn Chock — Université Hassan II de Casablanca" loading="lazy" decoding="async" />
+        <span class="sr-only"> (nouvel onglet)</span>
+      </a>
     </div>
   </section>
 
@@ -181,6 +185,10 @@ const crochets = (t: string) => /^\s*\[.*\]\s*$/s.test(t);
 
   .fsac { display: grid; gap: 1.5rem 3rem; align-items: center; }
   .fsac .titre-3 { color: var(--marine); margin-bottom: .6rem; }
+  @media (min-width: 720px) { .fsac { grid-template-columns: 1fr auto; } }
+  .fsac-logo { justify-self: start; display: block; padding: 1.1rem 1.4rem; border-radius: var(--rayon); background: var(--marine); box-shadow: var(--ombre); transition: transform .2s; }
+  .fsac-logo img { display: block; width: 220px; max-width: 100%; height: auto; }
+  .fsac-logo:hover { transform: translateY(-2px); }
 </style>
 
 <style is:global>

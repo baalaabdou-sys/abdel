@@ -10,8 +10,10 @@ const chemin = Astro.url.pathname;
 ---
 <header class="entete">
   <div class="conteneur barre">
-    <a class="marques" href={u('/')} aria-label="Club 2AMECA — accueil">
+    <a class="marques" href={u('/')} aria-label="Club 2AMECA, Faculté des Sciences Aïn Chock — accueil">
       <img class="logo-club" src={u('/logos/2ameca-white-560.png')} width="560" height="120" alt="" />
+      <span class="separateur" aria-hidden="true"></span>
+      <img class="logo-fsac" src={u('/logos/fsac-blanc.png')} width="531" height="207" alt="" />
     </a>
 
     <div class="cloche-zone" id="cloche-zone" hidden>
@@ -60,8 +62,12 @@ const chemin = Astro.url.pathname;
 
   .marques { display: flex; align-items: center; gap: 12px; text-decoration: none; flex-shrink: 0; }
   .separateur { width: 1px; height: 30px; background: var(--blanc-25); }
-  .logo-club { width: 112px; height: auto; }
-  @media (min-width: 720px) { .logo-club { width: 148px; } .separateur { height: 38px; } .marques { gap: 16px; } }
+  .logo-club { width: 104px; height: auto; }
+  .logo-fsac { width: auto; height: 30px; }
+  @media (max-width: 419px) { .logo-club { width: 90px; } .logo-fsac { height: 25px; } .separateur { height: 24px; } .marques { gap: 8px; } }
+  @media (max-width: 374px) { .logo-club { width: 78px; } .logo-fsac { height: 21px; } .separateur { height: 20px; } .marques { gap: 6px; } }
+  @media (max-width: 359px) { .logo-fsac, .marques .separateur { display: none; } .logo-club { width: 90px; } }
+  @media (min-width: 720px) { .logo-club { width: 148px; } .logo-fsac { height: 40px; } .separateur { height: 38px; } .marques { gap: 16px; } }
 
   .bouton-menu {
     display: inline-flex; align-items: center; gap: .7rem;

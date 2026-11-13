@@ -52,5 +52,5 @@ export const CONTACT = {
 export const FSAC = {
   nom: 'Faculté des Sciences Aïn Chock',
   universite: 'Université Hassan II de Casablanca',
-  url: 'https://fsac.univh2c.ma',
+  url: 'https://fsac.ac.ma',
 };
