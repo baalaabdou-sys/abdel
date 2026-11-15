@@ -87,7 +87,6 @@ export function messageErreur(e: unknown): string {
     [/Failed to fetch|NetworkError|Load failed/i, 'Connexion impossible. Vérifiez votre connexion internet.'],
     [/row-level security|permission denied|not allowed/i, 'Vous n’avez pas les droits pour cette action.'],
     [/duplicate key/i, 'Cet élément existe déjà.'],
-    [/violates foreign key.*attestations/i, 'Impossible : cette activité a déjà délivré des attestations.'],
   ];
   for (const [re, fr] of t) if (re.test(m)) return fr;
   return m || 'Une erreur est survenue.';

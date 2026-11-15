@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import '../styles/app.css';
 import { FILIERES, ANNEES } from '../config';
 ---
-<Base prive titre="Mon espace" description="Espace membre du Club 2AMECA : inscriptions, présences, supports et attestations.">
+<Base prive titre="Mon espace" description="Espace membre du Club 2AMECA : inscriptions, présences et supports.">
   <section class="app">
     <div class="conteneur">
       <p class="chargement" id="chargement">Chargement de votre espace…</p>
@@ -41,7 +41,6 @@ import { FILIERES, ANNEES } from '../config';
               <div class="carte" id="carte-retours" hidden><h2>Votre avis compte</h2><p class="aide">Notez les activités auxquelles vous avez participé : cela aide le bureau à les améliorer.</p><div id="retours"></div></div>
             </div>
             <div>
-              <div class="carte"><h2>Mes attestations</h2><ul class="liste-app" id="attestations"><li class="aide">Chargement…</li></ul></div>
               <div class="carte"><h2>Mes supports de formation</h2><ul class="liste-app" id="supports"><li class="aide">Chargement…</li></ul></div>
             </div>
           </div>
@@ -51,7 +50,7 @@ import { FILIERES, ANNEES } from '../config';
           <div class="carte mon-qr">
             <h2>Mon QR code de présence</h2>
             <img id="qr" alt="Votre QR code personnel de présence" width="220" height="220" />
-            <p class="aide">Présentez ce code à l’entrée de chaque activité : un responsable le scanne pour valider votre présence. Vos supports et votre attestation sont ensuite disponibles automatiquement.</p>
+            <p class="aide">Présentez ce code à l’entrée de chaque activité : un responsable le scanne pour valider votre présence. Vos supports sont ensuite disponibles automatiquement.</p>
           </div>
         </div>
 
@@ -94,7 +93,7 @@ import { FILIERES, ANNEES } from '../config';
             <div class="champ"><label for="p-tel">Téléphone / WhatsApp</label><input id="p-tel" name="telephone" type="tel" autocomplete="tel" /></div>
             <div class="champ"><span class="lbl">E-mail</span><span id="p-email"></span></div>
             <label class="case" for="p-emails"><input type="checkbox" id="p-emails" name="emails_actifs" />
-              <span>Recevoir par e-mail les messages qui me concernent (activité annulée ou modifiée, attestation disponible, nouveaux supports).</span></label>
+              <span>Recevoir par e-mail les messages qui me concernent (activité annulée ou modifiée, nouveaux supports).</span></label>
             <div class="actions"><button class="btn" type="submit">Enregistrer</button></div>
           </form>
         </div>
@@ -107,7 +106,6 @@ import { FILIERES, ANNEES } from '../config';
   import QRCode from 'qrcode';
   import { sb, monProfil, estBureau, messageErreur, TYPES, ROLES, type Formation, type Profil } from '../lib/supabase';
   import { h, vider, toast, dateLongue, dateCourte, horaire, aujourdhui, taille, pendant } from '../lib/dom';
-  import { genererAttestation, telecharger, nomFichier } from '../lib/attestation';
   import { STATUTS_IDEE, TYPES_IDEE } from '../lib/supabase';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
@@ -145,20 +143,18 @@ import { FILIERES, ANNEES } from '../config';
   document.querySelectorAll<HTMLButtonElement>('[data-onglet]').forEach((b) => b.addEventListener('click', () => ouvrir(b.dataset.onglet!)));
 
   async function charger() {
-    const [fRes, iRes, aRes, sRes] = await Promise.all([
+    const [fRes, iRes, sRes] = await Promise.all([
       sb.from('formations').select('*').eq('publiee', true).gte('date', aujourdhui()).order('date').order('heure_debut'),
       sb.from('inscriptions').select('formation_id, present, inscrit_at, formations(*)').eq('membre_id', profil.id),
-      sb.from('attestations').select('code, delivree_at, formation_id').eq('membre_id', profil.id),
       sb.from('supports').select('*').order('created_at'),
     ]);
-    const erreur = fRes.error || iRes.error || aRes.error || sRes.error;
+    const erreur = fRes.error || iRes.error || sRes.error;
     if (erreur) toast(messageErreur(erreur), 'erreur');
 
     const inscriptions = (iRes.data ?? []) as unknown as Inscription[];
     const parFormation = new Map(inscriptions.map((i) => [i.formation_id, i]));
     afficherAVenir((fRes.data ?? []) as Formation[], parFormation);
     afficherHistorique(inscriptions);
-    afficherAttestations(aRes.data ?? [], parFormation);
     const presentes = new Set(inscriptions.filter((i) => i.present).map((i) => i.formation_id));
     afficherSupports((sRes.data ?? []).filter((s) => presentes.has(s.formation_id)), parFormation);
     await Promise.all([chargerRetours(inscriptions), chargerNotifications(), chargerRessources(), chargerIdees()]);
@@ -329,51 +325,6 @@ import { FILIERES, ANNEES } from '../config';
         : i.present ? h('span', { class: 'pastille-etat ok' }, 'Présent')
         : passe ? h('span', { class: 'pastille-etat' }, 'Absent') : h('span', { class: 'pastille-etat attente' }, 'Inscrit');
       return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, i.formations.titre), h('span', {}, `${TYPES[i.formations.type]} · ${dateCourte(i.formations.date)}`)), etat);
-    }));
-  }
-
-  function afficherAttestations(liste: { code: string; delivree_at: string; formation_id: string }[], mes: Map<string, Inscription>) {
-    const ul = $('attestations');
-    if (!liste.length) return vider(ul, h('li', { class: 'vide' }, 'Vos attestations apparaîtront ici dès que votre présence à une activité sera validée.'));
-    vider(ul, liste.map((a) => {
-      const f = mes.get(a.formation_id)!.formations;
-      const btn = h('button', { type: 'button', class: 'btn btn-petit' }, 'Télécharger (PDF)') as HTMLButtonElement;
-      btn.addEventListener('click', () => pendant(btn, 'Préparation…', async () => {
-        try {
-          const pdf = await genererAttestation({ prenom: profil.prenom, nom: profil.nom, titre: f.titre, type: f.type, date: f.date, lieu: f.lieu, code: a.code, delivree_at: a.delivree_at });
-          telecharger(pdf, `Attestation-2AMECA-${nomFichier(f.titre)}.pdf`);
-        } catch (e) { toast(messageErreur(e), 'erreur'); }
-      }));
-      // « Ajouter à LinkedIn » : l'attestation apparaît dans « Licences et certifications », liée à la page de vérification.
-      const delivree = new Date(a.delivree_at);
-      const linkedin = 'https://www.linkedin.com/profile/add?' + new URLSearchParams({
-        startTask: 'CERTIFICATION_NAME',
-        name: `Attestation de participation — ${f.titre}`,
-        organizationName: 'Club 2AMECA — FSAC',
-        issueYear: String(delivree.getFullYear()),
-        issueMonth: String(delivree.getMonth() + 1),
-        certUrl: `${location.origin}${base}/verifier/?code=${a.code}`,
-        certId: a.code,
-      });
-      // « Partager sur LinkedIn » : une publication déjà rédigée, avec le lien de vérification.
-      // Téléphone : menu de partage du téléphone (on choisit LinkedIn, le texte est déjà là).
-      // Ordinateur : LinkedIn s'ouvre avec la publication pré-remplie.
-      const urlVerif = `${location.origin}${base}/verifier/?code=${a.code}`;
-      const quoi = f.type === 'formation' ? 'à la formation' : f.type === 'atelier' ? 'à l’atelier' : 'à l’événement';
-      const texte = `Je viens de recevoir mon attestation de participation ${quoi} « ${f.titre} » avec le Club 2AMECA, à la Faculté des Sciences Aïn Chock (Université Hassan II de Casablanca). Merci à toute l’équipe du club !\n\nAttestation vérifiable ici : ${urlVerif}\n\n#2AMECA #FSAC #UH2C`;
-      const partager = h('button', { type: 'button', class: 'btn btn-contour btn-petit' }, 'Partager sur LinkedIn') as HTMLButtonElement;
-      partager.addEventListener('click', async () => {
-        try { await navigator.clipboard?.writeText(texte); } catch { /* copie facultative */ }
-        const telephone = matchMedia('(pointer: coarse)').matches && typeof navigator.share === 'function';
-        if (telephone) {
-          try { await navigator.share({ title: `Attestation — ${f.titre}`, text: texte }); return; }
-          catch (e) { if ((e as DOMException).name === 'AbortError') return; }
-        }
-        window.open('https://www.linkedin.com/feed/?' + new URLSearchParams({ shareActive: 'true', text: texte }), '_blank', 'noopener');
-        toast('Publication prête. Si le texte n’apparaît pas, collez-le : il est copié.');
-      });
-      const lien = h('a', { class: 'btn-lien', href: linkedin, target: '_blank', rel: 'noopener' }, 'Ajouter à mon profil LinkedIn');
-      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, f.titre), h('span', {}, `${dateCourte(f.date)} · code ${a.code}`)), h('div', { class: 'actions' }, btn, partager, lien));
     }));
   }
 

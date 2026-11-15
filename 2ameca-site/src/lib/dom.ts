@@ -65,3 +65,7 @@ export async function pendant<T>(btn: HTMLButtonElement | null, texte: string, a
   if (btn) { btn.disabled = true; btn.textContent = texte; }
   try { return await action(); } finally { if (btn) { btn.disabled = false; btn.textContent = avant; } }
 }
+
+/** Nom de fichier sans accents ni caractères spéciaux (envois de fichiers, exports). */
+export const nomFichier = (s: string) =>
+  s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);

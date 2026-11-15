@@ -103,7 +103,7 @@ import '../../styles/app.css';
         <div data-panneau="emails" role="tabpanel" hidden>
           <div class="carte">
             <h2>E-mails automatiques (Brevo)</h2>
-            <p>Les membres reçoivent un e-mail quand une <strong>nouvelle activité</strong> est publiée (avec un bouton « Je m’inscris »), quand ils <strong>s’inscrivent</strong> (avec leur QR code d’entrée), quand une activité à laquelle ils sont inscrits est <strong>annulée</strong>, <strong>rétablie</strong> ou <strong>modifiée</strong>, quand leur <strong>attestation</strong> est disponible et quand un <strong>support</strong> est ajouté. Chacun peut les désactiver dans « Mon profil ».</p>
+            <p>Les membres reçoivent un e-mail quand une <strong>nouvelle activité</strong> est publiée (avec un bouton « Je m’inscris »), quand ils <strong>s’inscrivent</strong> (avec leur QR code d’entrée), quand une activité à laquelle ils sont inscrits est <strong>annulée</strong>, <strong>rétablie</strong> ou <strong>modifiée</strong> et quand un <strong>support</strong> est ajouté. Chacun peut les désactiver dans « Mon profil ».</p>
             <p class="aide">Les annonces du tableau de bord restent dans les notifications du site (cloche), pour rester dans la limite gratuite de Brevo (300 e-mails par jour).</p>
             <div class="actions" style="margin-top:1rem"><button class="btn" type="button" id="btn-test-email">M’envoyer un e-mail de test</button></div>
             <div id="resultat-email" style="margin-top:1rem"></div>
@@ -115,7 +115,7 @@ import '../../styles/app.css';
         <div data-panneau="annonces" role="tabpanel" hidden>
           <form class="carte form" id="form-annonce" novalidate>
             <h2>Envoyer une annonce aux membres</h2>
-            <p class="aide">Elle apparaît dans l’onglet « Notifications » de l’espace de chaque membre. Les nouvelles activités publiées, les supports ajoutés et les attestations disponibles sont déjà annoncés automatiquement.</p>
+            <p class="aide">Elle apparaît dans l’onglet « Notifications » de l’espace de chaque membre. Les nouvelles activités publiées et les supports ajoutés sont déjà annoncés automatiquement.</p>
             <div class="champ"><label for="an-titre">Titre</label><input id="an-titre" name="titre" maxlength="120" required /></div>
             <div class="champ"><label for="an-msg">Message</label><textarea id="an-msg" name="message" maxlength="1000"></textarea></div>
             <div class="actions"><button class="btn" type="submit">Publier l’annonce</button></div>
@@ -129,9 +129,8 @@ import '../../styles/app.css';
 
 <script>
   import { sb, monProfil, estBureau, messageErreur, ACCES, type Formation } from '../../lib/supabase';
-  import { h, vider, toast, dateCourte, taille, pendant } from '../../lib/dom';
+  import { h, vider, toast, dateCourte, taille, pendant, nomFichier } from '../../lib/dom';
   import { urlMedia, reduireImage } from '../../lib/images';
-  import { nomFichier } from '../../lib/attestation';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;

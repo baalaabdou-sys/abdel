@@ -223,7 +223,7 @@ import '../../styles/app.css';
       h('div', { class: 'ligne-2' }, champ('prenom', 'Prénom', m.prenom), champ('nom', 'Nom', m.nom)),
       h('div', { class: 'ligne-2' }, champ('filiere', 'Filière', m.filiere, FILIERES), champ('annee', 'Année', m.annee, ANNEES)),
       champ('telephone', 'Téléphone', m.telephone),
-      h('p', { class: 'aide' }, 'La suppression efface le compte et tout son historique (inscriptions, attestations). Elle est irréversible.'),
+      h('p', { class: 'aide' }, 'La suppression efface le compte et tout son historique (inscriptions, présences). Elle est irréversible.'),
       h('div', { class: 'actions' }, h('button', { type: 'submit', class: 'btn btn-petit' }, 'Enregistrer'), h('button', { type: 'button', class: 'btn-lien', onclick: () => afficherMembres() }, 'Annuler'), suppr));
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

@@ -13,7 +13,7 @@ import { reperer, appliquer, nettoyer, pageCourante, blocs, blocParId, duplicabl
 type Docs = { page: Doc; global: Doc };
 const CLE_SESSION = '2ameca-mode-edition';
 const PAGES: [string, string][] = [['/', 'Accueil'], ['/le-club/', 'Le club'], ['/evenements/', 'Événements'], ['/formations/', 'Formations'],
-  ['/galerie/', 'Galerie'], ['/ressources/', 'Ressources'], ['/rejoindre/', 'Rejoindre'], ['/contact/', 'Contact'], ['/verifier/', 'Vérifier une attestation']];
+  ['/galerie/', 'Galerie'], ['/ressources/', 'Ressources'], ['/rejoindre/', 'Rejoindre'], ['/contact/', 'Contact']];
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const vide = (): Doc => ({ t: {}, l: {}, i: {}, s: {} });
 const copie = <T>(x: T): T => JSON.parse(JSON.stringify(x));

@@ -43,7 +43,7 @@ import '../../styles/app.css';
             <div class="champ"><label for="f-resume">Résumé (une ou deux phrases, affichées sur la carte de l’événement)</label><textarea id="f-resume" name="resume" rows="2" maxlength="300"></textarea></div>
             <div class="champ"><label for="f-desc">Description</label><textarea id="f-desc" name="description" rows="8" aria-describedby="f-desc-aide"></textarea>
               <span class="aide" id="f-desc-aide">Laissez une ligne vide entre deux paragraphes. « ## Titre » pour un intertitre, « - » en début de ligne pour une liste, **texte** pour du gras.</span></div>
-            <div class="champ"><label for="f-programme">Au programme (un point par ligne, facultatif)</label><textarea id="f-programme" name="programme" rows="3" placeholder="Conférence d’ouverture&#10;Ateliers en groupes&#10;Remise des attestations"></textarea></div>
+            <div class="champ"><label for="f-programme">Au programme (un point par ligne, facultatif)</label><textarea id="f-programme" name="programme" rows="3" placeholder="Conférence d’ouverture&#10;Ateliers en groupes&#10;Remise des prix"></textarea></div>
             <div class="champ"><label for="f-affiche">Affiche (image, facultatif)</label>
               <div class="affiche-ed" id="affiche-ed" hidden><img id="affiche-apercu" alt="Affiche actuelle" /><label class="case" for="f-affiche-retirer"><input type="checkbox" id="f-affiche-retirer" /><span>Retirer l’affiche</span></label></div>
               <input id="f-affiche" name="affiche" type="file" accept="image/*" /></div>
@@ -121,9 +121,8 @@ import '../../styles/app.css';
 <script>
   import jsQR from 'jsqr';
   import { sb, monProfil, estBureau, messageErreur, type Formation, type Profil } from '../../lib/supabase';
-  import { h, vider, toast, dateCourte, taille, pendant, nomComplet } from '../../lib/dom';
+  import { h, vider, toast, dateCourte, taille, pendant, nomComplet, nomFichier } from '../../lib/dom';
   import { exporterExcel } from '../../lib/excel';
-  import { nomFichier } from '../../lib/attestation';
   import { urlMedia, reduireImage } from '../../lib/images';
 
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
