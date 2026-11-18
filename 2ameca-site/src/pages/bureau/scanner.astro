@@ -117,6 +117,7 @@ import '../../styles/app.css';
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   const $ = (id: string) => document.getElementById(id)!;
   const id = new URLSearchParams(location.search).get('id');
+  const idSeance = new URLSearchParams(location.search).get('seance');
   const ICONES = {
     ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
     deja: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12.5l4.5 4.5L16.5 7.5M10 16.5l.5.5L20 7.5"/></svg>',
@@ -131,6 +132,7 @@ import '../../styles/app.css';
     const p = await monProfil();
     if (!p) { location.href = `${base}/connexion/?suite=${encodeURIComponent('/bureau/scanner/' + location.search)}`; return; }
     if (!estBureau(p)) { vider($('chargement'), 'Cette page est réservée aux membres du bureau.'); return; }
+    if (idSeance) return demarrerSeance();
     if (!id) return choisir();
     const { data, error } = await sb.from('formations').select('*').eq('id', id).maybeSingle();
     if (error || !data) { $('chargement').textContent = error ? messageErreur(error) : 'Activité introuvable.'; return; }
@@ -139,6 +141,36 @@ import '../../styles/app.css';
     ($('ac-fermer') as HTMLAnchorElement).href = `${base}/bureau/activite/?id=${formation.id}`;
     ($('ac-manuel') as HTMLAnchorElement).href = `${base}/bureau/activite/?id=${formation.id}#presences`;
     await compter();
+    $('chargement').hidden = true; $('accueil').hidden = false;
+    demarrerCamera();
+  }
+
+  // ── Mode séance : présence aux séances du club (séparée des événements)
+  let seance: { id: string; nom: string; terminee: boolean } | null = null;
+  async function demarrerSeance() {
+    const [sRes, mRes, pRes] = await Promise.all([
+      sb.from('seances').select('id, nom, terminee').eq('id', idSeance!).maybeSingle(),
+      sb.from('profiles').select('id, role'),
+      sb.from('seance_presences').select('membre_id, present').eq('seance_id', idSeance!),
+    ]);
+    if (sRes.error || !sRes.data) { $('chargement').textContent = sRes.error ? messageErreur(sRes.error) : 'Séance introuvable.'; return; }
+    seance = sRes.data;
+    const retour = `${base}/bureau/seances/?id=${seance.id}`;
+    if (seance.terminee) { vider($('chargement'), 'Cette séance est terminée. ', h('a', { href: retour }, 'Rouvrez-la'), ' pour scanner de nouveau.'); return; }
+    $('ac-activite').textContent = seance.nom;
+    document.querySelector('.ac-label')!.textContent = 'Séance · présence';
+    ($('ac-fermer') as HTMLAnchorElement).href = retour;
+    ($('ac-manuel') as HTMLAnchorElement).href = retour + '#liste-presences';
+    $('ac-manuel').textContent = 'Corriger à la main (liste des membres)';
+    // Le bureau (responsables, administrateurs) est toujours compté présent.
+    const profils = mRes.data ?? [];
+    presents.clear();
+    for (const p of profils) if (p.role !== 'membre') presents.add(p.id);
+    for (const r of pRes.data ?? []) if (r.present) presents.add(r.membre_id);
+    nbInscrits = profils.length;
+    $('ac-inscrits').parentElement!.firstChild!.textContent = 'présent(s) sur ';
+    $('ac-inscrits').nextSibling!.textContent = ' membre(s)';
+    majCompteur();
     $('chargement').hidden = true; $('accueil').hidden = false;
     demarrerCamera();
   }
@@ -218,6 +250,15 @@ import '../../styles/app.css';
       const membre = m[1].toLowerCase();
       occupe = true;
       try {
+        if (seance) {
+          const { data, error } = await sb.rpc('marquer_presence_seance', { p_seance: seance.id, p_membre: membre });
+          if (error) { resultat('ko', 'Échec', messageErreur(error)); return; }
+          const r = (data as { nom: string; deja: boolean }[])[0];
+          if (r.deja) resultat('deja', r.nom, 'Déjà scanné(e)');
+          else { presents.add(membre); majCompteur(); resultat('ok', r.nom, 'Présent(e)'); }
+          $('ac-dernier').textContent = `Dernier : ${r.nom} · ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+          return;
+        }
         const deja = presents.has(membre);
         const { data, error } = await sb.rpc('marquer_presence', { p_formation: formation.id, p_membre: membre, p_present: true });
         if (error) { resultat('ko', 'Échec', messageErreur(error)); return; }
@@ -236,7 +277,7 @@ import '../../styles/app.css';
   function arreter() { cancelAnimationFrame(boucle); flux?.getTracks().forEach((t) => t.stop()); flux = null; }
   $('ac-reessayer').addEventListener('click', demarrerCamera);
   addEventListener('pagehide', arreter);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) arreter(); else if (!flux && formation) demarrerCamera(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) arreter(); else if (!flux && (formation || seance)) demarrerCamera(); });
 
   demarrer();
 </script>

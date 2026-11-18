@@ -18,6 +18,7 @@ import '../../styles/app.css';
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg>
               Scanner les entrées
             </a>
+            <a class="btn btn-petit" id="seances" href="#">Séances</a>
             <a class="btn btn-petit" id="nouvelle" href="#">Nouvelle activité</a>
             <a class="btn btn-petit" id="contenus" href="#">Contenus du site</a>
             <a class="btn btn-contour btn-petit" id="guide" href="#">Guide vidéo</a>
@@ -94,6 +95,7 @@ import '../../styles/app.css';
     moi = p;
     $('role').textContent = `Bureau · ${ROLES[p.role]}`;
     ($('nouvelle') as HTMLAnchorElement).href = `${base}/bureau/activite/`;
+    ($('seances') as HTMLAnchorElement).href = `${base}/bureau/seances/`;
     ($('scanner') as HTMLAnchorElement).href = `${base}/bureau/scanner/`;
     ($('mon-espace') as HTMLAnchorElement).href = `${base}/espace/`;
     ($('guide') as HTMLAnchorElement).href = `${base}/video/guide-bureau.mp4`;

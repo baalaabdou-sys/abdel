@@ -1,0 +1,300 @@
+---
+import Base from '../../layouts/Base.astro';
+import '../../styles/app.css';
+---
+<Base prive titre="Séances" description="Présence aux séances du Club 2AMECA (réservé au bureau).">
+  <section class="app">
+    <div class="conteneur">
+      <p class="chargement" id="chargement">Chargement…</p>
+
+      <!-- Liste des séances -->
+      <div id="liste" hidden>
+        <div class="app-tete">
+          <div>
+            <a class="lien-fleche" id="retour" href="#"><span aria-hidden="true">←</span> Tableau de bord</a>
+            <h1 class="titre-2">Séances</h1>
+          </div>
+          <div class="actions"><button class="btn" type="button" id="btn-creer">+ Créer une séance</button></div>
+        </div>
+        <form class="carte form" id="form-creer" novalidate hidden>
+          <h2>Nouvelle séance</h2>
+          <div class="ligne-2">
+            <div class="champ"><label for="c-nom">Nom</label><input id="c-nom" name="nom" maxlength="120" required /></div>
+            <div class="champ"><label for="c-date">Date</label><input id="c-date" name="date" type="date" required /></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Créer la séance</button><button class="btn btn-contour" type="button" id="c-annuler">Annuler</button></div>
+        </form>
+        <div class="carte"><ul class="liste-app" id="seances" role="list"><li class="aide">Chargement…</li></ul></div>
+        <p class="aide">Les séances sont visibles seulement par le bureau. Les membres ne voient pas leurs absences.</p>
+      </div>
+
+      <!-- Une séance -->
+      <div id="detail" hidden>
+        <div class="app-tete">
+          <div>
+            <a class="lien-fleche" id="retour-liste" href="#"><span aria-hidden="true">←</span> Toutes les séances</a>
+            <span class="surtitre" id="d-etat"></span>
+            <h1 class="titre-2" id="d-nom"></h1>
+            <p class="aide" id="d-date"></p>
+          </div>
+        </div>
+
+        <div class="seance-actions">
+          <a class="btn btn-scan" id="d-scanner" href="#">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg>
+            Scanner la présence
+          </a>
+          <button class="btn btn-fin" type="button" id="d-terminer">Séance terminée</button>
+          <button class="btn btn-contour" type="button" id="d-rouvrir" hidden>Rouvrir la séance</button>
+          <button class="btn btn-contour" type="button" id="d-excel">Télécharger Excel</button>
+        </div>
+
+        <div class="chiffres" id="d-chiffres"></div>
+
+        <div class="carte" id="liste-presences">
+          <h2>Présences</h2>
+          <div class="actions" style="margin-bottom:.8rem">
+            <label class="sr-only" for="d-recherche">Rechercher</label>
+            <input class="recherche" id="d-recherche" type="search" placeholder="Rechercher un membre…" style="flex:1 1 14rem" />
+          </div>
+          <ul class="liste-app" id="d-membres" role="list"></ul>
+        </div>
+
+        <details class="carte">
+          <summary><strong>Modifier ou supprimer la séance</strong></summary>
+          <form class="form" id="form-modif" novalidate style="margin-top:1rem">
+            <div class="ligne-2">
+              <div class="champ"><label for="m-nom">Nom</label><input id="m-nom" name="nom" maxlength="120" required /></div>
+              <div class="champ"><label for="m-date">Date</label><input id="m-date" name="date" type="date" required /></div>
+            </div>
+            <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer</button><button class="btn btn-contour btn-petit" type="button" id="m-supprimer">Supprimer la séance</button></div>
+          </form>
+        </details>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style is:global>
+  .seance-actions { display: grid; gap: .6rem; margin-bottom: 1.2rem; }
+  @media (min-width: 640px) { .seance-actions { grid-template-columns: repeat(2, 1fr); } }
+  .seance-actions .btn { width: 100%; min-height: 54px; font-size: 1rem; }
+  .seance-actions .btn-scan svg { width: 22px; height: 22px; }
+  .btn-fin { --fond: var(--marine); --bord: var(--marine); }
+  .etat-presence { display: inline-flex; align-items: center; gap: .4rem; }
+  .pastille-etat.absent { border-color: #b3403a; color: #b3403a; }
+  .basculer { min-height: 36px; padding: 0 .8em; border: 1px solid var(--bleu-12); border-radius: 999px; background: var(--blanc); color: var(--bleu); font: 500 .75rem var(--f-label); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .liste-app .infos .heure { color: var(--bleu); }
+  details.carte summary { cursor: pointer; font-family: var(--f-label); color: var(--marine); }
+</style>
+
+<script>
+  import { sb, monProfil, estBureau, messageErreur, ROLES, type Role } from '../../lib/supabase';
+  import { h, vider, toast, dateLongue, dateCourte, aujourdhui, pendant, nomComplet, nomFichier } from '../../lib/dom';
+  import { exporterSections } from '../../lib/excel';
+
+  interface Seance { id: string; nom: string; date: string; terminee: boolean; terminee_at: string | null; created_at: string }
+  interface Membre { id: string; prenom: string; nom: string; filiere: string | null; annee: string | null; role: Role }
+  interface Presence { membre_id: string; present: boolean; scanne_at: string | null }
+
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const $ = (id: string) => document.getElementById(id)!;
+  const id = new URLSearchParams(location.search).get('id');
+  const estBureauRole = (r: Role) => r === 'admin' || r === 'responsable';
+  const heureFr = (iso: string) => new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Casablanca' });
+
+  async function demarrer() {
+    const p = await monProfil();
+    if (!p) { location.href = `${base}/connexion/?suite=${encodeURIComponent('/bureau/seances/' + location.search)}`; return; }
+    if (!estBureau(p)) { vider($('chargement'), 'Cette page est réservée aux membres du bureau.'); return; }
+    if (id) await detail(id); else await liste();
+  }
+
+  // ── Liste et création
+  let seances: Seance[] = [];
+  /** Nom proposé : « Séance N », N = le numéro suivant. */
+  const prochainNom = () => {
+    const nums = seances.map((s) => Number(/^s[ée]ance\s+(\d+)\s*$/i.exec(s.nom)?.[1] ?? 0));
+    return `Séance ${Math.max(seances.length, ...nums, 0) + 1}`;
+  };
+  async function liste() {
+    ($('retour') as HTMLAnchorElement).href = `${base}/bureau/`;
+    const [sRes, pRes] = await Promise.all([
+      sb.from('seances').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }),
+      sb.from('seance_presences').select('seance_id, present'),
+    ]);
+    if (sRes.error) { $('chargement').textContent = messageErreur(sRes.error); return; }
+    seances = (sRes.data ?? []) as Seance[];
+    const nb = new Map<string, number>();
+    for (const r of pRes.data ?? []) if (r.present) nb.set(r.seance_id, (nb.get(r.seance_id) ?? 0) + 1);
+    const today = aujourdhui();
+    vider($('seances'), seances.length ? seances.map((s) => h('li', {},
+      h('div', { class: 'infos' }, h('strong', {}, s.nom), h('span', {}, `${s.date === today ? 'Aujourd’hui' : dateCourte(s.date)} · ${nb.get(s.id) ?? 0} présent(s)`)),
+      h('span', { class: `pastille-etat ${s.terminee ? 'ok' : 'attente'}` }, s.terminee ? 'Terminée' : 'En cours'),
+      h('a', { class: s.terminee ? 'btn btn-contour btn-petit' : 'btn btn-petit', href: `${base}/bureau/seances/?id=${s.id}` }, 'Ouvrir')))
+      : h('li', { class: 'vide' }, 'Aucune séance pour l’instant. Créez la première avec « Créer une séance ».'));
+    $('chargement').hidden = true; $('liste').hidden = false;
+  }
+  $('btn-creer').addEventListener('click', () => {
+    const f = $('form-creer') as HTMLFormElement;
+    (f.elements.namedItem('nom') as HTMLInputElement).value = prochainNom();
+    const d = f.elements.namedItem('date') as HTMLInputElement; d.value = aujourdhui(); d.min = aujourdhui();
+    f.hidden = false; (f.elements.namedItem('nom') as HTMLInputElement).focus();
+  });
+  $('c-annuler').addEventListener('click', () => { ($('form-creer') as HTMLFormElement).hidden = true; });
+  $('form-creer').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    const nom = (f.elements.namedItem('nom') as HTMLInputElement).value.trim(), date = (f.elements.namedItem('date') as HTMLInputElement).value;
+    if (!nom) return toast('Donnez un nom à la séance.', 'erreur');
+    if (!date || date < aujourdhui()) return toast('La date ne peut pas être dans le passé.', 'erreur');
+    pendant(f.querySelector('button[type=submit]'), 'Création…', async () => {
+      const { data, error } = await sb.from('seances').insert({ nom, date }).select('id').single();
+      if (error) return toast(messageErreur(error), 'erreur');
+      location.href = `${base}/bureau/seances/?id=${data.id}`;
+    });
+  });
+
+  // ── Une séance
+  let seance: Seance, membres: Membre[] = [], presences = new Map<string, Presence>();
+  /** Statut d'un membre : le bureau est toujours présent ; sinon scanné = présent, séance terminée = absent. */
+  const statut = (m: Membre): 'present' | 'bureau' | 'absent' | 'attente' | 'hors' => {
+    const p = presences.get(m.id);
+    if (estBureauRole(m.role)) return p?.scanne_at ? 'present' : 'bureau';   // toujours présent
+    if (p?.present) return 'present';
+    if (seance.terminee) return p ? 'absent' : 'hors';
+    return 'attente';
+  };
+
+  async function detail(idS: string) {
+    ($('retour-liste') as HTMLAnchorElement).href = `${base}/bureau/seances/`;
+    const [sRes, mRes, pRes] = await Promise.all([
+      sb.from('seances').select('*').eq('id', idS).maybeSingle(),
+      sb.from('profiles').select('id, prenom, nom, filiere, annee, role').order('nom').order('prenom'),
+      sb.from('seance_presences').select('membre_id, present, scanne_at').eq('seance_id', idS),
+    ]);
+    if (sRes.error || !sRes.data) { $('chargement').textContent = sRes.error ? messageErreur(sRes.error) : 'Séance introuvable.'; return; }
+    seance = sRes.data as Seance;
+    membres = (mRes.data ?? []) as Membre[];
+    presences = new Map(((pRes.data ?? []) as Presence[]).map((p) => [p.membre_id, p]));
+    afficher();
+    $('chargement').hidden = true; $('detail').hidden = false;
+  }
+
+  function afficher() {
+    $('d-nom').textContent = seance.nom;
+    $('d-date').textContent = dateLongue(seance.date).replace(/^./, (c) => c.toUpperCase());
+    $('d-etat').textContent = seance.terminee ? `Séance terminée${seance.terminee_at ? ` à ${heureFr(seance.terminee_at)}` : ''}` : 'Séance en cours';
+    ($('d-scanner') as HTMLAnchorElement).href = `${base}/bureau/scanner/?seance=${seance.id}`;
+    $('d-scanner').hidden = seance.terminee;
+    $('d-terminer').hidden = seance.terminee;
+    $('d-rouvrir').hidden = !seance.terminee;
+    const f = $('form-modif') as HTMLFormElement;
+    (f.elements.namedItem('nom') as HTMLInputElement).value = seance.nom;
+    const d = f.elements.namedItem('date') as HTMLInputElement;
+    d.value = seance.date; d.min = seance.date < aujourdhui() ? seance.date : aujourdhui(); d.disabled = seance.date < aujourdhui();
+    const s = membres.map((m) => ({ m, st: statut(m) })).filter((x) => x.st !== 'hors');
+    const nbP = s.filter((x) => x.st === 'present' || x.st === 'bureau').length;
+    const nbA = s.filter((x) => x.st === 'absent').length;
+    const nbW = s.filter((x) => x.st === 'attente').length;
+    vider($('d-chiffres'),
+      h('div', { class: 'chiffre' }, h('b', {}, String(nbP)), h('span', {}, 'Présents')),
+      h('div', { class: 'chiffre' }, h('b', {}, String(seance.terminee ? nbA : nbW)), h('span', {}, seance.terminee ? 'Absents' : 'Pas encore scannés')),
+      h('div', { class: 'chiffre' }, h('b', {}, s.length ? `${Math.round((nbP / s.length) * 100)} %` : '—'), h('span', {}, 'Taux de présence')));
+    listeMembres();
+  }
+
+  function listeMembres() {
+    const q = ($('d-recherche') as HTMLInputElement).value.trim().toLowerCase();
+    const ordre = { present: 0, bureau: 1, attente: 2, absent: 3, hors: 4 } as const;
+    const s = membres.map((m) => ({ m, st: statut(m) })).filter((x) => x.st !== 'hors' && (!q || nomComplet(x.m).toLowerCase().includes(q)))
+      .sort((a, b) => ordre[a.st] - ordre[b.st] || nomComplet(a.m).localeCompare(nomComplet(b.m), 'fr'));
+    vider($('d-membres'), s.length ? s.map(({ m, st }) => {
+      const p = presences.get(m.id);
+      const pastille = st === 'present' ? h('span', { class: 'pastille-etat ok' }, 'Présent')
+        : st === 'bureau' ? h('span', { class: 'pastille-etat ok' }, 'Présent · bureau')
+        : st === 'absent' ? h('span', { class: 'pastille-etat absent' }, 'Absent')
+        : h('span', { class: 'pastille-etat attente' }, 'Pas encore scanné');
+      const infos = [m.role !== 'membre' ? ROLES[m.role] : '', [m.filiere, m.annee].filter(Boolean).join(' · '), p?.scanne_at ? `scanné à ${heureFr(p.scanne_at)}` : ''].filter(Boolean).join(' · ');
+      let bouton: HTMLElement | null = null;
+      if (m.role === 'membre') {
+        const versPresent = st !== 'present';
+        bouton = h('button', { type: 'button', class: 'basculer' }, versPresent ? 'Marquer présent' : 'Marquer absent');
+        bouton.addEventListener('click', () => pendant(bouton as HTMLButtonElement, '…', async () => {
+          const { error } = await sb.rpc('marquer_presence_seance', { p_seance: seance.id, p_membre: m.id, p_present: versPresent, p_manuel: true });
+          if (error) return toast(messageErreur(error), 'erreur');
+          presences.set(m.id, { membre_id: m.id, present: versPresent, scanne_at: versPresent ? p?.scanne_at ?? null : null });
+          afficher();
+        }));
+      }
+      return h('li', {}, h('div', { class: 'infos' }, h('strong', {}, nomComplet(m)), infos ? h('span', {}, infos) : null), h('span', { class: 'etat-presence' }, pastille, bouton));
+    }) : h('li', { class: 'vide' }, q ? 'Aucun membre ne correspond.' : 'Aucun membre.'));
+  }
+  $('d-recherche').addEventListener('input', listeMembres);
+
+  $('d-terminer').addEventListener('click', () => {
+    const restants = membres.filter((m) => statut(m) === 'attente').length;
+    if (!confirm(`Terminer « ${seance.nom} » ?\n\n${restants} membre(s) non scanné(s) seront marqués absents. Les responsables et administrateurs sont comptés présents.`)) return;
+    pendant($('d-terminer') as HTMLButtonElement, 'Clôture…', async () => {
+      const { error } = await sb.rpc('terminer_seance', { p_seance: seance.id });
+      if (error) return toast(messageErreur(error), 'erreur');
+      toast('Séance terminée : les absents sont enregistrés.');
+      await detail(seance.id);
+    });
+  });
+  $('d-rouvrir').addEventListener('click', () => {
+    if (!confirm('Rouvrir la séance pour scanner de nouveau ?')) return;
+    pendant($('d-rouvrir') as HTMLButtonElement, '…', async () => {
+      const { error } = await sb.from('seances').update({ terminee: false, terminee_at: null }).eq('id', seance.id);
+      if (error) return toast(messageErreur(error), 'erreur');
+      await detail(seance.id);
+    });
+  });
+
+  $('d-excel').addEventListener('click', () => pendant($('d-excel') as HTMLButtonElement, 'Préparation…', async () => { try {
+    type L = { m: Membre; st: ReturnType<typeof statut> };
+    const tous: L[] = membres.map((m) => ({ m, st: statut(m) })).filter((x) => x.st !== 'hors');
+    const tri = (a: L, b: L) => nomComplet(a.m).localeCompare(nomComplet(b.m), 'fr');
+    const presents = tous.filter((x) => x.st === 'present' || x.st === 'bureau').sort(tri);
+    const absents = tous.filter((x) => x.st === 'absent' || x.st === 'attente').sort(tri);
+    const taux = tous.length ? `${Math.round((presents.length / tous.length) * 100)} %` : '—';
+    await exporterSections(`${seance.nom} — ${dateLongue(seance.date)}`, [
+      ['Membres', tous.length], ['Présents', presents.length], [seance.terminee ? 'Absents' : 'Pas encore scannés', absents.length], ['Taux de présence', taux],
+    ], [{ titre: 'Présents', lignes: presents }, { titre: seance.terminee ? 'Absents' : 'Pas encore scannés', lignes: absents }], [
+      { titre: 'Nom', valeur: (l) => l.m.nom, largeur: 20 },
+      { titre: 'Prénom', valeur: (l) => l.m.prenom, largeur: 18 },
+      { titre: 'Filière', valeur: (l) => l.m.filiere ?? '', largeur: 22 },
+      { titre: 'Année', valeur: (l) => l.m.annee ?? '', largeur: 14 },
+      { titre: 'Rôle', valeur: (l) => ROLES[l.m.role], largeur: 16 },
+      { titre: 'Heure du scan', valeur: (l) => { const p = presences.get(l.m.id); return p?.present && p.scanne_at ? heureFr(p.scanne_at) : ''; }, largeur: 14 },
+    ], `Seance-${nomFichier(seance.nom)}-${seance.date}.xlsx`, seance.nom);
+  } catch (e) { toast(messageErreur(e), 'erreur'); } }));
+
+  $('form-modif').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const f = e.currentTarget as HTMLFormElement;
+    const nom = (f.elements.namedItem('nom') as HTMLInputElement).value.trim();
+    const dEl = f.elements.namedItem('date') as HTMLInputElement;
+    if (!nom) return toast('Donnez un nom à la séance.', 'erreur');
+    const maj: Record<string, string> = { nom };
+    if (!dEl.disabled && dEl.value !== seance.date) {
+      if (dEl.value < aujourdhui()) return toast('La date ne peut pas être dans le passé.', 'erreur');
+      maj.date = dEl.value;
+    }
+    pendant(f.querySelector('button[type=submit]'), 'Enregistrement…', async () => {
+      const { error } = await sb.from('seances').update(maj).eq('id', seance.id);
+      if (error) return toast(messageErreur(error), 'erreur');
+      Object.assign(seance, maj); afficher(); toast('Séance modifiée.');
+    });
+  });
+  $('m-supprimer').addEventListener('click', () => {
+    if (!confirm(`Supprimer « ${seance.nom} » et toutes ses présences ? C’est irréversible.`)) return;
+    pendant($('m-supprimer') as HTMLButtonElement, '…', async () => {
+      const { error } = await sb.from('seances').delete().eq('id', seance.id);
+      if (error) return toast(messageErreur(error), 'erreur');
+      location.href = `${base}/bureau/seances/`;
+    });
+  });
+
+  demarrer();
+</script>
