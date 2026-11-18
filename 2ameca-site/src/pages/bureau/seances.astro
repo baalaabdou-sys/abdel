@@ -14,7 +14,7 @@ import '../../styles/app.css';
             <a class="lien-fleche" id="retour" href="#"><span aria-hidden="true">←</span> Tableau de bord</a>
             <h1 class="titre-2">Séances</h1>
           </div>
-          <div class="actions"><button class="btn" type="button" id="btn-creer">+ Créer une séance</button></div>
+          <div class="actions"><button class="btn" type="button" id="btn-creer">+ Créer une séance</button><button class="btn btn-contour" type="button" id="btn-bilan">Bilan Excel (toutes les séances)</button></div>
         </div>
         <form class="carte form" id="form-creer" novalidate hidden>
           <h2>Nouvelle séance</h2>
@@ -129,11 +129,71 @@ import '../../styles/app.css';
     b.addEventListener('click', () => supprimerSeance(s, b, () => liste()));
     return b;
   }
+  /** Toutes les lignes de présence (lues par pages : la base en renvoie 1000 au maximum à la fois). */
+  async function toutesPresences<T>(colonnes: string): Promise<{ data: T[] | null; error: unknown }> {
+    const tout: Record<string, unknown>[] = [];
+    for (let de = 0; ; de += 1000) {
+      const { data, error } = await sb.from('seance_presences').select(colonnes).range(de, de + 999);
+      if (error) return { data: null, error };
+      tout.push(...((data ?? []) as unknown as Record<string, unknown>[]));
+      if (!data || data.length < 1000) break;
+    }
+    return { data: tout as unknown as T[], error: null };
+  }
+
+  /** Bilan de présence : une ligne par personne, une colonne par séance (P / A). */
+  $('btn-bilan').addEventListener('click', () => pendant($('btn-bilan') as HTMLButtonElement, 'Préparation…', async () => {
+    try {
+      const [mRes, pRes] = await Promise.all([
+        sb.from('profiles').select('id, prenom, nom, filiere, annee, role').order('nom').order('prenom'),
+        toutesPresences<{ seance_id: string; membre_id: string; present: boolean }>('seance_id, membre_id, present'),
+      ]);
+      if (mRes.error || pRes.error) return toast(messageErreur(mRes.error || pRes.error), 'erreur');
+      if (!seances.length) return toast('Aucune séance pour l’instant.', 'erreur');
+      const chrono = [...seances].sort((a, b) => a.date.localeCompare(b.date) || a.created_at.localeCompare(b.created_at));
+      const lignes = new Map<string, boolean>();
+      for (const r of pRes.data ?? []) lignes.set(`${r.seance_id}|${r.membre_id}`, r.present);
+      // P = présent, A = absent, vide = pas concerné (séance en cours non scannée, ou membre arrivé après la séance)
+      const etat = (m: Membre, s: Seance): 'P' | 'A' | '' => {
+        if (estBureauRole(m.role)) return 'P';
+        const v = lignes.get(`${s.id}|${m.id}`);
+        if (v === true) return 'P';
+        if (v === false && s.terminee) return 'A';
+        return '';
+      };
+      type L = { m: Membre; e: ('P' | 'A' | '')[]; p: number; a: number };
+      const tous: L[] = ((mRes.data ?? []) as Membre[]).map((m) => {
+        const e = chrono.map((s) => etat(m, s));
+        return { m, e, p: e.filter((x) => x === 'P').length, a: e.filter((x) => x === 'A').length };
+      }).filter((l) => l.p + l.a > 0);
+      const taux = (l: L) => (l.p + l.a ? Math.round((l.p / (l.p + l.a)) * 100) : 0);
+      const tri = (x: L, y: L) => nomComplet(x.m).localeCompare(nomComplet(y.m), 'fr');
+      const membresSeuls = tous.filter((l) => l.m.role === 'membre');
+      const moy = membresSeuls.length ? Math.round(membresSeuls.reduce((n, l) => n + taux(l), 0) / membresSeuls.length) : 0;
+      const court = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+      await exporterSections(`Bilan des séances — ${chrono.length} séance(s), du ${dateCourte(chrono[0].date)} au ${dateCourte(chrono.at(-1)!.date)}`, [
+        ['Séances', chrono.length], ['Séances terminées', chrono.filter((s) => s.terminee).length], ['Membres concernés', membresSeuls.length], ['Taux de présence moyen (membres)', `${moy} %`],
+      ], [
+        { titre: 'Membres', lignes: membresSeuls.sort(tri) },
+        { titre: 'Bureau (toujours présent)', lignes: tous.filter((l) => l.m.role !== 'membre').sort(tri) },
+      ], [
+        { titre: 'Nom', valeur: (l: L) => l.m.nom, largeur: 18 },
+        { titre: 'Prénom', valeur: (l: L) => l.m.prenom, largeur: 16 },
+        { titre: 'Filière', valeur: (l: L) => l.m.filiere ?? '', largeur: 18 },
+        { titre: 'Année', valeur: (l: L) => l.m.annee ?? '', largeur: 12 },
+        { titre: 'Présences', valeur: (l: L) => l.p, largeur: 11 },
+        { titre: 'Absences', valeur: (l: L) => l.a, largeur: 11 },
+        { titre: 'Taux', valeur: (l: L) => `${taux(l)} %`, largeur: 9 },
+        ...chrono.map((s, i) => ({ titre: `${s.nom} (${court(s.date)})`, valeur: (l: L) => l.e[i], largeur: Math.max(10, Math.min(18, s.nom.length + 8)) })),
+      ], `Bilan-seances-${aujourdhui()}.xlsx`, 'Bilan des séances');
+    } catch (e) { toast(messageErreur(e), 'erreur'); }
+  }));
+
   async function liste() {
     ($('retour') as HTMLAnchorElement).href = `${base}/bureau/`;
     const [sRes, pRes] = await Promise.all([
       sb.from('seances').select('*').order('date', { ascending: false }).order('created_at', { ascending: false }),
-      sb.from('seance_presences').select('seance_id, present'),
+      toutesPresences<{ seance_id: string; present: boolean }>('seance_id, present'),
     ]);
     if (sRes.error) { $('chargement').textContent = messageErreur(sRes.error); return; }
     seances = (sRes.data ?? []) as Seance[];
