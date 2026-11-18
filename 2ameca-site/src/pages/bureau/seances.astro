@@ -47,6 +47,7 @@ import '../../styles/app.css';
           <button class="btn btn-fin" type="button" id="d-terminer">Séance terminée</button>
           <button class="btn btn-contour" type="button" id="d-rouvrir" hidden>Rouvrir la séance</button>
           <button class="btn btn-contour" type="button" id="d-excel">Télécharger Excel</button>
+          <button class="btn btn-supprimer" type="button" id="d-supprimer">Supprimer la séance</button>
         </div>
 
         <div class="chiffres" id="d-chiffres"></div>
@@ -61,13 +62,13 @@ import '../../styles/app.css';
         </div>
 
         <details class="carte">
-          <summary><strong>Modifier ou supprimer la séance</strong></summary>
+          <summary><strong>Modifier le nom ou la date</strong></summary>
           <form class="form" id="form-modif" novalidate style="margin-top:1rem">
             <div class="ligne-2">
               <div class="champ"><label for="m-nom">Nom</label><input id="m-nom" name="nom" maxlength="120" required /></div>
               <div class="champ"><label for="m-date">Date</label><input id="m-date" name="date" type="date" required /></div>
             </div>
-            <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer</button><button class="btn btn-contour btn-petit" type="button" id="m-supprimer">Supprimer la séance</button></div>
+            <div class="actions"><button class="btn btn-petit" type="submit">Enregistrer</button></div>
           </form>
         </details>
       </div>
@@ -81,6 +82,11 @@ import '../../styles/app.css';
   .seance-actions .btn { width: 100%; min-height: 54px; font-size: 1rem; }
   .seance-actions .btn-scan svg { width: 22px; height: 22px; }
   .btn-fin { --fond: var(--marine); --bord: var(--marine); }
+  .btn-supprimer { --fond: transparent; --txt: #b3403a; --bord: #e2b4b1; }
+  .btn-supprimer:hover { --fond: #b3403a; --txt: var(--blanc); --bord: #b3403a; }
+  .supprimer-ligne { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #e2b4b1; border-radius: 50%; background: var(--blanc); color: #b3403a; cursor: pointer; }
+  .supprimer-ligne svg { width: 18px; height: 18px; }
+  .supprimer-ligne:hover { background: #b3403a; color: var(--blanc); }
   .etat-presence { display: inline-flex; align-items: center; gap: .4rem; }
   .pastille-etat.absent { border-color: #b3403a; color: #b3403a; }
   .basculer { min-height: 36px; padding: 0 .8em; border: 1px solid var(--bleu-12); border-radius: 999px; background: var(--blanc); color: var(--bleu); font: 500 .75rem var(--f-label); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
@@ -117,6 +123,12 @@ import '../../styles/app.css';
     const nums = seances.map((s) => Number(/^s[ée]ance\s+(\d+)\s*$/i.exec(s.nom)?.[1] ?? 0));
     return `Séance ${Math.max(seances.length, ...nums, 0) + 1}`;
   };
+  function boutonSupprimer(s: Seance) {
+    const b = h('button', { type: 'button', class: 'supprimer-ligne', 'aria-label': `Supprimer ${s.nom}`, title: 'Supprimer' }) as HTMLButtonElement;
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+    b.addEventListener('click', () => supprimerSeance(s, b, () => liste()));
+    return b;
+  }
   async function liste() {
     ($('retour') as HTMLAnchorElement).href = `${base}/bureau/`;
     const [sRes, pRes] = await Promise.all([
@@ -131,7 +143,8 @@ import '../../styles/app.css';
     vider($('seances'), seances.length ? seances.map((s) => h('li', {},
       h('div', { class: 'infos' }, h('strong', {}, s.nom), h('span', {}, `${s.date === today ? 'Aujourd’hui' : dateCourte(s.date)} · ${nb.get(s.id) ?? 0} présent(s)`)),
       h('span', { class: `pastille-etat ${s.terminee ? 'ok' : 'attente'}` }, s.terminee ? 'Terminée' : 'En cours'),
-      h('a', { class: s.terminee ? 'btn btn-contour btn-petit' : 'btn btn-petit', href: `${base}/bureau/seances/?id=${s.id}` }, 'Ouvrir')))
+      h('a', { class: s.terminee ? 'btn btn-contour btn-petit' : 'btn btn-petit', href: `${base}/bureau/seances/?id=${s.id}` }, 'Ouvrir'),
+      boutonSupprimer(s)))
       : h('li', { class: 'vide' }, 'Aucune séance pour l’instant. Créez la première avec « Créer une séance ».'));
     $('chargement').hidden = true; $('liste').hidden = false;
   }
@@ -287,14 +300,17 @@ import '../../styles/app.css';
       Object.assign(seance, maj); afficher(); toast('Séance modifiée.');
     });
   });
-  $('m-supprimer').addEventListener('click', () => {
-    if (!confirm(`Supprimer « ${seance.nom} » et toutes ses présences ? C’est irréversible.`)) return;
-    pendant($('m-supprimer') as HTMLButtonElement, '…', async () => {
-      const { error } = await sb.from('seances').delete().eq('id', seance.id);
+  /** Supprime une séance et toutes ses présences, après confirmation. */
+  async function supprimerSeance(s: { id: string; nom: string }, btn: HTMLButtonElement, apres: () => void) {
+    if (!confirm(`Supprimer « ${s.nom} » et toutes ses présences ?\n\nC’est irréversible.`)) return;
+    await pendant(btn, '…', async () => {
+      const { error } = await sb.from('seances').delete().eq('id', s.id);
       if (error) return toast(messageErreur(error), 'erreur');
-      location.href = `${base}/bureau/seances/`;
+      toast(`« ${s.nom} » supprimée.`);
+      apres();
     });
-  });
+  }
+  $('d-supprimer').addEventListener('click', () => supprimerSeance(seance, $('d-supprimer') as HTMLButtonElement, () => { location.href = `${base}/bureau/seances/`; }));
 
   demarrer();
 </script>
